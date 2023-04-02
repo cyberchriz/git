@@ -1,9 +1,8 @@
 // code by: Christian Suer
 // to be used as helper class in conjunction with <neuralnet2.h>
 #pragma once
-#include </home/christian/Documents/own_code/c++/DataScience/array.h>
-#include </home/christian/Documents/own_code/c++/DataScience/enums.h>
-using namespace std;
+#include "network.h"
+#include "../../array.h"
 
 class Neuron{
     private:

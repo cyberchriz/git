@@ -1,5 +1,4 @@
 #pragma once
-#include </home/christian/Documents/own_code/c++/DataScience/enums.h>
 #include <string>
 #include <cmath>
 using namespace std;

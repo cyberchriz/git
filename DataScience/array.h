@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath> 
-#include </home/christian/Documents/own_code/c++/DataScience/sample.h>
+#include "sample.h"
 using namespace std;
 
 // class for multidimensional arrays
@@ -24,10 +24,10 @@ class Array{
         void identity_fill();
         void random_normal(double mu=0, double sigma=1);
         void random_uniform(double x_mean=0.5,double range=0.5);
-        double mean(){return Sample(data).mean();};
-        double median(){return Sample(data).median();};
-        double variance(){return Sample(data).variance();};
-        double stddev(){return Sample(data).stddev();};
+        double mean(){return Sample<double>(data).mean();};
+        double median(){return Sample<double>(data).median();};
+        double variance(){return Sample<double>(data).variance();};
+        double stddev(){return Sample<double>(data).stddev();};
         double sum();
         void add(double value);
         void add(Array* array);

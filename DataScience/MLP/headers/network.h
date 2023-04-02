@@ -1,6 +1,26 @@
 // author: 'cyberchriz' (Christian Suer)
 // this is a neural network library for flexible topologies
 
+// neural network optimization methods
+enum OPTIMIZATION_METHOD
+  {
+   Vanilla=1,           // Vanilla Stochastic Gradient Descent
+   Nesterov=2,          // Nesterov Accelerated Gradient (NAG)
+   RMSprop=3,           // RMSprop
+   ADADELTA=4,          // ADADELTA
+   ADAM=5,              // ADAM
+   AdaGrad=6            // AdaGrad
+  };
+
+// neural network feature and label scaling methods
+enum SCALING
+  {
+   none,              // no scaling
+   standardized,      // standard deviation method (µ=0, sigma=1)
+   normalized,        // minmax, range 0 to 1
+   maxabs             // minmax, range -1 to +1
+  };
+
 #pragma once
 #include "../../DataScience/array.h"
 #include "../../weight_init.h"
@@ -8,7 +28,6 @@
 #include "../../activation_functions.h"
 #include <cmath>
 #define MAX_LAYERS 50
-using namespace std;
 
 class Network{
     private:

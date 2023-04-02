@@ -1,8 +1,6 @@
 #pragma once
 #include <string>
-using namespace std;
    
-
 // available types of neural network layers
 enum LAYER_TYPE {
     standard,
