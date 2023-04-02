@@ -4,10 +4,6 @@
 
 // author: Christian Suer
 
-#pragma once
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
 #include "../headers/random_distributions.h"
 
 // get random value from a normal distribution with a given µ and sigma

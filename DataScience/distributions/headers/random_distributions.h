@@ -4,6 +4,10 @@
 
 // author: Christian Suer
 
+#pragma once
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 template<typename T>
 class Random {
