@@ -354,345 +354,110 @@ void Network::backpropagate(){
     }                
 }
 
-// set a single input value via 1-dimensional index (with auto-scaling)
+// set a single input value via index (with auto-scaling)
 void Network::set_input(int index, double value){
-    layer[0]->neuron[index]->x = value;
-    layer[0]->neuron[index]->input_min = fmin(value,layer[0]->neuron[index]->input_min);
-    layer[0]->neuron[index]->input_max = fmax(value,layer[0]->neuron[index]->input_max);
-    layer[0]->neuron[index]->input_maxabs = fmax(layer[0]->neuron[index]->input_maxabs,abs(value));
+    layer[0].neuron[index].x = value;
+    layer[0].neuron[index].input_min = fmin(value,layer[0].neuron[index].input_min);
+    layer[0].neuron[index].input_max = fmax(value,layer[0].neuron[index].input_max);
+    layer[0].neuron[index].input_maxabs = fmax(layer[0].neuron[index].input_maxabs,abs(value));
     if (backprop_iterations<10){
-        layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.5+value*0.5;
-        layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-        layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.5+layer[0]->neuron[index]->input_mdev2*0.5;     
+        layer[0].neuron[index].input_rolling_average = layer[0].neuron[index].input_rolling_average*0.5+value*0.5;
+        layer[0].neuron[index].input_mdev2 = pow((value-layer[0].neuron[index].input_rolling_average),2);
+        layer[0].neuron[index].input_variance = layer[0].neuron[index].input_variance*0.5+layer[0].neuron[index].input_mdev2*0.5;     
     }
     else if (backprop_iterations<200){
-        layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.95+value*0.05;
-        layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-        layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.95+layer[0]->neuron[index]->input_mdev2*0.05;     
+        layer[0].neuron[index].input_rolling_average = layer[0].neuron[index].input_rolling_average*0.95+value*0.05;
+        layer[0].neuron[index].input_mdev2 = pow((value-layer[0].neuron[index].input_rolling_average),2);
+        layer[0].neuron[index].input_variance = layer[0].neuron[index].input_variance*0.95+layer[0].neuron[index].input_mdev2*0.05;     
     }
     else{
-        layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.999+value*0.001;
-        layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-        layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.999+layer[0]->neuron[index]->input_mdev2*0.001;         
+        layer[0].neuron[index].input_rolling_average = layer[0].neuron[index].input_rolling_average*0.999+value*0.001;
+        layer[0].neuron[index].input_mdev2 = pow((value-layer[0].neuron[index].input_rolling_average),2);
+        layer[0].neuron[index].input_variance = layer[0].neuron[index].input_variance*0.999+layer[0].neuron[index].input_mdev2*0.001;         
     } 
-    layer[0]->neuron[index]->input_stddev = sqrt(layer[0]->neuron[index]->input_variance);
+    layer[0].neuron[index].input_stddev = sqrt(layer[0].neuron[index].input_variance);
 
     switch (scaling_method){
         case none:
-            layer[0]->neuron[index]->h = value;
+            layer[0].neuron[index].h = value;
             break;
         case maxabs:
             // -1 to 1
-            layer[0]->neuron[index]->h = value / (layer[0]->neuron[index]->input_maxabs + __DBL_EPSILON__);
+            layer[0].neuron[index].h = value / (layer[0].neuron[index].input_maxabs + __DBL_EPSILON__);
             break;
         case normalized:
             // 0 to 1
-            layer[0]->neuron[index]->h = value - layer[0]->neuron[index]->input_min;
-            layer[0]->neuron[index]->h = layer[0]->neuron[index]->h / (layer[0]->neuron[index]->input_max - layer[0]->neuron[index]->input_min + __DBL_EPSILON__);
+            layer[0].neuron[index].h = value - layer[0].neuron[index].input_min;
+            layer[0].neuron[index].h = layer[0].neuron[index].h / (layer[0].neuron[index].input_max - layer[0].neuron[index].input_min + __DBL_EPSILON__);
             break;
         default:
             // standardized (µ=0, sigma=1)
-            layer[0]->neuron[index]->h = layer[0]->neuron[index]->h - layer[0]->neuron[index]->input_rolling_average; 
-            layer[0]->neuron[index]->h = layer[0]->neuron[index]->h / (layer[0]->neuron[index]->input_stddev + __DBL_EPSILON__);
+            layer[0].neuron[index].h = layer[0].neuron[index].h - layer[0].neuron[index].input_rolling_average; 
+            layer[0].neuron[index].h = layer[0].neuron[index].h / (layer[0].neuron[index].input_stddev + __DBL_EPSILON__);
             break;
-    }
-}
-
-// set a single input via n-dimensional index
-void Network::set_input(int* nd_index,double value){
-    int index = layer[0]->neuronindex(nd_index);
-    layer[0]->neuron[index]->x = value;
-    layer[0]->neuron[index]->input_min = fmin(value,layer[0]->neuron[index]->input_min);
-    layer[0]->neuron[index]->input_max = fmax(value,layer[0]->neuron[index]->input_max);
-    layer[0]->neuron[index]->input_maxabs = fmax(layer[0]->neuron[index]->input_maxabs,abs(value));
-    if (backprop_iterations<10){
-        layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.5+value*0.5;
-        layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-        layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.5+layer[0]->neuron[index]->input_mdev2*0.5;     
-    }
-    else if (backprop_iterations<200){
-        layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.95+value*0.05;
-        layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-        layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.95+layer[0]->neuron[index]->input_mdev2*0.05;     
-    }
-    else{
-        layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.999+value*0.001;
-        layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-        layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.999+layer[0]->neuron[index]->input_mdev2*0.001;         
-    } 
-    layer[0]->neuron[index]->input_stddev = sqrt(layer[0]->neuron[index]->input_variance);   
-
-    switch (scaling_method){
-        case none:
-            layer[0]->neuron[index]->h = value;
-            break;
-        case maxabs:
-            // -1 to 1
-            layer[0]->neuron[index]->h = value / (layer[0]->neuron[index]->input_maxabs + __DBL_EPSILON__);
-            break;
-        case normalized:
-            // 0 to 1
-            layer[0]->neuron[index]->h = value - layer[0]->neuron[index]->input_min;
-            layer[0]->neuron[index]->h = layer[0]->neuron[index]->h / (layer[0]->neuron[index]->input_max - layer[0]->neuron[index]->input_min + __DBL_EPSILON__);
-            break;
-        default:
-            // standardized (µ=0, sigma=1)
-            layer[0]->neuron[index]->h = layer[0]->neuron[index]->h - layer[0]->neuron[index]->input_rolling_average; 
-            layer[0]->neuron[index]->h = layer[0]->neuron[index]->h / (layer[0]->neuron[index]->input_stddev + __DBL_EPSILON__);
-            break;
-    }
-}
-
-// set all inputs at once via n-dimensional data array, with auto-scaling
-void Network::set_inputs(Array* nd_array){
-    int* nd_index = new int[nd_array->get_dimensions()];
-    for (int d=0;d<nd_array->get_dimensions();d++){
-        for (int i=0;i<nd_array->get_size(d);i++){
-            nd_index[d]=i;
-            int index=nd_array->get_element(nd_index);
-            double value=nd_array->get(index);
-            layer[0]->neuron[index]->x = value;
-            layer[0]->neuron[index]->input_min = fmin(value,layer[0]->neuron[index]->input_min);
-            layer[0]->neuron[index]->input_max = fmax(value,layer[0]->neuron[index]->input_max);
-            layer[0]->neuron[index]->input_maxabs = fmax(layer[0]->neuron[index]->input_maxabs,abs(value));
-            if (backprop_iterations<10){
-                layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.5+value*0.5;
-                layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-                layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.5+layer[0]->neuron[index]->input_mdev2*0.5;     
-            }
-            else if (backprop_iterations<200){
-                layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.95+value*0.05;
-                layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-                layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.95+layer[0]->neuron[index]->input_mdev2*0.05;     
-            }
-            else{
-                layer[0]->neuron[index]->input_rolling_average = layer[0]->neuron[index]->input_rolling_average*0.999+value*0.001;
-                layer[0]->neuron[index]->input_mdev2 = pow((value-layer[0]->neuron[index]->input_rolling_average),2);
-                layer[0]->neuron[index]->input_variance = layer[0]->neuron[index]->input_variance*0.999+layer[0]->neuron[index]->input_mdev2*0.001;         
-            } 
-            layer[0]->neuron[index]->input_stddev = sqrt(layer[0]->neuron[index]->input_variance);   
-
-            switch (scaling_method){
-                case none:
-                    layer[0]->neuron[index]->h = value;
-                    break;
-                case maxabs:
-                    // -1 to 1
-                    layer[0]->neuron[index]->h = value / (layer[0]->neuron[index]->input_maxabs + __DBL_EPSILON__);
-                    break;
-                case normalized:
-                    // 0 to 1
-                    layer[0]->neuron[index]->h = value - layer[0]->neuron[index]->input_min;
-                    layer[0]->neuron[index]->h = layer[0]->neuron[index]->h / (layer[0]->neuron[index]->input_max - layer[0]->neuron[index]->input_min + __DBL_EPSILON__);
-                    break;
-                default:
-                    // standardized (µ=0, sigma=1)
-                    layer[0]->neuron[index]->h = layer[0]->neuron[index]->h - layer[0]->neuron[index]->input_rolling_average; 
-                    layer[0]->neuron[index]->h = layer[0]->neuron[index]->h / (layer[0]->neuron[index]->input_stddev + __DBL_EPSILON__);
-                    break;
-            }
-        }
     }
 }
 
 // get single output via 1d index
 double Network::get_output(int index){
-    return layer[layers-1]->neuron[index]->output;
-}
-
-// get single input via n-dimensional index
-double Network::get_output(int* nd_index){
-    int index = layer[layers-1]->neuronindex(nd_index);
-    return layer[layers-1]->neuron[index]->output;
-}
-
-// get all outputs at once as n-dimensional data array
-Array* Network::get_outputs(){
-    int* shape=layer[layers-1]->get_layer_shape();
-    Array* result=new Array(shape);
-    int *nd_index=new int[result->get_dimensions()];
-    for (int d=0;d<result->get_dimensions();d++){
-        for (int i=0;i<result->get_size(d);i++){
-            nd_index[d]=i;
-            result->set(nd_index,layer[layers-1]->neuron[layer[layers-1]->neuronindex(nd_index)]->output);
-        }
-    }
-    return result;
+    return layer[layers-1].neuron[index].output;
 }
    
 // get a single 'h' from a hidden layer via 1d index (e.g. for autoencoder bottleneck)      
 double Network::get_hidden(int index,int layer_index){
-    return layer[layer_index]->neuron[index]->h;
-}
-
-// get a single 'h' value from a hidden layer via n-dimensional index
-// (e.g. for autoencoder bottleneck)
-double Network::get_hidden(int* nd_index, int layer_index){
-    int index = layer[layer_index]->neuronindex(nd_index);
-    return layer[layer_index]->neuron[index]->h;
-}
-
-// get 'h' values as array for hidden layer (e.g. for autoencoder bottleneck)
-Array* Network::get_hidden(int layer_index){
-    int* shape=layer[layer_index]->get_layer_shape();
-    Array* result=new Array(shape);
-    int *nd_index=new int[result->get_dimensions()];
-    for (int d=0;d<result->get_dimensions();d++){
-        for (int i=0;i<result->get_size(d);i++){
-            nd_index[d]=i;
-            result->set(nd_index,layer[layer_index]->neuron[layer[layer_index]->neuronindex(nd_index)]->h);
-        }
-    }
-    return result;    
+    return layer[layer_index].neuron[index].h;
 }
 
 // set a single label value via 1-dimensional index (with auto-scaling)
 void Network::set_label(int index, double value){
-    layer[layers-1]->neuron[index]->x = value;
-    layer[layers-1]->neuron[index]->label_min = fmin(value,layer[layers-1]->neuron[index]->label_min);
-    layer[layers-1]->neuron[index]->label_max = fmax(value,layer[layers-1]->neuron[index]->label_max);
-    layer[layers-1]->neuron[index]->label_maxabs = fmax(layer[layers-1]->neuron[index]->label_maxabs,abs(value));
+    layer[layers-1].neuron[index].x = value;
+    layer[layers-1].neuron[index].label_min = fmin(value,layer[layers-1].neuron[index].label_min);
+    layer[layers-1].neuron[index].label_max = fmax(value,layer[layers-1].neuron[index].label_max);
+    layer[layers-1].neuron[index].label_maxabs = fmax(layer[layers-1].neuron[index].label_maxabs,abs(value));
     if (backprop_iterations<10){
-        layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.5+value*0.5;
-        layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-        layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.5+layer[layers-1]->neuron[index]->label_mdev2*0.5;
+        layer[layers-1].neuron[index].label_rolling_average = layer[layers-1].neuron[index].label_rolling_average*0.5+value*0.5;
+        layer[layers-1].neuron[index].label_mdev2 = pow((value-layer[layers-1].neuron[index].label_rolling_average),2);
+        layer[layers-1].neuron[index].label_variance = layer[layers-1].neuron[index].label_variance*0.5+layer[layers-1].neuron[index].label_mdev2*0.5;
     }
     else if (backprop_iterations<200){
-        layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.95+value*0.05;
-        layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-        layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.95+layer[layers-1]->neuron[index]->label_mdev2*0.05;
+        layer[layers-1].neuron[index].label_rolling_average = layer[layers-1].neuron[index].label_rolling_average*0.95+value*0.05;
+        layer[layers-1].neuron[index].label_mdev2 = pow((value-layer[layers-1].neuron[index].label_rolling_average),2);
+        layer[layers-1].neuron[index].label_variance = layer[layers-1].neuron[index].label_variance*0.95+layer[layers-1].neuron[index].label_mdev2*0.05;
     }
     else{
-        layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.999+value*0.001;
-        layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-        layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.999+layer[layers-1]->neuron[index]->label_mdev2*0.001;
+        layer[layers-1].neuron[index].label_rolling_average = layer[layers-1].neuron[index].label_rolling_average*0.999+value*0.001;
+        layer[layers-1].neuron[index].label_mdev2 = pow((value-layer[layers-1].neuron[index].label_rolling_average),2);
+        layer[layers-1].neuron[index].label_variance = layer[layers-1].neuron[index].label_variance*0.999+layer[layers-1].neuron[index].label_mdev2*0.001;
     }
-    layer[layers-1]->neuron[index]->label_stddev = sqrt(layer[layers-1]->neuron[index]->label_variance);    
+    layer[layers-1].neuron[index].label_stddev = sqrt(layer[layers-1].neuron[index].label_variance);    
 
     switch (scaling_method){
         case none:
-            layer[layers-1]->neuron[index]->scaled_label = value;
+            layer[layers-1].neuron[index].scaled_label = value;
             break;
         case maxabs:
             // -1 to 1
-            layer[layers-1]->neuron[index]->scaled_label = value / (layer[layers-1]->neuron[index]->label_maxabs + __DBL_EPSILON__);
+            layer[layers-1].neuron[index].scaled_label = value / (layer[layers-1].neuron[index].label_maxabs + __DBL_EPSILON__);
             break;
         case normalized:
             // 0 to 1
-            layer[layers-1]->neuron[index]->scaled_label = value - layer[layers-1]->neuron[index]->label_min;
-            layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h / (layer[layers-1]->neuron[index]->label_max - layer[layers-1]->neuron[index]->label_min + __DBL_EPSILON__);
+            layer[layers-1].neuron[index].scaled_label = value - layer[layers-1].neuron[index].label_min;
+            layer[layers-1].neuron[index].scaled_label = layer[layers-1].neuron[index].h / (layer[layers-1].neuron[index].label_max - layer[layers-1].neuron[index].label_min + __DBL_EPSILON__);
             break;
         default:
             // standardized (µ=0, sigma=1)
-            layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h - layer[layers-1]->neuron[index]->label_rolling_average; 
-            layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h / (layer[layers-1]->neuron[index]->label_stddev + __DBL_EPSILON__);
+            layer[layers-1].neuron[index].scaled_label = layer[layers-1].neuron[index].h - layer[layers-1].neuron[index].label_rolling_average; 
+            layer[layers-1].neuron[index].scaled_label = layer[layers-1].neuron[index].h / (layer[layers-1].neuron[index].label_stddev + __DBL_EPSILON__);
             break;
-    }
-}
-
-// set a single label via n-dimensional index
-void Network::set_label(int* nd_index,double value){
-    int index = layer[layers-1]->neuronindex(nd_index);
-    layer[layers-1]->neuron[index]->x = value;
-    layer[layers-1]->neuron[index]->label_min = fmin(value,layer[layers-1]->neuron[index]->label_min);
-    layer[layers-1]->neuron[index]->label_max = fmax(value,layer[layers-1]->neuron[index]->label_max);
-    layer[layers-1]->neuron[index]->label_maxabs = fmax(layer[layers-1]->neuron[index]->label_maxabs,abs(value));
-    if (backprop_iterations<10){
-        layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.5+value*0.5;
-        layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-        layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.5+layer[layers-1]->neuron[index]->label_mdev2*0.5;
-    }
-    else if (backprop_iterations<200){
-        layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.95+value*0.05;
-        layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-        layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.95+layer[layers-1]->neuron[index]->label_mdev2*0.05;
-    }
-    else{
-        layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.999+value*0.001;
-        layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-        layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.999+layer[layers-1]->neuron[index]->label_mdev2*0.001;
-    }
-    layer[layers-1]->neuron[index]->label_stddev = sqrt(layer[layers-1]->neuron[index]->label_variance);    
-
-    switch (scaling_method){
-        case none:
-            layer[layers-1]->neuron[index]->scaled_label = value;
-            break;
-        case maxabs:
-            // -1 to 1
-            layer[layers-1]->neuron[index]->scaled_label = value / (layer[layers-1]->neuron[index]->label_maxabs + __DBL_EPSILON__);
-            break;
-        case normalized:
-            // 0 to 1
-            layer[layers-1]->neuron[index]->scaled_label = value - layer[layers-1]->neuron[index]->label_min;
-            layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h / (layer[layers-1]->neuron[index]->label_max - layer[layers-1]->neuron[index]->label_min + __DBL_EPSILON__);
-            break;
-        default:
-            // standardized (µ=0, sigma=1)
-            layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h - layer[layers-1]->neuron[index]->label_rolling_average; 
-            layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h / (layer[layers-1]->neuron[index]->label_stddev + __DBL_EPSILON__);
-            break;
-    }
-}
-
-// set all labels at once via n-dimensional data array, with auto-scaling
-void Network::set_labels(Array* nd_array){
-    int* nd_index = new int[nd_array->get_dimensions()];
-    for (int d=0;d<nd_array->get_dimensions();d++){
-        for (int i=0;i<nd_array->get_size(d);i++){
-            nd_index[d]=i;
-            int index=nd_array->get_element(nd_index);
-            double value=nd_array->get(index);
-            layer[layers-1]->neuron[index]->x = value;
-            layer[layers-1]->neuron[index]->label_min = fmin(value,layer[layers-1]->neuron[index]->label_min);
-            layer[layers-1]->neuron[index]->label_max = fmax(value,layer[layers-1]->neuron[index]->label_max);
-            layer[layers-1]->neuron[index]->label_maxabs = fmax(layer[layers-1]->neuron[index]->label_maxabs,abs(value));
-            if (backprop_iterations<10){
-                layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.5+value*0.5;
-                layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-                layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.5+layer[layers-1]->neuron[index]->label_mdev2*0.5;
-            }
-            else if (backprop_iterations<200){
-                layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.95+value*0.05;
-                layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-                layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.95+layer[layers-1]->neuron[index]->label_mdev2*0.05;
-            }
-            else{
-                layer[layers-1]->neuron[index]->label_rolling_average = layer[layers-1]->neuron[index]->label_rolling_average*0.999+value*0.001;
-                layer[layers-1]->neuron[index]->label_mdev2 = pow((value-layer[layers-1]->neuron[index]->label_rolling_average),2);
-                layer[layers-1]->neuron[index]->label_variance = layer[layers-1]->neuron[index]->label_variance*0.999+layer[layers-1]->neuron[index]->label_mdev2*0.001;
-            }
-            layer[layers-1]->neuron[index]->label_stddev = sqrt(layer[layers-1]->neuron[index]->label_variance);       
-
-            switch (scaling_method){
-                case none:
-                    layer[layers-1]->neuron[index]->scaled_label = value;
-                    break;
-                case maxabs:
-                    // -1 to 1
-                    layer[layers-1]->neuron[index]->scaled_label = value / (layer[layers-1]->neuron[index]->label_maxabs + __DBL_EPSILON__);
-                    break;
-                case normalized:
-                    // 0 to 1
-                    layer[layers-1]->neuron[index]->scaled_label = value - layer[layers-1]->neuron[index]->label_min;
-                    layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h / (layer[layers-1]->neuron[index]->label_max - layer[layers-1]->neuron[index]->label_min + __DBL_EPSILON__);
-                    break;
-                default:
-                    // standardized (µ=0, sigma=1)
-                    layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h - layer[layers-1]->neuron[index]->label_rolling_average; 
-                    layer[layers-1]->neuron[index]->scaled_label = layer[layers-1]->neuron[index]->h / (layer[layers-1]->neuron[index]->label_stddev + __DBL_EPSILON__);
-                    break;
-            }
-        }
     }
 }
 
 // autoencode (set inputs as labels)
 void Network::autoencode(){
-    if (layer[0]->get_dimensions()!=layer[layers-1]->get_dimensions() || layer[0].neurons!=layer[layers-1].neurons){return;}
-    int items=layer[0].neurons;
+    if (layer[0].neurons!=layer[layers-1].neurons){return;}
+    static int items=layer[0].neurons;
     for (int j=0;j<items;j++){
-        set_label(j,layer[0]->neuron[j]->x);
+        set_label(j,layer[0].neuron[j].x);
     }
 }
 
@@ -702,7 +467,7 @@ double Network::get_loss_avg(){
     if (backprop_iterations==0){return result;}
     int n=layer[layers-1].neurons;
     for (int j=0;j<n;j++){
-        result+=layer[layers-1]->neuron[j]->loss_sum/backprop_iterations;
+        result+=layer[layers-1].neuron[j].loss_sum/backprop_iterations;
     }
     result/=n;
     return result;
@@ -715,7 +480,7 @@ double Network::get_avg_h(){
     double result=0;
     int n=layer[layers-1].neurons;
     for (int j=0;j<n;j++){
-        result+=layer[layers-1]->neuron[j]->h;
+        result+=layer[layers-1].neuron[j].h;
     }
     result/=n;
     return result;
@@ -726,7 +491,7 @@ double Network::get_avg_output(){
     double result=0;
     int n=layer[layers-1].neurons;
     for (int j=0;j<n;j++){
-        result+=layer[layers-1]->neuron[j]->output;
+        result+=layer[layers-1].neuron[j].output;
     }
     result/=n;
     return result;
