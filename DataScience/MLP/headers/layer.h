@@ -1,4 +1,4 @@
-// code by: Christian Suer
+// author: 'cyberchriz' (Christian Suer)
 // to be used as helper class in conjunction with <neuralnet2.h>
 #pragma once
 #include </home/christian/Documents/own_code/c++/DataScience/enums.h>

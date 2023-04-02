@@ -1,13 +1,11 @@
-// code by: Christian Suer
+// author: 'cyberchriz' (Christian Suer)
 // this is a neural network library for flexible topologies
-// one of the goals is optimized execution speed, therefore this version tries to avoid std::vector
-// and uses arrays instead whereever possible
+
 #pragma once
-#include </home/christian/Documents/own_code/c++/DataScience/array.h>
-#include </home/christian/Documents/own_code/c++/DataScience/weight_init.h>
-#include </home/christian/Documents/own_code/c++/DataScience/NeuralNet2/layer2.h>
-#include </home/christian/Documents/own_code/c++/DataScience/enums.h>
-#include </home/christian/Documents/own_code/c++/DataScience/activation_functions.h>
+#include "../../DataScience/array.h"
+#include "../../weight_init.h"
+#include "layer.h"
+#include "../../activation_functions.h"
 #include <cmath>
 #define MAX_LAYERS 50
 using namespace std;
