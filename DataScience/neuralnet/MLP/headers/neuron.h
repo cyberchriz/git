@@ -4,8 +4,7 @@
 // preprocessor directives
 #pragma once
 #include "network.h"
-#include "../../array.h"
-#include <array>
+#include <vector>
 
 // declaration of the 'Neuron' class
 class Neuron{

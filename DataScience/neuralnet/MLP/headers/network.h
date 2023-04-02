@@ -24,8 +24,8 @@ enum SCALING
 // preprocessor directives
 #pragma once
 #include "../../weight_init.h"
-#include "layer.h"
 #include "../../activation_functions.h"
+#include "layer.h"
 #include <cmath>
 #define MAX_LAYERS 50
 

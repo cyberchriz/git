@@ -1,6 +1,7 @@
 #pragma once
-#include "distributions/headers/random_distributions.h"
-using namespace std;
+#include "../distributions/headers/random_distributions.h"
+#include <cmath>
+
 // weight initialization methods for neural networks
 
 // normal "Xavier" weight initialization (by Xavier Glorot & Bengio) for tanh activation

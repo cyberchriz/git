@@ -8,7 +8,7 @@
 template<typename T>
 class Random {
     private:
-        static bool seeded=false;
+        static bool seeded;
     public:    
         static T normal(T mu=0,T sigma=1);
         static T cauchy(T x_peak=0,T gamma=1);

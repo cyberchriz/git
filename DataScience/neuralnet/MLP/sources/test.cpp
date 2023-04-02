@@ -10,16 +10,14 @@ int main(int argc, char *argv[]){
     // hyperparameters
     ACTIVATION_FUNC act_func=f_LReLU;
     OPTIMIZATION_METHOD opt=ADADELTA;
-    bool self_attention=false;
-    bool recurrent=false;
     
     // topology
-    int input_shape[]={5};
-    network->add_layer(input_shape,opt,act_func,self_attention,recurrent);
-    int hidden_shape[]={100,100};
-    network->add_layer(hidden_shape,opt,act_func,self_attention,recurrent);
-    network->add_layer(hidden_shape,opt,act_func,self_attention,recurrent);
-    network->add_layer(input_shape,opt,act_func,self_attention,recurrent);
+    int input_neurons=5;
+    int hidden_neurons=200;
+    network->add_layer(input_neurons,opt,act_func);
+    network->add_layer(hidden_neurons,opt,act_func);
+    network->add_layer(hidden_neurons,opt,act_func);
+    network->add_layer(input_neurons,opt,act_func);
 
     // test iterations
     for (int i=0;i<=100000; i++){

@@ -7,12 +7,13 @@
 #pragma once
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include "../headers/random_distributions.h"
 
 // get random value from a normal distribution with a given µ and sigma
 template<typename T>
 T Random<T>::normal(T mu,T sigma){
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}
+    if (!seeded){srand(time(nullptr)); seeded=true;}
     double random=(double)rand() / RAND_MAX;                // get random value within range 0-1
     random/=sqrt(2*M_PI*pow(sigma,2));                      // reduce to the top of the distribution (f(x_val=mu))
     char sign=rand()>(0.5*RAND_MAX) ? 1 : -1;               // get random algebraic sign
@@ -22,7 +23,7 @@ T Random<T>::normal(T mu,T sigma){
 // get random value from a Cauchy distribution with a given x_peak and gamma
 template<typename T>
 T Random<T>::cauchy(T x_peak,T gamma) {
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}
+    if (!seeded){srand(time(nullptr)); seeded=true;}
     double random=(double)rand() / RAND_MAX;                // random value within range 0-1
     random/=M_PI*gamma;                                     // reduce to the top of the distribution (=f(x_val=x_peak))
     char sign=rand()>(0.5*RAND_MAX) ? 1 : -1;               // get random algebraic sign   
@@ -32,7 +33,7 @@ T Random<T>::cauchy(T x_peak,T gamma) {
 // get random value from a uniform distribution
 template<typename T>
 T Random<T>::uniform(T min,T max) {
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}    
+    if (!seeded){srand(time(nullptr)); seeded=true;}    
     double random=(double)rand() / (0.5*RAND_MAX) - 1;      // random value within range +/- 1
     random*=(max-min);                                      // expand range
     return T(random+min);                                   // shift by lower margin
@@ -41,7 +42,7 @@ T Random<T>::uniform(T min,T max) {
 // get random value from a Laplace distribution
 template<typename T>
 T Random<T>::laplace(T mu,T sigma) {
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}    
+    if (!seeded){srand(time(nullptr)); seeded=true;}    
     double scale_factor = sigma/sqrt(2);
     double random=(double)rand() / RAND_MAX;                // random value within range 0-1
     random/=2*scale_factor;                                 // reduce to top of distribution (f(x_val=mu)
@@ -52,7 +53,7 @@ T Random<T>::laplace(T mu,T sigma) {
 // get random value from a Pareto distribution
 template<typename T>
 T Random<T>::pareto(T alpha,T tail_index){
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}    
+    if (!seeded){srand(time(nullptr)); seeded=true;}    
     double random=(double)rand() / RAND_MAX;                // random value within range 0-1
     random*=(alpha*pow(tail_index,alpha))/pow(tail_index,alpha+1); // top of distribution is given for x_val=tail_index
     return T(pow((alpha*pow(tail_index,alpha))/random,1/(alpha+1)));
@@ -61,7 +62,7 @@ T Random<T>::pareto(T alpha,T tail_index){
 // get random value from a Lomax distribution
 template<typename T>
 T Random<T>::lomax(T alpha,T tail_index){
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}    
+    if (!seeded){srand(time(nullptr)); seeded=true;}    
     double random=(double)rand() / RAND_MAX;                // random value within range 0-1
     random*=(alpha/tail_index)*pow(1/tail_index,-(alpha+1));
     return T(tail_index*(pow((random*tail_index)/alpha,-1/(alpha+1))-1));
@@ -70,13 +71,13 @@ T Random<T>::lomax(T alpha,T tail_index){
 // random binary
 template<typename T>
 T Random<T>::binary(){
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}    
+    if (!seeded){srand(time(nullptr)); seeded=true;}    
     return T((int)rand()%2);
 }
 
 // random sign
 template<typename T>
 T Random<T>::sign() {
-    if (!seeded){srand(std::time(nullptr)); seeded=true;}    
+    if (!seeded){srand(time(nullptr)); seeded=true;}    
     return T(rand()>(0.5*RAND_MAX) ? 1 : -1);               // get random algebraic sign
 }
