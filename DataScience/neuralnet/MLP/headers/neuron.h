@@ -4,7 +4,7 @@
 // preprocessor directives
 #pragma once
 #include <vector>
-#include "network.h"
+#include "../../enums.h"
 
 // declaration of the 'Neuron' class
 class Neuron{

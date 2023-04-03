@@ -10,14 +10,13 @@
                 "-std=c++11",
                 "-fdiagnostics-color=always",
                 "-g",
-                "${workspaceFolder}/DataScience/neuralnet/MLP/sources/test.cpp",
-                "${workspaceFolder}/DataScience/neuralnet/MLP/headers/layer.h",
-                "${workspaceFolder}/DataScience/neuralnet/MLP/headers/network.h",
-                "${workspaceFolder}/DataScience/neuralnet/MLP/headers/neuron.h",
-                "${workspaceFolder}/DataScience/neuralnet/activation_functions.h",
-                "${workspaceFolder}/DataScience/neuralnet/weight_init.h",
                 "${workspaceFolder}/DataScience/distributions/sources/random_distributions.cpp",
-                "${workspaceFolder}/DataScience/distributions/headers/random_distributions.h"
+                "${workspaceFolder}/DataScience/neuralnet/MLP/sources/test.cpp"
+                //"${workspaceFolder}/DataScience/neuralnet/activation_functions.h",
+                //"${workspaceFolder}/DataScience/neuralnet/weight_init.h",                
+                //"${workspaceFolder}/DataScience/neuralnet/MLP/headers/neuron.h",
+                //"${workspaceFolder}/DataScience/neuralnet/MLP/headers/layer.h",
+                //"${workspaceFolder}/DataScience/neuralnet/MLP/headers/network.h"
             ],
             "options": {
                 "cwd": "${fileDirname}"

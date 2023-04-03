@@ -1,30 +1,11 @@
 // author: 'cyberchriz' (Christian Suer)
 // this is a neural network library for multilayer perceptrons (MLP) with flexible topologies
 
-// available neural network optimization methods
-enum OPTIMIZATION_METHOD
-  {
-   Vanilla=1,           // Vanilla Stochastic Gradient Descent
-   Nesterov=2,          // Nesterov Accelerated Gradient (NAG)
-   RMSprop=3,           // RMSprop
-   ADADELTA=4,          // ADADELTA
-   ADAM=5,              // ADAM
-   AdaGrad=6            // AdaGrad
-  };
-
-// available feature and label scaling methods
-enum SCALING
-  {
-   none,              // no scaling
-   standardized,      // standard deviation method (µ=0, sigma=1)
-   normalized,        // minmax, range 0 to 1
-   maxabs             // minmax, range -1 to +1
-  };
-
 // preprocessor directives
 #pragma once
 #include <vector>
 #include <cmath>
+#include "../../enums.h"
 #include "../../weight_init.h"
 #include "../../activation_functions.h"
 #include "layer.h"

@@ -1,9 +1,10 @@
 // author: 'cyberchriz' (Christian Suer)
 
 #pragma once
-#include "network.h"
-#include "neuron.h"
 #include <vector>
+#include "../../activation_functions.h"
+#include "../../enums.h"
+#include "neuron.h"
 
 class Layer{
     public:
