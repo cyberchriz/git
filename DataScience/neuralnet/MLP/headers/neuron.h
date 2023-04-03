@@ -78,7 +78,7 @@ Neuron::Neuron(int inputs){
     this->inputs=inputs;
     for (int j=0;j<inputs;j++){
         input_weight.push_back(sizeof(double));
-        input_weight_delta.push_back(sizeof(double));
+        input_weight_delta.push_back(sizeof(double)); input_weight_delta[j]=0;
         opt_v.push_back(sizeof(double)); opt_v[j]=0;
         opt_w.push_back(sizeof(double)); opt_w[j]=0;
     }

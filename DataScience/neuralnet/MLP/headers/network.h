@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include "../../../distributions/headers/random_distributions.h"
 #include "../../enums.h"
 #include "../../weight_init.h"
@@ -35,7 +36,7 @@ class Network{
     protected:
     public:
         int add_layer(int neurons, OPTIMIZATION_METHOD _opt_method=ADADELTA, ACTIVATION_FUNC _activation=f_LReLU);
-        void reset_weights(); // manually reset weights (note: weights are automatically set whenever a layer is added)
+        void reset_weights(int start_layer=1, int end_layer=__INT_MAX__, double factor=1.0); // manually reset weights (note: weights are automatically set whenever a layer is added)
         void feedforward();
         void backpropagate();
         void set_input(int index, double value); // set single input via 1d index
@@ -85,8 +86,8 @@ int Network::add_layer(int neurons, OPTIMIZATION_METHOD _opt_method, ACTIVATION_
 
 // initialize weights:
 // automatically sets appropriate method for a given activation function
-void Network::reset_weights(){
-    for (int l=1;l<layers;l++){
+void Network::reset_weights(int start_layer, int end_layer, double factor){
+    for (int l=fmax(1,start_layer);l<=fmin(layers-1,end_layer);l++){
         int fan_in = 1;
         int fan_out = l<layers-1 ? layer[l+1].neurons : 1;
         if (l>=1){
@@ -101,73 +102,79 @@ void Network::reset_weights(){
             case f_ReLU:
                 for (int j=0;j<layer[l].neurons;j++){
                     for (int i=0;i<layer[l-1].neurons;i++){
-                        layer[l].neuron[j].input_weight[i]=f_He_ReLU(fan_in);
+                        layer[l].neuron[j].input_weight[i]=f_He_ReLU(fan_in)*factor;
+                        layer[l].neuron[j].input_weight_delta[i]=0;
                     }
-                    layer[l].neuron[j].bias_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m1_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m2_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m3_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m4_weight=f_He_ReLU(fan_in);
+                    layer[l].neuron[j].bias_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m1_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m2_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m3_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m4_weight=f_He_ReLU(fan_in)*factor;
                 }
                 break;
             case f_LReLU:
                 for (int j=0;j<layer[l].neurons;j++){
                     for (int i=0;i<layer[l-1].neurons;i++){
-                        layer[l].neuron[j].input_weight[i]=f_He_ReLU(fan_in);
+                        layer[l].neuron[j].input_weight[i]=f_He_ReLU(fan_in)*factor;
+                        layer[l].neuron[j].input_weight_delta[i]=0;
                     }
-                    layer[l].neuron[j].bias_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m1_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m2_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m3_weight=f_He_ReLU(fan_in);
-                    layer[l].neuron[j].m4_weight=f_He_ReLU(fan_in);
+                    layer[l].neuron[j].bias_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m1_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m2_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m3_weight=f_He_ReLU(fan_in)*factor;
+                    layer[l].neuron[j].m4_weight=f_He_ReLU(fan_in)*factor;
                 }
                 break;                
             case f_tanh:
                 for (int j=0;j<layer[l].neurons;j++){
                     for (int i=0;i<layer[l-1].neurons;i++){
-                        layer[l].neuron[j].input_weight[i]=f_Xavier_uniform(fan_in,fan_out);
+                        layer[l].neuron[j].input_weight[i]=f_Xavier_uniform(fan_in,fan_out)*factor;
+                        layer[l].neuron[j].input_weight_delta[i]=0;
                     }
-                    layer[l].neuron[j].bias_weight=f_Xavier_uniform(fan_in,fan_out);
-                    layer[l].neuron[j].m1_weight=f_Xavier_uniform(fan_in,fan_out);
-                    layer[l].neuron[j].m2_weight=f_Xavier_uniform(fan_in,fan_out);
-                    layer[l].neuron[j].m3_weight=f_Xavier_uniform(fan_in,fan_out);
-                    layer[l].neuron[j].m4_weight=f_Xavier_uniform(fan_in,fan_out);
+                    layer[l].neuron[j].bias_weight=f_Xavier_uniform(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m1_weight=f_Xavier_uniform(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m2_weight=f_Xavier_uniform(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m3_weight=f_Xavier_uniform(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m4_weight=f_Xavier_uniform(fan_in,fan_out)*factor;
                 }          
                 break;
             case f_sigmoid:
                 for (int j=0;j<layer[l].neurons;j++){
                     for (int i=0;i<layer[l-1].neurons;i++){
-                        layer[l].neuron[j].input_weight[i]=f_Xavier_sigmoid(fan_in,fan_out);
+                        layer[l].neuron[j].input_weight[i]=f_Xavier_sigmoid(fan_in,fan_out)*factor;
+                        layer[l].neuron[j].input_weight_delta[i]=0;
                     }
-                    layer[l].neuron[j].bias_weight=f_Xavier_sigmoid(fan_in,fan_out);
-                    layer[l].neuron[j].m1_weight=f_Xavier_sigmoid(fan_in,fan_out);
-                    layer[l].neuron[j].m2_weight=f_Xavier_sigmoid(fan_in,fan_out);
-                    layer[l].neuron[j].m3_weight=f_Xavier_sigmoid(fan_in,fan_out);
-                    layer[l].neuron[j].m4_weight=f_Xavier_sigmoid(fan_in,fan_out);
+                    layer[l].neuron[j].bias_weight=f_Xavier_sigmoid(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m1_weight=f_Xavier_sigmoid(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m2_weight=f_Xavier_sigmoid(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m3_weight=f_Xavier_sigmoid(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m4_weight=f_Xavier_sigmoid(fan_in,fan_out)*factor;
                 }              
                 break;
             case f_ELU:
                 for (int j=0;j<layer[l].neurons;j++){
                     for (int i=0;i<layer[l-1].neurons;i++){
-                        layer[l].neuron[j].input_weight[i]=f_He_ELU(fan_in);
+                        layer[l].neuron[j].input_weight[i]=f_He_ELU(fan_in)*factor;
+                        layer[l].neuron[j].input_weight_delta[i]=0;
                     }
-                    layer[l].neuron[j].bias_weight=f_He_ELU(fan_in);
-                    layer[l].neuron[j].m1_weight=f_He_ELU(fan_in);
-                    layer[l].neuron[j].m2_weight=f_He_ELU(fan_in);
-                    layer[l].neuron[j].m3_weight=f_He_ELU(fan_in);
-                    layer[l].neuron[j].m4_weight=f_He_ELU(fan_in);
+                    layer[l].neuron[j].bias_weight=f_He_ELU(fan_in)*factor;
+                    layer[l].neuron[j].m1_weight=f_He_ELU(fan_in)*factor;
+                    layer[l].neuron[j].m2_weight=f_He_ELU(fan_in)*factor;
+                    layer[l].neuron[j].m3_weight=f_He_ELU(fan_in)*factor;
+                    layer[l].neuron[j].m4_weight=f_He_ELU(fan_in)*factor;
                 }          
                 break;
             default:
                 for (int j=0;j<layer[l].neurons;j++){
                     for (int i=0;i<layer[l-1].neurons;i++){
-                        layer[l].neuron[j].input_weight[i]=f_Xavier_normal(fan_in,fan_out);
+                        layer[l].neuron[j].input_weight[i]=f_Xavier_normal(fan_in,fan_out)*factor;
+                        layer[l].neuron[j].input_weight_delta[i]=0;
                     }
-                    layer[l].neuron[j].bias_weight=f_Xavier_normal(fan_in,fan_out);
-                    layer[l].neuron[j].m1_weight=f_Xavier_normal(fan_in,fan_out);
-                    layer[l].neuron[j].m2_weight=f_Xavier_normal(fan_in,fan_out);
-                    layer[l].neuron[j].m3_weight=f_Xavier_normal(fan_in,fan_out);
-                    layer[l].neuron[j].m4_weight=f_Xavier_normal(fan_in,fan_out);
+                    layer[l].neuron[j].bias_weight=f_Xavier_normal(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m1_weight=f_Xavier_normal(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m2_weight=f_Xavier_normal(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m3_weight=f_Xavier_normal(fan_in,fan_out)*factor;
+                    layer[l].neuron[j].m4_weight=f_Xavier_normal(fan_in,fan_out)*factor;
                 }                
         }
     }
@@ -178,16 +185,15 @@ void Network::feedforward(){
     // cycle through layers
     for (int l=1;l<layers;l++){
         for (int j=0;j<layer[l].neurons;j++){
-            // update recurrent values
+            // update recurrent values from last iteration
             if (recurrent && !layer[l].neuron[j].dropout){
                 layer[l].neuron[j].m1=layer[l].neuron[j].h;
                 layer[l].neuron[j].m2=0.9*layer[l].neuron[j].m2+0.1*layer[l].neuron[j].h;
                 layer[l].neuron[j].m3=0.99*layer[l].neuron[j].m3+0.01*layer[l].neuron[j].h;
                 layer[l].neuron[j].m4=0.999*layer[l].neuron[j].m4+0.001*layer[l].neuron[j].h;
             }
-            layer[l].neuron[j].h=0;
-            layer[l].neuron[j].x=0;
             // set dropout
+            layer[l].neuron[j].dropout=false;
             if (training_mode && l!=0 && l!=layers-1){
                 layer[l].neuron[j].dropout = Random<double>::uniform(0,1)<dropout;
                 if (layer[l].neuron[j].dropout){
@@ -195,9 +201,11 @@ void Network::feedforward(){
                 }
             }
             // get sum of weighted inputs
-            int input_neurons=layer[l-1].neurons;
-            for (int i=0;i<input_neurons;i++){
-                layer[l].neuron[j].x+=layer[l-1].neuron[i].h*layer[l].neuron[j].input_weight[i] * layer[l-1].neuron[i].dropout;
+            layer[l].neuron[j].x=0;            
+            for (int i=0;i<layer[l-1].neurons;i++){
+                if (!layer[l-1].neuron[i].dropout){
+                    layer[l].neuron[j].x+=layer[l-1].neuron[i].h*layer[l].neuron[j].input_weight[i];
+                }
             }
             // add weighted bias
             layer[l].neuron[j].x+=1.0*layer[l].neuron[j].bias_weight;
@@ -214,6 +222,17 @@ void Network::feedforward(){
             }            
             // activate
             layer[l].neuron[j].h = activate(layer[l].neuron[j].x,layer[l].activation);
+
+            // reset weights of current layer in case of invalid numbers
+            if (std::isnan(layer[l].neuron[j].x) || std::isnan(layer[l].neuron[j].h) ||
+                std::isinf(layer[l].neuron[j].x) || std::isinf(layer[l].neuron[j].h)){
+                std::cout << "iteration " << backprop_iterations << ": NaN/Inf error in layer " << l << ", neuron " << j
+                << " (x=" << layer[l].neuron[j].x << ", h=" << layer[l].neuron[j].h
+                << "); resetting weights for this layer\n";
+                layer[l].neuron[j].x=0;
+                layer[l].neuron[j].h=0;
+                reset_weights(l,l);
+            }
         }        
         // rescale outputs
         if (l==layers-1){
@@ -397,7 +416,7 @@ void Network::set_input(int index, double value){
             layer[0].neuron[index].h = layer[0].neuron[index].h / (layer[0].neuron[index].input_max - layer[0].neuron[index].input_min + __DBL_EPSILON__);
             break;
         default:
-            // standardized (µ=0, sigma=1)
+        // case standardized: // (µ=0, sigma=1)
             layer[0].neuron[index].h = layer[0].neuron[index].h - layer[0].neuron[index].input_rolling_average; 
             layer[0].neuron[index].h = layer[0].neuron[index].h / (layer[0].neuron[index].input_stddev + __DBL_EPSILON__);
             break;
