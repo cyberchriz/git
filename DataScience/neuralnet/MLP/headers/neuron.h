@@ -3,8 +3,8 @@
 
 // preprocessor directives
 #pragma once
-#include "network.h"
 #include <vector>
+#include "network.h"
 
 // declaration of the 'Neuron' class
 class Neuron{

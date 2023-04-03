@@ -23,11 +23,11 @@ enum SCALING
 
 // preprocessor directives
 #pragma once
+#include <vector>
+#include <cmath>
 #include "../../weight_init.h"
 #include "../../activation_functions.h"
 #include "layer.h"
-#include <cmath>
-#define MAX_LAYERS 50
 
 // Network class declaration
 class Network{

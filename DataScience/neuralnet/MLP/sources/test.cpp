@@ -1,6 +1,6 @@
 #include <iostream>
-#include "../headers/network.h"
 #include <cmath>
+#include "../headers/network.h"
 
 int main(int argc, char *argv[]){
 

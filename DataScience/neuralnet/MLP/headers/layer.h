@@ -3,6 +3,7 @@
 #pragma once
 #include "network.h"
 #include "neuron.h"
+#include <vector>
 
 class Layer{
     public:
