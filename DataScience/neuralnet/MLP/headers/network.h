@@ -7,8 +7,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include "../../distributions/headers/random_distributions.h"
-#include "../../validate.h"
+#include "../../../distributions/headers/random_distributions.h"
+#include "../../../validate.h"
 #include "../../enums.h"
 #include "../../weight_init.h"
 #include "../../activation_functions.h"
@@ -180,7 +180,7 @@ void Network::feedforward(){
     for (int l=1;l<layers;l++){
         for (int j=0;j<layer[l].neurons;j++){
             // update recurrent values
-            if (!layer[l].neuron[j].dropout){
+            if (recurrent && !layer[l].neuron[j].dropout){
                 layer[l].neuron[j].m1=layer[l].neuron[j].h;
                 layer[l].neuron[j].m2=0.9*layer[l].neuron[j].m2+0.1*layer[l].neuron[j].h;
                 layer[l].neuron[j].m3=0.99*layer[l].neuron[j].m3+0.01*layer[l].neuron[j].h;
@@ -203,10 +203,12 @@ void Network::feedforward(){
             // add weighted bias
             layer[l].neuron[j].x+=1.0*layer[l].neuron[j].bias_weight;
             // add weighted recurrent neurons
-            layer[l].neuron[j].x+=layer[l].neuron[j].m1*layer[l].neuron[j].m1_weight;
-            layer[l].neuron[j].x+=layer[l].neuron[j].m2*layer[l].neuron[j].m2_weight;
-            layer[l].neuron[j].x+=layer[l].neuron[j].m3*layer[l].neuron[j].m3_weight;
-            layer[l].neuron[j].x+=layer[l].neuron[j].m4*layer[l].neuron[j].m4_weight;
+            if (recurrent){
+                layer[l].neuron[j].x+=layer[l].neuron[j].m1*layer[l].neuron[j].m1_weight;
+                layer[l].neuron[j].x+=layer[l].neuron[j].m2*layer[l].neuron[j].m2_weight;
+                layer[l].neuron[j].x+=layer[l].neuron[j].m3*layer[l].neuron[j].m3_weight;
+                layer[l].neuron[j].x+=layer[l].neuron[j].m4*layer[l].neuron[j].m4_weight;
+            }
             // add dropout compensation in training mode
             if (training_mode && l>1){
                 layer[l].neuron[j].x *= 1/(1-dropout);
@@ -259,12 +261,12 @@ void Network::backpropagate(){
                     layer[l].neuron[j].gradient = fmin(layer[l].neuron[j].gradient, gradient_clipping_threshold);
                     layer[l].neuron[j].gradient = fmax(layer[l].neuron[j].gradient, -gradient_clipping_threshold);
                 }
-
+                validate_r(layer[l].neuron[j].gradient);
                 // 0.5err^2 loss
-                layer[l].neuron[j].loss = 0.5 * layer[l].neuron[j].gradient * layer[l].neuron[j].gradient;
+                layer[l].neuron[j].loss = validate(0.5 * layer[l].neuron[j].gradient * layer[l].neuron[j].gradient);
 
                 // cumulative loss (per neuron)
-                layer[l].neuron[j].loss_sum += layer[l].neuron[j].loss;
+                layer[l].neuron[j].loss_sum = validate(layer[l].neuron[j].loss_sum + layer[l].neuron[j].loss);
             }
         }
         // get hidden errors, i.e. SUM_k[err_k*w_jk]
@@ -276,6 +278,7 @@ void Network::backpropagate(){
                 for (int k=0;k<fan_out;k++){
                     layer[l].neuron[j].gradient+=layer[l+1].neuron[k].gradient*layer[l+1].neuron[k].input_weight[j];
                 }
+                validate_r(layer[l].neuron[j].gradient);
             }
         }
     }
@@ -293,69 +296,71 @@ void Network::backpropagate(){
                 if (layer[l-1].neuron[i].dropout){continue;}
                 if (method==Vanilla){
                     // get delta
-                    layer[l].neuron[j].input_weight_delta[i] = (lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
+                    layer[l].neuron[j].input_weight_delta[i] = validate((lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h);
                     // update
-                    layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i];
+                    layer[l].neuron[j].input_weight[i] = validate(layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i]);
                 }
                 else if (method==Nesterov){
                     // lookahead step
-                    double lookahead = (lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
+                    double lookahead = validate((lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h);
                     // momentum step
-                    layer[l].neuron[j].input_weight_delta[i] =  (lr_momentum*lookahead) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
+                    layer[l].neuron[j].input_weight_delta[i] = validate((lr_momentum*lookahead) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h);
                     // update step
-                    layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i] + layer[l].neuron[j].input_weight_delta[i];
+                    layer[l].neuron[j].input_weight[i] = validate(layer[l].neuron[j].input_weight[i] + layer[l].neuron[j].input_weight_delta[i]);
                 }
                 else if (method==RMSprop){
                     // opt_v update
-                    layer[l].neuron[j].opt_v[i] =  lr_momentum*layer[l].neuron[j].opt_v[i] + (1-lr_momentum)*pow(deactivate(layer[l].neuron[j].x,layer[l].activation),2) * layer[l].neuron[j].gradient;
+                    layer[l].neuron[j].opt_v[i] =  validate(lr_momentum*layer[l].neuron[j].opt_v[i] + (1-lr_momentum)*pow(deactivate(layer[l].neuron[j].x,layer[l].activation),2) * layer[l].neuron[j].gradient);
                     // get delta
-                    layer[l].neuron[j].input_weight_delta[i] =  ((lr/(1+lr_decay*backprop_iterations)) / (sqrt(layer[l].neuron[j].opt_v[i]+1e-8)+__DBL_MIN__)) * pow(layer[l].neuron[j].h,2) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h;
+                    layer[l].neuron[j].input_weight_delta[i] =  validate(((lr/(1+lr_decay*backprop_iterations)) / (sqrt(layer[l].neuron[j].opt_v[i]+1e-8)+__DBL_MIN__)) * pow(layer[l].neuron[j].h,2) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h);
                     // update
-                    layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i];
+                    layer[l].neuron[j].input_weight[i] = validate(layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i]);
                 }
                 else if (method==ADADELTA){
                     // opt_v update
-                    layer[l].neuron[j].opt_v[i] =  opt_beta1 * layer[l].neuron[j].opt_v[i] + (1-opt_beta1) * pow(deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2);
+                    layer[l].neuron[j].opt_v[i] =  validate(opt_beta1 * layer[l].neuron[j].opt_v[i] + (1-opt_beta1) * pow(deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2));
                     // opt_w update
-                    layer[l].neuron[j].opt_w[i] =  (opt_beta1 * pow(layer[l].neuron[j].opt_w[i],2)) + (1-opt_beta1)*pow(layer[l].neuron[j].input_weight_delta[i],2);
+                    layer[l].neuron[j].opt_w[i] =  validate((opt_beta1 * pow(layer[l].neuron[j].opt_w[i],2)) + (1-opt_beta1)*pow(layer[l].neuron[j].input_weight_delta[i],2));
                     // get delta
-                    layer[l].neuron[j].input_weight_delta[i] =  sqrt(layer[l].neuron[j].opt_w[i]+1e-8)/(sqrt(layer[l].neuron[j].opt_v[i]+1e-8)+__DBL_MIN__) * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h;
+                    layer[l].neuron[j].input_weight_delta[i] =  validate(sqrt(layer[l].neuron[j].opt_w[i]+1e-8)/(sqrt(layer[l].neuron[j].opt_v[i]+1e-8)+__DBL_MIN__) * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h);
                     // update
-                    layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i];
+                    layer[l].neuron[j].input_weight[i] = validate(layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i]);
                 }
                 else if (method==ADAM){ // =ADAM without minibatch
                     // opt_v update
-                    layer[l].neuron[j].opt_v[i] =  opt_beta1 * layer[l].neuron[j].opt_v[i] + (1-opt_beta1) * deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h;
+                    layer[l].neuron[j].opt_v[i] =  validate(opt_beta1 * layer[l].neuron[j].opt_v[i] + (1-opt_beta1) * deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h);
                     // opt_w update
-                    layer[l].neuron[j].opt_w[i] = opt_beta2 * layer[l].neuron[j].opt_w[i] * pow(deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2);
+                    layer[l].neuron[j].opt_w[i] = validate(opt_beta2 * layer[l].neuron[j].opt_w[i] * pow(deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2));
                     // get delta
-                    double v_t = layer[l].neuron[j].opt_v[i]/(1-opt_beta1);
-                    double w_t = layer[l].neuron[j].opt_w[i]/(1-opt_beta2);
-                    layer[l].neuron[j].input_weight_delta[i] =  (lr/(1+lr_decay*backprop_iterations)) * (v_t/(sqrt(w_t+1e-8))+__DBL_MIN__);
+                    double v_t = validate(layer[l].neuron[j].opt_v[i]/(1-opt_beta1));
+                    double w_t = validate(layer[l].neuron[j].opt_w[i]/(1-opt_beta2));
+                    layer[l].neuron[j].input_weight_delta[i] =  validate((lr/(1+lr_decay*backprop_iterations)) * (v_t/(sqrt(w_t+1e-8))+__DBL_MIN__));
                     // update
-                    layer[l].neuron[j].input_weight[i] =  layer[l].neuron[j].input_weight[i]  + layer[l].neuron[j].input_weight_delta[i];
+                    layer[l].neuron[j].input_weight[i] =  validate(layer[l].neuron[j].input_weight[i]  + layer[l].neuron[j].input_weight_delta[i]);
                 }
                 else if (method==AdaGrad){
                     // opt_v update
-                    layer[l].neuron[j].opt_v[i] =  layer[l].neuron[j].opt_v[i] + pow(deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2);
+                    layer[l].neuron[j].opt_v[i] =  validate(layer[l].neuron[j].opt_v[i] + pow(deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2));
                     // get delta
-                    layer[l].neuron[j].input_weight_delta[i] =  ((lr/(1+lr_decay*backprop_iterations)) / sqrt(layer[l].neuron[j].opt_v[i] +1e-8)) * deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h;
+                    layer[l].neuron[j].input_weight_delta[i] = validate(((lr/(1+lr_decay*backprop_iterations)) / sqrt(layer[l].neuron[j].opt_v[i] +1e-8)) * deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h);
                     // update
-                    layer[l].neuron[j].input_weight[i] =  layer[l].neuron[j].input_weight[i]  + layer[l].neuron[j].input_weight_delta[i];
+                    layer[l].neuron[j].input_weight[i] = validate(layer[l].neuron[j].input_weight[i]  + layer[l].neuron[j].input_weight_delta[i]);
                 }                
             }
             // update bias weights (Vanilla)
-            layer[l].neuron[j].delta_b = (lr_momentum*layer[l].neuron[j].delta_b) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation);
-            layer[l].neuron[j].bias_weight += layer[l].neuron[j].delta_b;
+            layer[l].neuron[j].delta_b = validate((lr_momentum*layer[l].neuron[j].delta_b) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation));
+            layer[l].neuron[j].bias_weight = validate(layer[l].neuron[j].bias_weight + layer[l].neuron[j].delta_b);
             // update recurrent weights (Vanilla)
-            layer[l].neuron[j].delta_m1 = (lr_momentum*layer[l].neuron[j].delta_m1) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m1;
-            layer[l].neuron[j].delta_m2 = (lr_momentum*layer[l].neuron[j].delta_m2) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m2;
-            layer[l].neuron[j].delta_m3 = (lr_momentum*layer[l].neuron[j].delta_m3) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m3;
-            layer[l].neuron[j].delta_m4 = (lr_momentum*layer[l].neuron[j].delta_m4) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m4;
-            layer[l].neuron[j].m1_weight += layer[l].neuron[j].delta_m1;
-            layer[l].neuron[j].m2_weight += layer[l].neuron[j].delta_m2;
-            layer[l].neuron[j].m3_weight += layer[l].neuron[j].delta_m3;
-            layer[l].neuron[j].m4_weight += layer[l].neuron[j].delta_m4;
+            if (recurrent){
+                layer[l].neuron[j].delta_m1 = validate((lr_momentum*layer[l].neuron[j].delta_m1) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m1);
+                layer[l].neuron[j].delta_m2 = validate((lr_momentum*layer[l].neuron[j].delta_m2) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m2);
+                layer[l].neuron[j].delta_m3 = validate((lr_momentum*layer[l].neuron[j].delta_m3) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m3);
+                layer[l].neuron[j].delta_m4 = validate((lr_momentum*layer[l].neuron[j].delta_m4) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l].neuron[j].m4);
+                layer[l].neuron[j].m1_weight = validate(layer[l].neuron[j].m1_weight + layer[l].neuron[j].delta_m1);
+                layer[l].neuron[j].m2_weight = validate(layer[l].neuron[j].m2_weight + layer[l].neuron[j].delta_m2);
+                layer[l].neuron[j].m3_weight = validate(layer[l].neuron[j].m3_weight + layer[l].neuron[j].delta_m3);
+                layer[l].neuron[j].m4_weight = validate(layer[l].neuron[j].m4_weight + layer[l].neuron[j].delta_m4);
+            }
         }
     }                
 }
