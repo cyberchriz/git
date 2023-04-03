@@ -9,18 +9,19 @@ int main(){
     
     // hyperparameters
     network.set_learning_rate(0.001);
-    network.set_learning_momentum(0.9);
-    network.set_learning_rate_decay(0.001);
+    network.set_learning_momentum(0);
+    network.set_learning_rate_decay(0.01);
     network.set_recurrent(false);
-    network.set_dropout(0.2);
+    network.set_dropout(0);
     network.set_training_mode(true);
-    ACTIVATION_FUNC act_func=f_tanh;
-    OPTIMIZATION_METHOD opt=Nesterov;
+    ACTIVATION_FUNC act_func=f_LReLU;
+    OPTIMIZATION_METHOD opt=ADADELTA;
     
     // topology
     int input_neurons=5;
-    int hidden_neurons=100;
+    int hidden_neurons=10;
     network.add_layer(input_neurons,opt,act_func);
+    network.add_layer(hidden_neurons,opt,act_func);
     network.add_layer(hidden_neurons,opt,act_func);
     network.add_layer(input_neurons,opt,act_func);
 
