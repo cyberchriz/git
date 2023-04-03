@@ -6,14 +6,10 @@
 
 #pragma once
 #include <cmath>
-#include <cstdlib>
-#include <ctime>
 
 template<typename T>
 class Random {
-    private:
-        static bool seeded;
-    public:    
+    public:   
         static T normal(T mu=0,T sigma=1);
         static T cauchy(T x_peak=0,T gamma=1);
         static T uniform(T min=0, T max=1);

@@ -5,6 +5,8 @@
 #pragma once
 #include <vector>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 #include "../../enums.h"
 #include "../../weight_init.h"
 #include "../../activation_functions.h"
@@ -15,7 +17,7 @@ class Network{
     private:
         int layers=0;
         std::vector<Layer> layer;
-        void load(string filename);
+        void load(std::string filename);
         int backprop_iterations=0;
         SCALING scaling_method=none;
         double lr=0.001;
@@ -26,7 +28,7 @@ class Network{
         bool training_mode=true;
         bool gradient_clipping=false;
         double gradient_clipping_threshold=0.999;
-        string filename;      
+        std::string filename;      
     protected:
     public:
         int add_layer(int neurons, OPTIMIZATION_METHOD _opt_method=ADADELTA, ACTIVATION_FUNC _activation=f_LReLU);
@@ -39,7 +41,7 @@ class Network{
         double get_hidden(int index,int layer_index); // get a single 'h' from a hidden layer via index
         void set_label(int index, double value); // set a single label value via 1d output neuron index
         void autoencode(); // enable autoencoding by copying the inputs to the labels
-        void save(string filename="network_backup.dat");
+        void save(std::string filename="network_backup.dat");
         bool network_exists(){return layers!=0;}
         double get_loss_avg();
         void set_training_mode(bool active=true){training_mode=active;}
@@ -51,14 +53,15 @@ class Network{
         double get_avg_h();
         double get_avg_output();     
         // constructor
-        Network(string filename="");
+        Network(std::string filename="");
         // destructor
         ~Network();
 };
 
 // constructor
-Network::Network(string filename){
+Network::Network(std::string filename){
     this->filename=filename;
+    srand(int(time(nullptr)));
     //if (filename!=""){load(filename);}
 }
 
@@ -479,6 +482,6 @@ double Network::get_avg_output(){
 }
 
 // save network data into file
-void Network::save(string filename) {
+void Network::save(std::string filename) {
 
 }

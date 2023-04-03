@@ -1,11 +1,9 @@
 #pragma once
 #include <string>
 #include <cmath>
-using namespace std;
 
 // enumeration of available activation functions for neural networks
-enum ACTIVATION_FUNC
-  {
+enum ACTIVATION_FUNC {
    f_ident,        // identity function
    f_sigmoid,      // sigmoid (logistic)
    f_ELU,          // exponential linear unit (ELU)
@@ -37,7 +35,7 @@ enum ACTIVATION_FUNC
 //+------------------------------------------------------------------+
 //|      return act.function as string variable equivalent           |
 //+------------------------------------------------------------------+
-string actfunct_string(ACTIVATION_FUNC f)
+std::string actfunct_string(ACTIVATION_FUNC f)
   {
    switch(f)
      {
@@ -71,7 +69,7 @@ string actfunct_string(ACTIVATION_FUNC f)
 
 // mitigate NaN/Inf errors
 double ValidNumber(double expression, double alternative){
-    if (isnan(expression) || isinf(expression)){
+    if (std::isnan(expression) || std::isinf(expression)){
         return alternative;
     }
     else{

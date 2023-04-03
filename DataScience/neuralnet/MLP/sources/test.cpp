@@ -34,7 +34,7 @@ int main(){
             std::cout << "outputs:   " << network->get_output(0) << " | " << network->get_output(1) << " | " << network->get_output(2) << " | " << network->get_output(3) << " | " << network->get_output(4) << "\n";
         }
     }
-    cout << "[...done]\n\n\n";
+    std::cout << "[...done]\n\n\n";
     delete network;
     return 0;
 } 
