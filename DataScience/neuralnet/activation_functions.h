@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <cmath>
+#include "../validate.h"
 
 // enumeration of available activation functions for neural networks
 enum ACTIVATION_FUNC {
@@ -67,25 +68,6 @@ std::string actfunct_string(ACTIVATION_FUNC f)
      }
   }
 
-// mitigate NaN/Inf errors
-double ValidNumber(double expression, double alternative){
-    if (std::isnan(expression) || std::isinf(expression)){
-        return alternative;
-    }
-    else{
-        return expression;
-    }
-}
-
-float ValidNumber(float expression, float alternative){
-    if (isnanf(expression) || isinff(expression)){
-        return alternative;
-    }
-    else{
-        return expression;
-    }
-}
-
 // +------------------------------------------------------------------+
 // |       function ELU / ELU_drv                                     |
 // +------------------------------------------------------------------+
@@ -96,7 +78,7 @@ double ELU(double z)
    else
      {
       double alpha=0.01;
-      return ValidNumber(alpha*(exp(z)-1),__DBL_EPSILON__-alpha);
+      return validate(alpha*(exp(z)-1),__DBL_EPSILON__-alpha);
      }
   }   
 
@@ -107,7 +89,7 @@ double ELU_drv(double z)
    else
      {
       double alpha=0.01;
-      return ValidNumber(alpha*exp(z),__DBL_MIN__);
+      return validate(alpha*exp(z),__DBL_MIN__);
      }
   }   
 
@@ -117,14 +99,14 @@ double ELU_drv(double z)
  double sigmoid(double z)
   {
    if (z>0)
-     {return ValidNumber(1/(1+exp(-z)),1-__DBL_EPSILON__);}
+     {return validate(1/(1+exp(-z)),1-__DBL_EPSILON__);}
    else
-     {return ValidNumber(1/(1+exp(-z)),__DBL_MIN__);}
+     {return validate(1/(1+exp(-z)),__DBL_MIN__);}
   }
 
 double sigmoid_drv(double z)
   {
-   return ValidNumber(exp(z)/(pow(exp(z)+1,2)),__DBL_MIN__);
+   return validate(exp(z)/(pow(exp(z)+1,2)),__DBL_MIN__);
   }   
 
 // +------------------------------------------------------------------+
@@ -134,15 +116,15 @@ double sigmoid_drv(double z)
   {
    double alpha=0.01;
    if (z>0)
-     {return ValidNumber(1/(1+exp(-z)),1-__DBL_EPSILON__)+alpha*z;}
+     {return validate(1/(1+exp(-z)),1-__DBL_EPSILON__)+alpha*z;}
    else
-     {return ValidNumber(1/(1+exp(-z)),__DBL_EPSILON__)+alpha*z;}
+     {return validate(1/(1+exp(-z)),__DBL_EPSILON__)+alpha*z;}
   }
 
 double oblique_sigmoid_drv(double z)
   {
    double alpha=0.01;
-   return ValidNumber(exp(z)/(pow(exp(z)+1,2)),__DBL_EPSILON__)+alpha;
+   return validate(exp(z)/(pow(exp(z)+1,2)),__DBL_EPSILON__)+alpha;
   } 
 
 // +------------------------------------------------------------------+
@@ -183,14 +165,14 @@ double LReLU_drv(double z)
 double modtanh(double z)
   {
    if (z>0)
-     {return ValidNumber(tanh(z),1-__DBL_EPSILON__);}
+     {return validate(tanh(z),1-__DBL_EPSILON__);}
    else
-     {return ValidNumber(tanh(z),__DBL_EPSILON__-1);}
+     {return validate(tanh(z),__DBL_EPSILON__-1);}
   }
 
 double modtanh_drv(double z)
   {
-   return ValidNumber(1-pow(tanh(z),2),__DBL_MIN__);
+   return validate(1-pow(tanh(z),2),__DBL_MIN__);
   }
 
 // +------------------------------------------------------------------+
@@ -200,15 +182,15 @@ double oblique_tanh(double z)
   {
    double alpha=0.01;  
    if (z>0)
-     {return ValidNumber(tanh(z),1-__DBL_EPSILON__)+alpha*z;}
+     {return validate(tanh(z),1-__DBL_EPSILON__)+alpha*z;}
    else
-     {return ValidNumber(tanh(z),__DBL_EPSILON__-1)+alpha*z;}
+     {return validate(tanh(z),__DBL_EPSILON__-1)+alpha*z;}
   }
      
 double oblique_tanh_drv(double z)
   {
    double alpha=0.01;
-   return ValidNumber(1-pow(tanh(z),2),__DBL_EPSILON__)+alpha;
+   return validate(1-pow(tanh(z),2),__DBL_EPSILON__)+alpha;
   }
   
 // +------------------------------------------------------------------+
@@ -218,18 +200,18 @@ double tanh_rectifier(double z)
   {
    double alpha=0.01;  
    if (z>=0)
-     {return ValidNumber(tanh(z),1-__DBL_EPSILON__)+alpha*z;}
+     {return validate(tanh(z),1-__DBL_EPSILON__)+alpha*z;}
    else
-     {return ValidNumber(alpha*tanh(z),__DBL_EPSILON__-1)+alpha*z;}
+     {return validate(alpha*tanh(z),__DBL_EPSILON__-1)+alpha*z;}
   }
      
 double tanh_rectifier_drv(double z)
   {
    double alpha=0.01;
    if (z>0)
-     {return ValidNumber(1-pow(tanh(z),2),__DBL_EPSILON__)+alpha;}
+     {return validate(1-pow(tanh(z),2),__DBL_EPSILON__)+alpha;}
    else
-     {return ValidNumber(alpha*(1-pow(tanh(z),2))+alpha,__DBL_EPSILON__+alpha);}
+     {return validate(alpha*(1-pow(tanh(z),2))+alpha,__DBL_EPSILON__+alpha);}
   }  
   
 //+------------------------------------------------------------------+
@@ -238,14 +220,14 @@ double tanh_rectifier_drv(double z)
 double arctan(double z)
   {
    if (z>0)
-     {return ValidNumber(atan(z),0.5*M_PI);}
+     {return validate(atan(z),0.5*M_PI);}
    else
-     {return ValidNumber(atan(z),-0.5*M_PI);}
+     {return validate(atan(z),-0.5*M_PI);}
   }
   
 double arctan_drv(double z)
   {
-   return ValidNumber(1/(pow(z,2)+1),__DBL_MIN__);
+   return validate(1/(pow(z,2)+1),__DBL_MIN__);
   }
 
 //+------------------------------------------------------------------+
@@ -254,14 +236,14 @@ double arctan_drv(double z)
 double arsinh(double z)
   {
    if (z>0)
-     {return ValidNumber(asinh(z),__DBL_MAX__);}
+     {return validate(asinh(z),__DBL_MAX__);}
    else
-     {return ValidNumber(asinh(z),-__DBL_MAX__);}
+     {return validate(asinh(z),-__DBL_MAX__);}
   }
   
 double arsinh_drv(double z)
   {
-   return ValidNumber(1/sqrt(pow(z,2)+1),__DBL_MIN__);
+   return validate(1/sqrt(pow(z,2)+1),__DBL_MIN__);
   }
 
 //+------------------------------------------------------------------+
@@ -270,14 +252,14 @@ double arsinh_drv(double z)
 double softsign(double z)
   {
    if (z>0)
-     {return ValidNumber(z/(1+fabs(z)),1-__DBL_EPSILON__);}
+     {return validate(z/(1+fabs(z)),1-__DBL_EPSILON__);}
    else
-     {return ValidNumber(z/(1+fabs(z)),__DBL_EPSILON__-1);}
+     {return validate(z/(1+fabs(z)),__DBL_EPSILON__-1);}
   }
   
 double softsign_drv(double z)
   {
-   return ValidNumber(1/pow(1+fabs(z),2),__DBL_MIN__);
+   return validate(1/pow(1+fabs(z),2),__DBL_MIN__);
   }
 
 //+------------------------------------------------------------------+
@@ -287,15 +269,15 @@ double ISRU(double z)
   {
    double alpha=1;
    if (z>0)
-     {return ValidNumber(z/sqrt(1+alpha*pow(z,2)),1/sqrt(alpha)-__DBL_EPSILON__);}
+     {return validate(z/sqrt(1+alpha*pow(z,2)),1/sqrt(alpha)-__DBL_EPSILON__);}
    else
-     {return ValidNumber(z/sqrt(1+alpha*pow(z,2)),__DBL_EPSILON__-1/sqrt(alpha));}
+     {return validate(z/sqrt(1+alpha*pow(z,2)),__DBL_EPSILON__-1/sqrt(alpha));}
   }
   
 double ISRU_drv(double z)
   {
    double alpha=1;
-   return ValidNumber(pow(1/sqrt(1+alpha*pow(z,2)),3),__DBL_MIN__);
+   return validate(pow(1/sqrt(1+alpha*pow(z,2)),3),__DBL_MIN__);
   }
 
 //+------------------------------------------------------------------+
@@ -306,7 +288,7 @@ double ISRLU(double z)
   {
    double alpha=1;
    if (z<0)
-     {return ValidNumber(z/sqrt(1+alpha*pow(z,2)),__DBL_EPSILON__-1/sqrt(alpha));}
+     {return validate(z/sqrt(1+alpha*pow(z,2)),__DBL_EPSILON__-1/sqrt(alpha));}
    else
      {
       return z;
@@ -317,7 +299,7 @@ double ISRLU_drv(double z)
   {
    double alpha=1;
    if (z<0)
-     {return ValidNumber(pow(1/sqrt(1+alpha*pow(z,2)),3),__DBL_MIN__);}
+     {return validate(pow(1/sqrt(1+alpha*pow(z,2)),3),__DBL_MIN__);}
    else
      {return 1;}
   }
@@ -328,9 +310,9 @@ double ISRLU_drv(double z)
 double softplus(double z)
   {
    if (z>0)
-     {return ValidNumber(log(1+exp(z)),__DBL_MAX__);}
+     {return validate(log(1+exp(z)),__DBL_MAX__);}
    else
-     {return ValidNumber(log(1+exp(z)),__DBL_MIN__);}
+     {return validate(log(1+exp(z)),__DBL_MIN__);}
   }
   
 double softplus_drv(double z)
@@ -338,7 +320,7 @@ double softplus_drv(double z)
    if (z>0)
      {return 1/(1+exp(-z));} //all positive results are valid (gradient is close to 1)
    else
-     {return ValidNumber(1/(1+exp(-z)),__DBL_MIN__);}
+     {return validate(1/(1+exp(-z)),__DBL_MIN__);}
   }
 
 //+------------------------------------------------------------------+
@@ -347,9 +329,9 @@ double softplus_drv(double z)
 double bentident(double z)
   {
    if (z>0)
-     {return ValidNumber((sqrt(pow(z,2)+1)-1)/2+z,__DBL_MAX__);}
+     {return validate((sqrt(pow(z,2)+1)-1)/2+z,__DBL_MAX__);}
    else
-     {return ValidNumber((sqrt(pow(z,2)+1)-1)/2+z,-__DBL_MAX__);}
+     {return validate((sqrt(pow(z,2)+1)-1)/2+z,-__DBL_MAX__);}
   }
   
 double bentident_drv(double z)
@@ -378,7 +360,7 @@ double sinc(double z)
    if (z==0)
      {return 1;}
    else
-     {return ValidNumber(sin(z)/z,__DBL_MIN__);}
+     {return validate(sin(z)/z,__DBL_MIN__);}
   }
   
 double sinc_drv(double z)
@@ -388,9 +370,9 @@ double sinc_drv(double z)
    else
      {
       if (z>0)
-        {return ValidNumber(cos(z)/z-sin(z)/pow(z,2),-__DBL_MIN__);}
+        {return validate(cos(z)/z-sin(z)/pow(z,2),-__DBL_MIN__);}
       else
-        {return ValidNumber(cos(z)/z-sin(z)/pow(z,2),__DBL_MIN__);} 
+        {return validate(cos(z)/z-sin(z)/pow(z,2),__DBL_MIN__);} 
      }
   }     
 
@@ -399,15 +381,15 @@ double sinc_drv(double z)
 //+------------------------------------------------------------------+
 double gaussian(double z)
   {
-   return ValidNumber(exp(-pow(z,2)),__DBL_MIN__);
+   return validate(exp(-pow(z,2)),__DBL_MIN__);
   }
   
 double gaussian_drv(double z)
   {
    if (z>0)
-     {return ValidNumber(-2*z*pow(M_E,-pow(z,2)),-__DBL_MIN__);}
+     {return validate(-2*z*pow(M_E,-pow(z,2)),-__DBL_MIN__);}
    else
-     {return ValidNumber(-2*z*pow(M_E,-pow(z,2)),__DBL_MIN__);}
+     {return validate(-2*z*pow(M_E,-pow(z,2)),__DBL_MIN__);}
   }
 
 //+------------------------------------------------------------------+
@@ -417,7 +399,7 @@ double diff_hardstep(double z)
   {
    double alpha=0.01;
    if (z>0)
-     {return ValidNumber(1+alpha*z,__DBL_MAX__);}
+     {return validate(1+alpha*z,__DBL_MAX__);}
    else
      {return 0;}
   }
@@ -437,9 +419,9 @@ double inv_diff_hardstep(double z)
   {
    double alpha=0.01;
    if (z>=0)
-     {return ValidNumber(1+alpha*z,__DBL_MAX__);}
+     {return validate(1+alpha*z,__DBL_MAX__);}
    else
-     {return ValidNumber(alpha*z,-__DBL_MAX__);}
+     {return validate(alpha*z,-__DBL_MAX__);}
   }
 double inv_diff_hardstep_drv()
   {
@@ -461,7 +443,7 @@ double log_rectifier(double z)
 double log_rectifier_drv(double z)
   {
    if (z>0)
-     {return ValidNumber(1/(z+1),__DBL_MIN__);}
+     {return validate(1/(z+1),__DBL_MIN__);}
    else
      {return 0;}
   }
@@ -482,7 +464,7 @@ double leaky_log_rectifier_drv(double z)
   {
    double alpha=0.01;
    if (z>0)
-     {return ValidNumber(1/(z+1),__DBL_MIN__);}
+     {return validate(1/(z+1),__DBL_MIN__);}
    else
      {return alpha;}
   }  

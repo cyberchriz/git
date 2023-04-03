@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include "../../distributions/headers/random_distributions.h"
+#include "../../validate.h"
 #include "../../enums.h"
 #include "../../weight_init.h"
 #include "../../activation_functions.h"
@@ -20,7 +22,7 @@ class Network{
         void load(std::string filename);
         int backprop_iterations=0;
         SCALING scaling_method=none;
-        double lr=0.001;
+        double lr=0.005;
         double lr_momentum=0.0;
         double lr_decay=0.0;
         double opt_beta1=0.9;
@@ -28,7 +30,9 @@ class Network{
         bool training_mode=true;
         bool gradient_clipping=false;
         double gradient_clipping_threshold=0.999;
-        std::string filename;      
+        double dropout=0;
+        bool recurrent=false;
+        std::string filename;     
     protected:
     public:
         int add_layer(int neurons, OPTIMIZATION_METHOD _opt_method=ADADELTA, ACTIVATION_FUNC _activation=f_LReLU);
@@ -49,6 +53,8 @@ class Network{
         void set_learning_rate_decay(double value){lr_decay=fmin(fmax(0,value),1.0);}
         void set_learning_momentum(double value){lr_momentum=fmin(fmax(0,value),1.0);}
         void set_scaling_method(SCALING method=normalized){scaling_method=method;}
+        void set_dropout(double value){dropout=fmax(0,fmin(value,1));}
+        void set_recurrent(bool confirm){recurrent=confirm;}
         void set_gradient_clipping(bool active,double threshold=0.999){gradient_clipping=active;gradient_clipping_threshold=threshold;}
         double get_avg_h();
         double get_avg_output();     
@@ -172,13 +178,27 @@ void Network::reset_weights(){
 void Network::feedforward(){
     // cycle through layers
     for (int l=1;l<layers;l++){
-        int layer_neurons=layer[l].neurons;
-        for (int j=0;j<layer_neurons;j++){
-            // get sum of weighted inputs
+        for (int j=0;j<layer[l].neurons;j++){
+            // update recurrent values
+            if (!layer[l].neuron[j].dropout){
+                layer[l].neuron[j].m1=layer[l].neuron[j].h;
+                layer[l].neuron[j].m2=0.9*layer[l].neuron[j].m2+0.1*layer[l].neuron[j].h;
+                layer[l].neuron[j].m3=0.99*layer[l].neuron[j].m3+0.01*layer[l].neuron[j].h;
+                layer[l].neuron[j].m4=0.999*layer[l].neuron[j].m4+0.001*layer[l].neuron[j].h;
+            }
+            layer[l].neuron[j].h=0;
             layer[l].neuron[j].x=0;
+            // set dropout
+            if (training_mode && l!=0 && l!=layers-1){
+                layer[l].neuron[j].dropout = Random<double>::uniform(0,1)<dropout;
+                if (layer[l].neuron[j].dropout){
+                    continue;
+                }
+            }
+            // get sum of weighted inputs
             int input_neurons=layer[l-1].neurons;
             for (int i=0;i<input_neurons;i++){
-                layer[l].neuron[j].x+=layer[l-1].neuron[i].h*layer[l].neuron[j].input_weight[i];
+                layer[l].neuron[j].x+=layer[l-1].neuron[i].h*layer[l].neuron[j].input_weight[i] * layer[l-1].neuron[i].dropout;
             }
             // add weighted bias
             layer[l].neuron[j].x+=1.0*layer[l].neuron[j].bias_weight;
@@ -187,19 +207,18 @@ void Network::feedforward(){
             layer[l].neuron[j].x+=layer[l].neuron[j].m2*layer[l].neuron[j].m2_weight;
             layer[l].neuron[j].x+=layer[l].neuron[j].m3*layer[l].neuron[j].m3_weight;
             layer[l].neuron[j].x+=layer[l].neuron[j].m4*layer[l].neuron[j].m4_weight;
+            // add dropout compensation in training mode
+            if (training_mode && l>1){
+                layer[l].neuron[j].x *= 1/(1-dropout);
+            }            
+            // validate (Nan/Inf mitigation, avoiding exploding or vanishing gradients)
+            validate_r(layer[l].neuron[j].x);
             // activate
             layer[l].neuron[j].h = activate(layer[l].neuron[j].x,layer[l].activation);
         }        
-        // update recurrent values
-        for (int j=0;j<layer_neurons;j++){
-            layer[l].neuron[j].m1=layer[l].neuron[j].h;
-            layer[l].neuron[j].m2=0.9*layer[l].neuron[j].m2+0.1*layer[l].neuron[j].h;
-            layer[l].neuron[j].m3=0.99*layer[l].neuron[j].m3+0.01*layer[l].neuron[j].h;
-            layer[l].neuron[j].m4=0.999*layer[l].neuron[j].m4+0.001*layer[l].neuron[j].h;
-        }
         // rescale outputs
         if (l==layers-1){
-            for (int j=0;j<layer_neurons;j++){
+            for (int j=0;j<layer[l].neurons;j++){
                 switch (scaling_method){
                     case none:
                         layer[l].neuron[j].output = layer[l].neuron[j].h;
@@ -215,6 +234,8 @@ void Network::feedforward(){
                         layer[l].neuron[j].output = layer[l].neuron[j].h * layer[l].neuron[j].label_stddev + layer[l].neuron[j].label_rolling_average;
                         break;
                 }
+                // validate
+                validate_r(layer[l].neuron[j].output);
             }
         }        
     }
@@ -227,10 +248,9 @@ void Network::backpropagate(){
 
     // (I) cycle backwards through layers
     for (int l=layers-1;l>=1;l--){
-        int layer_neurons=layer[l].neurons;
         // get global errors from output layer
         if (l==layers-1){
-            for (int j=0;j<layer_neurons;j++){
+            for (int j=0;j<layer[l].neurons;j++){
                 // derivative of the 0.5err^2 loss function: scaled_label-output
                 layer[l].neuron[j].gradient = layer[l].neuron[j].scaled_label - layer[l].neuron[j].h;
 
@@ -249,8 +269,9 @@ void Network::backpropagate(){
         }
         // get hidden errors, i.e. SUM_k[err_k*w_jk]
         else{
-            for (int j=0;j<layer_neurons;j++){
+            for (int j=0;j<layer[l].neurons;j++){
                 layer[l].neuron[j].gradient=0;
+                if (layer[l].neuron[j].dropout){continue;}
                 int fan_out=layer[l+1].neurons;
                 for (int k=0;k<fan_out;k++){
                     layer[l].neuron[j].gradient+=layer[l+1].neuron[k].gradient*layer[l+1].neuron[k].input_weight[j];
@@ -264,11 +285,12 @@ void Network::backpropagate(){
     // - delta rule for hidden neurons: delta w_ij=lr*SUM_k[err_k*w_jk]*act'(net_inp_j)*out_i
     // - general rule: delta w_ij=lr*error*act'(net_inp_j)*out_i    
     for (int l=layers-1;l>=1;l--){
-        int layer_neurons=layer[l].neurons;
         int input_neurons=layer[l-1].neurons;
         OPTIMIZATION_METHOD method=layer[l].opt_method;
-        for (int j=0;j<layer_neurons;j++){
+        for (int j=0;j<layer[l].neurons;j++){
+            if (layer[l].neuron[j].dropout){continue;}
             for (int i=0;i<input_neurons;i++){
+                if (layer[l-1].neuron[i].dropout){continue;}
                 if (method==Vanilla){
                     // get delta
                     layer[l].neuron[j].input_weight_delta[i] = (lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr/(1+lr_decay*backprop_iterations)) * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
