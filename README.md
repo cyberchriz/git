@@ -9,55 +9,72 @@ ___
 # git/DataScience/distributions/headers/cumulative_distribution_functions.h
 
 A cumulative distribution function returns the probability of a random variable taking on values less than or equal to a given value.
+
 Classname: CdfObject, alias: cdf
+
 Available methods:
+
 ```cpp
-	- cdf<T>::gaussian(T x_val,T mu=0,T sigma=1);
-	- cdf<T>::cauchy(T x_val,T x_peak=0,T gamma=1);
-	- cdf<T>::laplace(T x_val,T mu=0,T sigma=1);
-	- cdf<T>::pareto(T x_val,T alpha=1,T tail_index=1);
-	- cdf<T>::lomax(T x_val,T alpha=1,T tail_index=1);
+cdf<T>::gaussian(T x_val,T mu=0,T sigma=1);
+cdf<T>::cauchy(T x_val,T x_peak=0,T gamma=1);
+cdf<T>::laplace(T x_val,T mu=0,T sigma=1);
+cdf<T>::pareto(T x_val,T alpha=1,T tail_index=1);
+cdf<T>::lomax(T x_val,T alpha=1,T tail_index=1);
 ```
+
 usage example:
+
 ```cpp
 double x = 0.3;
 double probability = cdf<double>::gaussian(x);
 ```
+
 ___
 # git/DataScience/distributions/headers/probability_density_functions.h
 
 A probability density function (PDF) is a statistical function that gives the probability
 of a random variable taking on any particular value. It is the derivative of the cumulative distribution function.
+
 Classname: PdfObject, alias: pdf
+
 Available methods:
+
 ```cpp
-	pdf<T>::gaussian(T x_val,T mu=0,T sigma=1);
-	pdf<T>::cauchy(T x_val,T x_peak=0,T gamma=1);
-	pdf<T>::laplace(T x_val,T mu=0,T sigma=1);
-	pdf<T>::pareto(T x_val,T alpha=1,T tail_index=1);
-	pdf<T>::lomax(T x_val,T alpha=1,T tail_index=1);
+pdf<T>::gaussian(T x_val,T mu=0,T sigma=1);
+pdf<T>::cauchy(T x_val,T x_peak=0,T gamma=1);
+pdf<T>::laplace(T x_val,T mu=0,T sigma=1);
+pdf<T>::pareto(T x_val,T alpha=1,T tail_index=1);
+pdf<T>::lomax(T x_val,T alpha=1,T tail_index=1);
 ```
+
 usage example:
+
 ```cpp
 double x = 0.3;
 double probability = pdf<double>::gaussian(x);
 ```
+
 ___
 # git/DataScience/distributions/headers/random_distributions.h
 Returns a random value from a specified distribution.
+
 Classname: Random, alias: rnd
+
 Available methods:
+
 ```cpp
-	Random<T>::gaussian(T mu=0,T sigma=1);
-	Random<T>::cauchy(T x_peak=0,T gamma=1);
-	Random<T>::uniform(T min=0, T max=1);
-	Random<T>::laplace(T mu=0,T sigma=1);
-	Random<T>::pareto(T alpha=1,T tail_index=1);
-	Random<T>::lomax(T alpha=1,T tail_index=1);
-	Random<T>::sign();
-	Random<T>::binary();
+Random<T>::gaussian(T mu=0,T sigma=1);
+Random<T>::cauchy(T x_peak=0,T gamma=1);
+Random<T>::uniform(T min=0, T max=1);
+Random<T>::laplace(T mu=0,T sigma=1);
+Random<T>::pareto(T alpha=1,T tail_index=1);
+Random<T>::lomax(T alpha=1,T tail_index=1);
+Random<T>::sign();
+Random<T>::binary();
 ```
+
 usage examples:
+
 ```cpp
 double x = rnd<double>::gaussian(); // returns a random <double> value from a gaussian normal distribution with default µ=0 and sigma=1;
 float y = rnd<float>::laplace();
@@ -65,6 +82,7 @@ double z = rnd<double>::uniform(0,10); // returns a random <double> from a unifo
 char s = rnd<char>::sign(); // randomly returns either -1 or 1
 bool b = rnd<bool>binary; // randomly returns either true or false
 ```
+
 ___
 # git/DataScience/neuralnet/MLP/headers/mlp.h
 Class for neural networks (multilayer perceptron, fully connected) with flexible topology.
@@ -72,6 +90,7 @@ The class allows multiple different activation functions, optimizers and options
 The neurons can be recurrent.
 
 usage example:
+
 ```cpp
 #include <iostream>
 #include <cmath>
@@ -118,13 +137,16 @@ int main(){
     }
     std::cout << "[...done]\n\n\n";
 ```
+
 ___
 # git/DataScience/neuralnet/autoencoder.h
 This is a child class of the Multilayer Perceptron (mlp.h) neural network class.
 An autoencoder is a special type of neural network that first encodes from the input to a lower number of neurons ("dimensionalty reduction", "bottleneck layer"), then decodes back to a number of outputs that exactly matches the number of input. The network takes the inputs as targets (=labels) and propagates the errors of the predictions back in order to adjust the network's weights via stochastic gradient descent.
+
 Classname: Autoencoder
 
 Available methods:
+
 ```cpp
         double get_encoded(uint index); // returns the hidden state of a bottleneck neuron (with a given index)
         double get_decoded(uint index); // returns the output a neuron (with a given index) from the decoder part (=output layer)
@@ -135,7 +157,9 @@ Available methods:
         // parametric constructor
         Autoencoder(uint inputs, uint bottleneck_neurons, u_char encoder_hidden_layers=1, u_char decoder_hidden_layers=1, ACTIVATION_FUNC act_func=f_oblique_sigmoid, bool recurrent=true, double dropout=0)
 ```
+
 usage example:
+
 ```cpp
 #include <iostream>
 #include <cmath>
@@ -162,11 +186,14 @@ int main(){
     std::cout << "[...done]\n\n\n"; 
 }
 ```
+
 ___
 # git/DataScience/neuralnet/activation_functions.h
+
 This is a helper file containing activation functions for neural networks.
 
 Available functions:
+
 ```cpp
 // enumeration of available activation functions for neural networks
 enum ACTIVATION_FUNC {
@@ -198,18 +225,23 @@ enum ACTIVATION_FUNC {
                    // note: the softmax function can't be part of this library because it has no single input but needs the other neurons of the layer, too, so it
   };               //       needs to be defined from within the neural network code
 ```
+
 Usage example:
+
 ```cpp
 // normal usage
 double h = activate(x, f_ReLU);
 // get derivative of activation function
 double d = deactivate(h, f_ReLU);
 ```
+
 ___
 # git/DataScience/sample.h
+
 The Sample class returns an abundance of statistical data from a given sample.
 
 Available methods:
+
 ```cpp
 double mean(); // returns the arithmetic mean of a sample that has been provided with the parametric constructor
 double median(); // returns the median of a sample that has been provided with the parametric constructor
@@ -250,3 +282,4 @@ Sample(std::vector<T> x_vect, std::vector<T> y_vect); // parametric constructor 
 Sample(T *data_vect); // parametric constructor for single array-type sample
 Sample(T *x_vect, T *y_vect) // parametric constructor for two array-type samples
 ```
+___
