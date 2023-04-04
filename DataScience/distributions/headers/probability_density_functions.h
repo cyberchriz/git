@@ -23,7 +23,7 @@ class PdfObject{
         // methods
         static T gaussian(T x_val,T mu=0, T sigma=1);
         static T cauchy(T x_val,T x_peak, T gamma);
-        static T laplace(T x_val,T mu=0,T scale_factor=SCALE_FACTOR);
+        static T laplace(T x_val,T mu=0,T sigma=1);
         static T pareto(T x_val,T alpha=1, T tail_index=1);
         static T lomax(T x_val,T alpha=1,T tail_index=1);
         // constructor
@@ -35,5 +35,5 @@ class PdfObject{
 // ------------------------------------------------------------------
 // ALIAS CLASS
 template<typename T>
-class pdf:PdfObject<T>{};
+class pdf:public PdfObject<T>{};
 // ------------------------------------------------------------------

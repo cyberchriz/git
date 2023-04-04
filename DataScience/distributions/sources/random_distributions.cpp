@@ -6,9 +6,9 @@
 
 #include "../headers/random_distributions.h"
 
-// get random value from a normal distribution with a given µ and sigma
+// get random value from a gaussian normal distribution with a given µ and sigma
 template<typename T>
-T Random<T>::normal(T mu,T sigma){
+T Random<T>::gaussian(T mu,T sigma){
     double random=(double)rand() / RAND_MAX;                // get random value within range 0-1
     random/=sqrt(2*M_PI*pow(sigma,2));                      // reduce to the top of the distribution (f(x_val=mu))
     char sign=rand()>(0.5*RAND_MAX) ? 1 : -1;               // get random algebraic sign

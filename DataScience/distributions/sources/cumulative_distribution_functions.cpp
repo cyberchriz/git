@@ -27,7 +27,9 @@ T CdfObject<T>::cauchy(T x_val,T x_peak,T gamma) {
 // being less or equal than the given 'x_val';
 // the scale_factor is sigma/sqrt(2)=0.707106781 by default
 template<typename T>
-T CdfObject<T>::laplace(T x_val,T mu,T scale_factor){
+T CdfObject<T>::laplace(T x_val,T mu,T sigma){
+    static double scale_factor;
+    scale_factor=sigma/sqrt(2);
     if (x_val<mu)
         {return 0.5*exp((x_val-mu)/scale_factor);}
     else

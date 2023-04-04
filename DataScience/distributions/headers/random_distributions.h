@@ -10,7 +10,7 @@
 template<typename T>
 class Random {
     public:   
-        static T normal(T mu=0,T sigma=1);
+        static T gaussian(T mu=0,T sigma=1);
         static T cauchy(T x_peak=0,T gamma=1);
         static T uniform(T min=0, T max=1);
         static T laplace(T mu=0,T sigma=1);
@@ -21,4 +21,4 @@ class Random {
 };
 
 // ALIAS CLASS
-template<typename T> class rnd:Random<T>{};
+template<typename T> class rnd: public Random<T>{};

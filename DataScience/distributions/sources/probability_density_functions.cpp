@@ -25,7 +25,9 @@ T PdfObject<T>::cauchy(T x_val,T x_peak, T gamma){
 // Laplace probability density function;
 // scale factor default: sigma/sqrt(2)=0.707106781
 template<typename T>
-T PdfObject<T>::laplace(T x_val,T mu,T scale_factor) {
+T PdfObject<T>::laplace(T x_val,T mu,T sigma) {
+    static double scale_factor;
+    scale_factor = sigma/sqrt(2);
     return exp(-fabs(x_val-mu)/scale_factor)/(2*scale_factor);
 }
 
