@@ -1,5 +1,4 @@
-author: cyberchriz (Christian Suer)
-language: C++
+author: cyberchriz (Christian Suer); language: C++
 ___
 # git/DataScience: GENERAL OVERVIEW
 This repository provides functionality for
