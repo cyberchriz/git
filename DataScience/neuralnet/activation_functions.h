@@ -71,12 +71,12 @@ std::string actfunct_string(ACTIVATION_FUNC f)
 // |       function ELU / ELU_drv                                     |
 // +------------------------------------------------------------------+
 double ELU(double z){
-    static double alpha = 0.001;
+    static double alpha = 0.01;
     return z>0 ? z : alpha*(exp(z)-1);
 }   
 
 double ELU_drv(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return z>0 ? 1 : alpha*exp(z);
 }   
 
@@ -95,12 +95,12 @@ double sigmoid_drv(double z){
 // |       function oblique sigmoid / obl. sigmoid_drv (custom)       |
 // +------------------------------------------------------------------+   
 double oblique_sigmoid(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return 1/(1+exp(-z))+alpha*z;
 }
 
 double oblique_sigmoid_drv(double z){
-   static double alpha=0.001;
+   static double alpha=0.01;
    return exp(z)/(pow(exp(z)+1,2)) + alpha;
 } 
 
@@ -119,12 +119,12 @@ double ReLU_drv(double z){
 // |       function LReLU / LReLU_drv                                 |
 // +------------------------------------------------------------------+
 double LReLU(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return z>0 ? z : alpha*z;
 }
       
 double LReLU_drv(double z){
-    static double alpha = 0.001;
+    static double alpha = 0.01;
     return z>0 ? 1 : alpha;
 }
     
@@ -143,12 +143,12 @@ double modtanh_drv(double z){
 // |       function oblique_tanh / oblique_tanh_drv (custom)          |
 // +------------------------------------------------------------------+
 double oblique_tanh(double z){
-    static double alpha=0.001;  
+    static double alpha=0.01;  
     return tanh(z)+alpha*z; 
 }
      
 double oblique_tanh_drv(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return 1-pow(tanh(z),2)+alpha;
 }
   
@@ -156,7 +156,7 @@ double oblique_tanh_drv(double z){
 // |       function tanh rectifier / _drv (custom)                    |
 // +------------------------------------------------------------------+
 double tanh_rectifier(double z){
-    double alpha=0.001;
+    double alpha=0.01;
     return z>0 ? tanh(z)+alpha*z : alpha*tanh(z);
 }
      
@@ -284,12 +284,12 @@ double gaussian_drv(double z){
 //|      function differentiable hardstep (custom) / _drv            |
 //+------------------------------------------------------------------+
 double diff_hardstep(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return z>0 ? 1+alpha*z : 0;
 }
 
 double diff_hardstep_drv(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return z>0 ? alpha : 0;
 }
   
@@ -297,12 +297,12 @@ double diff_hardstep_drv(double z){
 //|      function leaky differentiable hardstep (custom) / _drv      |
 //+------------------------------------------------------------------+
 double inv_diff_hardstep(double z){
-   static double alpha=0.001;
+   static double alpha=0.01;
    return z>=0 ? 1+alpha*z : alpha*z;
 }
 
 double inv_diff_hardstep_drv(){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return alpha;
 }  
   
@@ -321,12 +321,12 @@ double log_rectifier_drv(double z){
 //|      function leaky log rectifier (custom) / _drv                |
 //+------------------------------------------------------------------+
 double leaky_log_rectifier(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return z>0 ? log(z+1) : alpha*z;
 }
   
 double leaky_log_rectifier_drv(double z){
-    static double alpha=0.001;
+    static double alpha=0.01;
     return z>0 ? 1/(z+1) : alpha;
 }  
   
