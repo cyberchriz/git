@@ -34,7 +34,7 @@ double f_He_ReLU(int fan_in){
 
 // modified "Kaiming He" nornal weight initialization, used for ELU activation
 double f_He_ELU(int fan_in){
-    double result=Random<double>::normal(0.0,1.0);
+    double result=Random<double>::gaussian(0.0,1.0);
     result*=sqrt(1.55/(double(fan_in)));
     return result;
 }

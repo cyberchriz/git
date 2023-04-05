@@ -26,7 +26,7 @@ class Neuron{
 
         // error calculations
         double gradient=0;              // used for output error (derivative of loss function) or hidden error, depending on the layer
-        double loss=0;                  // for MSE loss
+        double  loss=0;                  // for MSE loss
         double loss_sum=0;              // used for average loss (after dividing by number of backprop iterations) 
 
         // values for input and label scaling

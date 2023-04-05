@@ -195,7 +195,7 @@ double softsign(double z){
 }
   
 double softsign_drv(double z){
-    1/pow(1+fabs(z),2);
+    return 1/pow(1+fabs(z),2);
 }
 
 //+------------------------------------------------------------------+
