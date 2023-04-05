@@ -7,30 +7,43 @@
 
 // in order to use this code, simply define the DEBUG flag as a preprocessor directive,
 // then write the macro keyword 'TIMER' in any function;
-// once the local scope ends, this will cause the timer struct to print out the duration since the 'TIMER' call
+// alternatively (including outside debugging) just create a Timer object without the macro;
+// once the local scope of the Timer call ends, the Timer destructor will print out the duration of the Timer's lifetime
 
 //#define DEBUG
 
 #ifdef DEBUG
-#define TIMER ns_timer::Timer timer_object;
+#define TIMER Timer timer;
 #else
 #define TIMER
 #endif
 
-namespace ns_timer {
-    struct Timer {
-        std::chrono::high_resolution_clock::time_point start, end;
-        std::chrono::duration<float> duration;
-        // constructor
-        Timer() {
-            start = std::chrono::high_resolution_clock::now();
-        }
-        // destructor
-        ~Timer() {
-            end = std::chrono::high_resolution_clock::now();
-            duration = end - start;
-            float ms = duration.count() * 1000.0f;
-            std::cout << "timer lifetime: " << ms << "ms\n";
-        }
-    };
-}
+struct Timer {
+    std::chrono::high_resolution_clock::time_point start, end;
+    std::chrono::duration<double> duration;
+
+    double elapsed_sec(){
+        end = std::chrono::high_resolution_clock::now();
+        return (end-start).count();          
+    }
+
+    double elapsed_ms(){
+        end = std::chrono::high_resolution_clock::now();
+        return (end-start).count() * 1000;          
+    }
+
+    double elapsed_µs(){
+        end = std::chrono::high_resolution_clock::now();
+        return (end-start).count() * 1000000;          
+    }           
+
+    // constructor
+    Timer() {
+        start = std::chrono::high_resolution_clock::now();
+    }
+    // destructor
+    ~Timer() {
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << "timer lifetime: " << (end-start).count()*1000 << "ms\n";
+    }
+};
