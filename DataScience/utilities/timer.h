@@ -9,16 +9,15 @@
 // then write the macro keyword 'TIMER' in any function;
 // once the local scope ends, this will cause the timer struct to print out the duration since the 'TIMER' call
 
-
-
 //#define DEBUG
 
-#define TIMER \
-    #ifdef DEBUG \
-        timer::Timer timer; \
-    #endif \
+#ifdef DEBUG
+#define TIMER ns_timer::Timer timer_object;
+#else
+#define TIMER
+#endif
 
-namespace timer {
+namespace ns_timer {
     struct Timer {
         std::chrono::high_resolution_clock::time_point start, end;
         std::chrono::duration<float> duration;
