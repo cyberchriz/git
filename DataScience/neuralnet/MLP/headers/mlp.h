@@ -290,7 +290,7 @@ void MLP::backpropagate(){
                     static double factor = 0.999;
                     static double inv_factor = 1/factor;
                     lr = layer[l].neuron[j].gradient-last_gradient>0 ? lr*factor : lr*inv_factor;
-                    lr = fmin(lr,0.01);
+                    lr = fmin(lr,0.1);
                     lr = fmax(lr,0.00000001);
                     //std::cout << "learning rate adjusted to " << lr << "\n";
                 }

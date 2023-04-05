@@ -6,7 +6,7 @@
 
 // normal "Xavier" weight initialization (by Xavier Glorot & Bengio) for tanh activation
 double f_Xavier_normal(int fan_in, int fan_out){
-    double result=Random<double>::normal(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
+    double result=Random<double>::gaussian(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
     result*=sqrt(6/sqrt(double(fan_in+fan_out)));
     return result;
 }
@@ -27,7 +27,7 @@ double f_Xavier_sigmoid(int fan_in, int fan_out){
 
 // "Kaiming He" normal weight initialization, used for ReLU activation
 double f_He_ReLU(int fan_in){
-    double result=Random<double>::normal(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
+    double result=Random<double>::gaussian(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
     result*=sqrt(2/((double)(fan_in)));
     return result;
     }

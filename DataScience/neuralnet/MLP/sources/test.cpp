@@ -29,6 +29,7 @@ int main(){
     MLP network = MLP("");
     
     // hyperparameters
+    network.set_learning_rate(0.1);
     network.set_learning_rate_auto(true);
     network.set_recurrent(false);
     network.set_dropout(0.0);
@@ -42,6 +43,7 @@ int main(){
     network.add_layer(input_neurons,opt,act_func);
     network.add_layer(hidden_neurons,opt,act_func);
     network.add_layer(input_neurons,opt,act_func);
+    network.reset_weights(1,__INT_MAX__,0.01);
 
     // test iterations
     for (int i=0;i<=10000000; i++){
