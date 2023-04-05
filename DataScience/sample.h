@@ -140,9 +140,3 @@ class Sample{
         // destructor
         ~Sample(){};
 };
-
-
-
-
-
-
