@@ -11,6 +11,7 @@
                 "-fdiagnostics-color=always",
                 "-g",
                     "${workspaceFolder}/DataScience/distributions/sources/random_distributions.cpp",
+                    "${workspaceFolder}/DataScience/neuralnet/MLP/sources/mlp.cpp",
                     "${workspaceFolder}/DataScience/neuralnet/MLP/sources/test.cpp",
                 "-o",
                     "${workspaceFolder}/DataScience/neuralnet/MLP/sources/executable"
