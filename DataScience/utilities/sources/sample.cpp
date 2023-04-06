@@ -1,5 +1,5 @@
 #pragma once
-#include "sample.h"
+#include "../headers/sample.h"
 #include <numeric>
 #include <vector>
 #include <cmath>
