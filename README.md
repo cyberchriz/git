@@ -15,11 +15,11 @@ Classname: CdfObject, alias: cdf
 Available methods:
 
 ```cpp
-cdf<T>::gaussian(T x_val,T mu=0,T sigma=1);
-cdf<T>::cauchy(T x_val,T x_peak=0,T gamma=1);
-cdf<T>::laplace(T x_val,T mu=0,T sigma=1);
-cdf<T>::pareto(T x_val,T alpha=1,T tail_index=1);
-cdf<T>::lomax(T x_val,T alpha=1,T tail_index=1);
+cdf<T>::gaussian(const T& x_val, const T& mu=0, const T& sigma=1);
+cdf<T>::cauchy(const T& x_val, const T& x_peak=0, const T& gamma=1);
+cdf<T>::laplace(const T& x_val, const T& mu=0, const T& sigma=1);
+cdf<T>::pareto(const T& x_val, const T& alpha=1, const T& tail_index=1);
+cdf<T>::lomax(const T& x_val, const T& alpha=1, const T& tail_index=1);
 ```
 
 usage example:
@@ -32,19 +32,21 @@ double probability = cdf<double>::gaussian(x);
 ___
 # git/DataScience/distributions/headers/probability_density_functions.h
 
-A probability density function (PDF) is a statistical function that gives the probability
-of a random variable taking on any particular value. It is the derivative of the cumulative distribution function.
+A probability density function (PDF) is a statistical function that returns the probability
+of a random variable taking on any particular value.
+It is the derivative of the cumulative distribution function.
 
-Classname: PdfObject, alias: pdf
+Classname: PdfObject
+Alias: pdf
 
 Available methods:
 
 ```cpp
-pdf<T>::gaussian(T x_val,T mu=0,T sigma=1);
-pdf<T>::cauchy(T x_val,T x_peak=0,T gamma=1);
-pdf<T>::laplace(T x_val,T mu=0,T sigma=1);
-pdf<T>::pareto(T x_val,T alpha=1,T tail_index=1);
-pdf<T>::lomax(T x_val,T alpha=1,T tail_index=1);
+pdf<T>::gaussian(const T& x_val, const T& mu=0, const T& sigma=1);
+pdf<T>::cauchy(const T& x_val, const T& x_peak=0, const T& gamma=1);
+pdf<T>::laplace(const T& x_val, const T& mu=0, const T& sigma=1);
+pdf<T>::pareto(const T& x_val, const T& alpha=1, const T& tail_index=1);
+pdf<T>::lomax(const T& x_val, const T& alpha=1, const T& tail_index=1);
 ```
 
 usage example:
@@ -63,12 +65,12 @@ Classname: Random, alias: rnd
 Available methods:
 
 ```cpp
-Random<T>::gaussian(T mu=0,T sigma=1);
-Random<T>::cauchy(T x_peak=0,T gamma=1);
-Random<T>::uniform(T min=0, T max=1);
-Random<T>::laplace(T mu=0,T sigma=1);
-Random<T>::pareto(T alpha=1,T tail_index=1);
-Random<T>::lomax(T alpha=1,T tail_index=1);
+Random<T>::gaussian(const T& mu=0, const T& sigma=1);
+Random<T>::cauchy(const T& x_peak=0, const T& gamma=1);
+Random<T>::uniform(const T& min=0, const T& max=1);
+Random<T>::laplace(const T& mu=0, const T& sigma=1);
+Random<T>::pareto(const T& alpha=1, const T& tail_index=1);
+Random<T>::lomax(const T& alpha=1, const T& tail_index=1);
 Random<T>::sign();
 Random<T>::binary();
 ```
@@ -86,7 +88,8 @@ bool b = rnd<bool>binary; // randomly returns either true or false
 ___
 # git/DataScience/neuralnet/MLP/headers/mlp.h
 Class for neural networks (multilayer perceptron, fully connected) with flexible topology.
-The class allows multiple different activation functions, optimizers and options for automatic scaling of input features and labels/outputs.
+The class allows multiple different activation functions, optimizers and options
+for automatic scaling of input features and labels/outputs.
 The neurons can be recurrent.
 
 usage example:
@@ -101,11 +104,11 @@ int main(){
     // set up a test network
     MLP network = MLP("");
     
-    // hyperparameters
-		network.set_learning_rate(0.002);
-		network.set_learning_momentum(0.9);
+    // set hyperparameters
+	network.set_learning_rate(0.002);
+	network.set_learning_momentum(0.9);
     network.set_learning_rate_auto(false);
-		network.set_scaling_method(normalized);
+	network.set_scaling_method(normalized);
     network.set_recurrent(false);
     network.set_dropout(0.0);
     network.set_training_mode(true);
@@ -117,10 +120,11 @@ int main(){
     int hidden_neurons=5;
     network.add_layer(input_neurons,opt,act_func);
     network.add_layer(hidden_neurons,opt,act_func);
-		network.add_layer(hidden_neurons,opt,act_func);
+	network.add_layer(hidden_neurons,opt,act_func);
     network.add_layer(input_neurons,opt,act_func);
 
-    // test iterations
+    // test iterations: try to reproduce the input as output
+    // (=only for test purposes)
     for (int i=0;i<=1000000; i++){
         // fill inputs with random numbers
         for (int r=0;r<5;r++){
@@ -141,7 +145,12 @@ int main(){
 ___
 # git/DataScience/neuralnet/autoencoder.h
 This is a child class of the Multilayer Perceptron (mlp.h) neural network class.
-An autoencoder is a special type of neural network that first encodes from the input to a lower number of neurons ("dimensionalty reduction", "bottleneck layer"), then decodes back to a number of outputs that exactly matches the number of input. The network takes the inputs as targets (=labels) and propagates the errors of the predictions back in order to adjust the network's weights via stochastic gradient descent.
+An autoencoder is a special type of neural network that first encodes from the
+input to a lower number of neurons ("dimensionalty reduction", "bottleneck layer"),
+then decodes back to a number of outputs that exactly matches the number of input.
+The network takes the inputs as targets (=labels) and propagates the errors of
+the predictions back in order to adjust the network's weights via 
+stochastic gradient descent.
 
 Classname: Autoencoder
 
@@ -277,8 +286,8 @@ double get_covariance(); returns the covariance of the correlation of two sample
 Histogram<T> histogram(unsigned int bars); returns a histogram (with specified number of bars) of the values of a sample that has been provided with the parametric constructor
         
 // constructors
-Sample(std::vector<T> data_vect) // parametric constructor for single std::vector<T> sample
-Sample(std::vector<T> x_vect, std::vector<T> y_vect); // parametric constructor for two samples of type std::vector<T>
+Sample(std::vector<T>& data_vect) // parametric constructor for single std::vector<T> sample
+Sample(std::vector<T>& x_vect, std::vector<T>& y_vect); // parametric constructor for two samples of type std::vector<T>
 Sample(T *data_vect); // parametric constructor for single array-type sample
 Sample(T *x_vect, T *y_vect) // parametric constructor for two array-type samples
 ```
