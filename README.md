@@ -236,7 +236,7 @@ double d = deactivate(h, f_ReLU);
 ```
 
 ___
-# git/DataScience/sample.h
+# git/DataScience/utilities/headers/sample.h
 
 The Sample class returns an abundance of statistical data from a given sample.
 
