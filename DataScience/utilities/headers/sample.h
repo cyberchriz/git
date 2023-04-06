@@ -43,7 +43,7 @@ class Sample{
         double mean();
         double median();   
         double weighted_average(bool as_series=false);
-        std::vector<int> ranking(bool low_to_high=true);
+        std::vector<int> ranking(bool ascending=true);
         std::vector<T> exponential_smoothing(bool as_series=false);
         double variance();
         double stddev();    
@@ -140,3 +140,28 @@ class Sample{
         bool poly_reg_completed=false;
         bool correlation_completed=false;        
 };
+
+
+/*
+Possible improvements:
+
+Add input validation to the constructors to ensure that the sample size is greater than zero and that the input data vector is not empty.
+
+Use templates to allow for different types of data vectors, such as std::array and std::valarray.
+
+Use range-based for loops and iterators instead of index-based loops to make the code more readable.
+
+Use the <numeric> header to compute the sum of squared deviations from the mean in the variance function.
+
+Add a function to compute the mean absolute deviation (MAD) of a sample.
+
+Add a function to compute the autocorrelation function (ACF) of a sample.
+
+Add a function to compute the partial autocorrelation function (PACF) of a sample.
+
+Add a function to perform a Box-Jenkins ARIMA model identification and estimation on a sample.
+
+Add a function to perform a Granger causality test on two or more samples.
+
+Add a function to perform a Kolmogorov-Smirnov test for goodness-of-fit on a sample.
+*/

@@ -33,7 +33,7 @@ double Sample<T>::median(){
 // that has been provided with the parametric constructor
 template<typename T>
 double Sample<T>::weighted_average(bool as_series=false){
-    double weight, weight_sum, sum=0;
+    double weight=0, weight_sum, sum=0;
     if (!as_series) //=indexing from zero, lower index means lower attributed weight
     {
         for (int n=0;n<elements;n++)
@@ -46,7 +46,7 @@ double Sample<T>::weighted_average(bool as_series=false){
     }
     else
     {
-        for (int n=elements-1;n>=0;n--)
+        for (int n=elements-2;n>=0;n--)
         {
         weight++;
         weight_sum+=weight;
@@ -58,10 +58,10 @@ double Sample<T>::weighted_average(bool as_series=false){
 
 // returns a vector of integers with that represent the individual rankings of values from
 // a sample (numeric vector or array) that has been provided with the parametric constructor
-// default: rank from low to high
-// pass "false" in order to rank in reverse (high to low)
+// default: rank from low to high (ascending=true)
+// pass "false" in order to rank in descending order
 template<typename T>
-std::vector<int> Sample<T>::ranking(bool low_to_high) {
+std::vector<int> Sample<T>::ranking(bool ascending) {
     // initialize ranks
     std::vector<int> rank(elements);
     for (int n=0;n<elements;n++){
@@ -658,7 +658,3 @@ double Sample<T>::get_covariance(){
     }
     return covariance;
 }
-
-
-
-
