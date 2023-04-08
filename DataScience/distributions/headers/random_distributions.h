@@ -10,12 +10,12 @@
 template<typename T>
 class Random {
     public:   
-        static T gaussian(const T& mu=0, const T& sigma=1);
-        static T cauchy(const T& x_peak=0, const T& gamma=1);
-        static T uniform(const T& min=0, const T& max=1);
-        static T laplace(const T& mu=0, const T& sigma=1);
-        static T pareto(const T& alpha=1, const T& tail_index=1);
-        static T lomax(const T& alpha=1, const T& tail_index=1);
+        static T gaussian(T mu=0, T sigma=1);
+        static T cauchy(T x_peak=0, T gamma=1);
+        static T uniform(T min=0, T max=1);
+        static T laplace(T mu=0, T sigma=1);
+        static T pareto(T alpha=1, T tail_index=1);
+        static T lomax(T alpha=1, T tail_index=1);
         static T binary();     
         static T sign();
 };
