@@ -19,11 +19,11 @@ Classname: CdfObject, alias: cdf
 Available methods:
 
 ```cpp
-cdf<T>::gaussian(const T& x_val, const T& mu=0, const T& sigma=1);
-cdf<T>::cauchy(const T& x_val, const T& x_peak=0, const T& gamma=1);
-cdf<T>::laplace(const T& x_val, const T& mu=0, const T& sigma=1);
-cdf<T>::pareto(const T& x_val, const T& alpha=1, const T& tail_index=1);
-cdf<T>::lomax(const T& x_val, const T& alpha=1, const T& tail_index=1);
+cdf<T>::gaussian(T x_val, T mu=0, T sigma=1);
+cdf<T>::cauchy(T x_val, T x_peak=0, T gamma=1);
+cdf<T>::laplace(T x_val, T mu=0, T sigma=1);
+cdf<T>::pareto(T x_val, T alpha=1, T tail_index=1);
+cdf<T>::lomax(T x_val, T alpha=1, T tail_index=1);
 ```
 
 usage example:
@@ -46,11 +46,11 @@ Alias: pdf
 Available methods:
 
 ```cpp
-pdf<T>::gaussian(const T& x_val, const T& mu=0, const T& sigma=1);
-pdf<T>::cauchy(const T& x_val, const T& x_peak=0, const T& gamma=1);
-pdf<T>::laplace(const T& x_val, const T& mu=0, const T& sigma=1);
-pdf<T>::pareto(const T& x_val, const T& alpha=1, const T& tail_index=1);
-pdf<T>::lomax(const T& x_val, const T& alpha=1, const T& tail_index=1);
+pdf<T>::gaussian(T x_val, T mu=0, T sigma=1);
+pdf<T>::cauchy(T x_val, T x_peak=0, T gamma=1);
+pdf<T>::laplace(T x_val, T mu=0, T sigma=1);
+pdf<T>::pareto(T x_val, T alpha=1, T tail_index=1);
+pdf<T>::lomax(T x_val, T alpha=1, T tail_index=1);
 ```
 
 usage example:
@@ -69,12 +69,12 @@ Classname: Random, alias: rnd
 Available methods:
 
 ```cpp
-Random<T>::gaussian(const T& mu=0, const T& sigma=1);
-Random<T>::cauchy(const T& x_peak=0, const T& gamma=1);
-Random<T>::uniform(const T& min=0, const T& max=1);
-Random<T>::laplace(const T& mu=0, const T& sigma=1);
-Random<T>::pareto(const T& alpha=1, const T& tail_index=1);
-Random<T>::lomax(const T& alpha=1, const T& tail_index=1);
+Random<T>::gaussian(T mu=0, T sigma=1);
+Random<T>::cauchy(T x_peak=0, T gamma=1);
+Random<T>::uniform(T min=0, T max=1);
+Random<T>::laplace(T mu=0, T sigma=1);
+Random<T>::pareto(T alpha=1, T tail_index=1);
+Random<T>::lomax(T alpha=1, T tail_index=1);
 Random<T>::sign();
 Random<T>::binary();
 ```
