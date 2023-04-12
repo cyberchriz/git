@@ -1,4 +1,5 @@
-author: cyberchriz (Christian Suer); language: C++
+author: cyberchriz (Christian Suer);
+language: C++
 
 THIS REPOSITORY IS 'WORK IN PROGRESS'. MOST OF THE CODE WILL WORK WITHOUT ANY ISSUES, BUT I'LL BE CONSTANTLY IMPROVING IT AND ADDING TO IT. YOU MAY STILL FEEL FREE TO USE IT AS IT IS, BUT KEEP IN MIND THAT NOTHING's PERFECT.
 I'M SELF-TAUGHT AND NOT A PROFESSIONAL PROGRAMMER.
@@ -11,6 +12,7 @@ This repository provides functionality for
         - multilayer perceptron
             - full flexibility for layers and neurons
             - optimizers: Vanilla, Nesterov, ADAM, ADADELTA, Adagrad, RMSprop
+            - input & label scaling
         - recurrent neural networks (RNN)
         - autoencoder
         - general:
@@ -20,24 +22,19 @@ This repository provides functionality for
     - sample analysis
         - single sample
             - linear regression
-                - slope
-                - y-axis intercept
+                - slope + y-axis intercept
                 - r squared + goodness of fit
                 - prediction
             - polynomial regression
                 - r squared + goodness of fit
                 - mean squared error (MSE)
                 - prediction
-            - cointegration
             - stationary transformation
             - Dickey-Fuller test (for stationarity)
             - logarithmic transformation
             - exponential smoothing
-            - mean
-            - median
-            - weighted average
-            - variance
-            - standard deviation
+            - mean, median, weighted average
+            - variance, standard deviation
             - histogram
             - ranking
             - find (=number of occurences of a given value)
