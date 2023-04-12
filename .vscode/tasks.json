@@ -6,7 +6,7 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "-std=c++17",
+                "-std=c++23",
                 "-fdiagnostics-color=always",
                 "-g",
                 "${workspaceFolder}/DataScience/distributions/sources/random_distributions.cpp",
@@ -14,8 +14,11 @@
                 "${workspaceFolder}/DataScience/neuralnet/MLP/sources/test.cpp",
                 "-o",
                 "${workspaceFolder}/DataScience/neuralnet/MLP/sources/executable",
-                "-lstacktrace" // Add this line to link the stacktrace library
-            ],
+                "-lboost_stacktrace_backtrace",
+                "-lstacktrace",
+                "-lstdc++-10",
+                "-lgcc-10"
+            ],            
             "options": {
                 "cwd": "${fileDirname}"
             },
