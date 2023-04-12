@@ -1,7 +1,7 @@
-author: cyberchriz (Christian Suer);
+author: cyberchriz (Christian Suer)
 language: C++
 ___
-# OVERVIEW
+## OVERVIEW
 This repository provides functionality for
 - Data Science
     - neural networks of various topologies
