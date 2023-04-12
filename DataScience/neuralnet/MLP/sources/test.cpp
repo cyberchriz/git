@@ -2,6 +2,9 @@
 #include <cmath>
 #include "../headers/mlp.h"
 #include "../../autoencoder/headers/autoencoder.h"
+#include "../../../../utilities/headers/memlog.h"
+
+#define MEMLOG
 
 int main(){
     /*
