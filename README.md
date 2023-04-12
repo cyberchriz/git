@@ -9,6 +9,8 @@ This repository provides functionality for
 - Data Science
     - neural networks of various topologies
         - multilayer perceptron
+            - full flexibility for layers and neurons
+            - optimizers: Vanilla, Nesterov, ADAM, ADADELTA, Adagrad, RMSprop
         - recurrent neural networks (RNN)
         - autoencoder
         - general:
