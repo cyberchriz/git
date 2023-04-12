@@ -1,5 +1,5 @@
 #pragma once
-#include "MLP/headers/mlp.h"
+#include "../../MLP/headers/mlp.h"
 
 class Autoencoder:public MLP {
     private:

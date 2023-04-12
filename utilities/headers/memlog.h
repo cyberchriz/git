@@ -9,7 +9,7 @@
 #ifdef DEBUG
 #pragma once
     #include <iostream>
-    #include <stacktrace>
+    #include <stacktrace> // requires C++17
 
     // returns the name of the function with the specified level on the call stack;
     // index 0 refers to the top level (=current function)

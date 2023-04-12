@@ -6,7 +6,8 @@
 
 #pragma once
 #include <cmath>
-#include <ctime>
+#include <cstdlib>
+#include <chrono>
 
 // singleton class(!)
 template<typename T>
@@ -14,7 +15,8 @@ class Random {
     private:
         // private constructor
         Random(){
-            std::srand(std::time(nullptr));
+            auto t = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+            std::srand(t);
         };
     public:   
         static T gaussian(T mu=0, T sigma=1);

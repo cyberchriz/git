@@ -1,4 +1,3 @@
-// BUILD DEBUG VERSION
 {
     "version": "2.0.0",
     "tasks": [
@@ -7,14 +6,15 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "-std=c++11",
+                "-std=c++17",
                 "-fdiagnostics-color=always",
                 "-g",
-                    "${workspaceFolder}/DataScience/distributions/sources/random_distributions.cpp",
-                    "${workspaceFolder}/DataScience/neuralnet/MLP/sources/mlp.cpp",
-                    "${workspaceFolder}/DataScience/neuralnet/MLP/sources/test.cpp",
+                "${workspaceFolder}/DataScience/distributions/sources/random_distributions.cpp",
+                "${workspaceFolder}/DataScience/neuralnet/MLP/sources/mlp.cpp",
+                "${workspaceFolder}/DataScience/neuralnet/MLP/sources/test.cpp",
                 "-o",
-                    "${workspaceFolder}/DataScience/neuralnet/MLP/sources/executable"
+                "${workspaceFolder}/DataScience/neuralnet/MLP/sources/executable",
+                "-lstacktrace" // Add this line to link the stacktrace library
             ],
             "options": {
                 "cwd": "${fileDirname}"

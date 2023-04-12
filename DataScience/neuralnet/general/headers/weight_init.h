@@ -1,5 +1,5 @@
 #pragma once
-#include "../distributions/sources/random_distributions.cpp"
+#include "../../../distributions/headers/random_distributions.h"
 #include <cmath>
 
 // weight initialization methods for neural networks

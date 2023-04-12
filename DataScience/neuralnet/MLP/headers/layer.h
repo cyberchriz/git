@@ -2,8 +2,8 @@
 
 #pragma once
 #include <vector>
-#include "../../activation_functions.h"
-#include "../../enums.h"
+#include "../../general/headers/activation_functions.h"
+#include "../../general/headers/enums.h"
 #include "neuron.h"
 
 class Layer{

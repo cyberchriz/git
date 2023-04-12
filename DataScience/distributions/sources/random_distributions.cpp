@@ -36,7 +36,7 @@ T Random<T>::uniform(T min, T max) {
 template<typename T>
 T Random<T>::laplace(T mu, T sigma) {  
     double scale_factor = sigma/sqrt(2);
-    double random=(double)rand() / RAND_MATX;                // random value within range 0-1
+    double random=(double)rand() / RAND_MAX;                // random value within range 0-1
     random/=2*scale_factor;                                 // reduce to top of distribution (f(x_val=mu)
     char sign=rand()>(0.5*RAND_MAX) ? 1 : -1;               // get random algebraic sign
     return T(mu + scale_factor*log(random*2*scale_factor)*sign);

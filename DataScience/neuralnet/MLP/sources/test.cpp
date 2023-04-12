@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include "../headers/mlp.h"
-#include "../../autoencoder.h"
+#include "../../autoencoder/headers/autoencoder.h"
 
 int main(){
     /*

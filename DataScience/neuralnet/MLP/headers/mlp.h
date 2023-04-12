@@ -9,9 +9,9 @@
 #include <ctime>
 #include <iostream>
 #include "../../../distributions/headers/random_distributions.h"
-#include "../../enums.h"
-#include "../../weight_init.h"
-#include "../../activation_functions.h"
+#include "../../general/headers/enums.h"
+#include "../../general/headers/weight_init.h"
+#include "../../general/headers/activation_functions.h"
 #include "layer.h"
 
 // MLP network class declaration
