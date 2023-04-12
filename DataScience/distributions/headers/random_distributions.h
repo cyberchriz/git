@@ -42,3 +42,8 @@ template<typename T> class rnd: public Random<T>{};
 
 // example of instantiation:
 // Random<double>& random = Random<double>::getInstance();
+
+
+// include .cpp resource (required due to this being a template class)
+// -> thus mitigating 'undefined reference' compiler errors
+#include "../sources/random_distributions.cpp"

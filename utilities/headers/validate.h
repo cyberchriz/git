@@ -227,3 +227,8 @@ void validate_r(ushort& expression){
     if (expression!=expression){expression = 0;}
     if (std::isinf(expression)){expression = 2*__SHRT_MAX__;}
 }
+
+
+// include .cpp resource (required due to this being a template class)
+// -> thus mitigating 'undefined reference' compiler errors
+#include "../sources/validate.cpp"

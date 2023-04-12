@@ -21,3 +21,7 @@ double f_He_ReLU(int fan_in);
 
 // modified "Kaiming He" nornal weight initialization, used for ELU activation
 double f_He_ELU(int fan_in);
+
+
+
+#include"../sources/weight_init.cpp"

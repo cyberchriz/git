@@ -39,3 +39,5 @@ class Autoencoder:public MLP {
             set_training_mode(true);
         }
 };
+
+#include "../sources/autoencoder.cpp"

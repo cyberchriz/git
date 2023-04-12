@@ -34,3 +34,8 @@ class CdfObject{
 template<typename T>
 class cdf:public CdfObject<T>{};
 // ------------------------------------------------------------------
+
+
+// include .cpp resource (required due to this being a template class)
+// -> thus mitigating 'undefined reference' compiler errors
+#include "../sources/cumulative_distribution_functions.cpp"

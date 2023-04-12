@@ -36,3 +36,8 @@ class PdfObject{
 template<typename T>
 class pdf:public PdfObject<T>{};
 // ------------------------------------------------------------------
+
+
+// include .cpp resource (required due to this being a template class)
+// -> thus mitigating 'undefined reference' compiler errors
+#include "../sources/probability_density_functions.cpp"

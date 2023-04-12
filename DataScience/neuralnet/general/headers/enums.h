@@ -50,3 +50,6 @@ enum LOSS_FUNCTION
    MAE=4                                                          // mean absolute error (MAE)
   };
   
+
+
+  #include "../sources/enums.cpp"

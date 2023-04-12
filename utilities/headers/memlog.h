@@ -34,4 +34,5 @@
         std::cout.flush();
         return malloc(size);
     }
+    #include "../sources/memlog.cpp"
 #endif

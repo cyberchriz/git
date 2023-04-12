@@ -66,3 +66,4 @@ class MLP{
         std::string filename;     
 };
 
+#include "../sources/mlp.cpp"

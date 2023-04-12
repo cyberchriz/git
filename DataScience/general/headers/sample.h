@@ -144,6 +144,13 @@ class Sample{
         bool correlation_completed=false;        
 };
 
+// include .cpp resource (required due to this being a template class)
+// -> thus mitigating 'undefined reference' compiler errors
+#include "../sources/sample.cpp"
+
+
+
+
 
 /*
 Possible improvements:

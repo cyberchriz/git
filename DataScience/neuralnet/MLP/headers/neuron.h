@@ -86,3 +86,8 @@ Neuron::Neuron(int inputs){
 
 // destructor definition
 Neuron::~Neuron(){}
+
+
+
+
+#include "../sources/neuron.cpp"

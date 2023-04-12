@@ -47,3 +47,7 @@ struct Timer {
         std::cout << "end of timer lifetime: " << elapsed_millisec() << "ms\n";
     }
 };
+
+
+
+#include "../sources/timer.cpp"

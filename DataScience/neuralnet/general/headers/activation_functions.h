@@ -42,3 +42,7 @@ std::string actfunct_string(ACTIVATION_FUNC f);
 // +------------------------------------------------------------------+
 double activate(double x, ACTIVATION_FUNC f);
 double deactivate(double x, ACTIVATION_FUNC f);
+
+
+
+#include "../sources/activation_functions.cpp"

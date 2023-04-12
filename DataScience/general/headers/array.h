@@ -85,3 +85,7 @@ class Matrix : Array<T>{
         // destructor declarations
         ~Matrix();
 };
+
+// include .cpp resource (required due to this being a template class)
+// -> thus mitigating 'undefined reference' compiler errors
+#include "../sources/array.cpp"
