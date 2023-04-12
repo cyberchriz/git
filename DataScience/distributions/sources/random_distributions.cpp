@@ -2,7 +2,7 @@
 //|      random values from a given distribution                     |
 //+------------------------------------------------------------------+
 
-// author: Christian Suer
+// author: 'cyberchriz' (Christian Suer)
 
 #include "../headers/random_distributions.h"
 

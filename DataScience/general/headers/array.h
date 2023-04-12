@@ -8,11 +8,11 @@
 template<typename T>
 class Array{
     public:
-        void set(u_int32_t &index, T value);
-        T get(u_int32_t &index);
-        u_int32_t get_dimensions(){return dimensions;};
-        u_int32_t get_size(u_int32_t dimension){return size[dimension];};
-        u_int32_t get_elements(){return elements;};
+        void set(int* index, T value);
+        T get(int* index);
+        int get_dimensions(){return dimensions;};
+        int get_size(int dimension){return size[dimension];};
+        int get_elements(){return elements;};
         void fill_values(T value);
         void fill_zeros(){fill_values(0);}
         void fill_identity();
@@ -35,20 +35,20 @@ class Array{
         void pow(T exponent);
         void sqrt();
         void replace(T old_value, T new_value);
-        u_int32_t find(T value);
+        int find(T value);
         void function(T (*pointer_to_function)(T));
         void operator=(const Array& other);
         // constructor declarations
         Array() = delete;
-        Array(u_int32_t &dim_size);
+        Array(int* dim_size);
         // destructor declarations
-        ~Array(u_int32_t &dim_size);
+        ~Array();
     protected:
-        u_int32_t get_element(u_int32_t &index)
+        int get_element(int* index);
         T *data; // 1dimensional array of source data
-        u_int32_t elements=0; // total number of elements in all dimensions
-        u_int32_t dimensions=0;
-        u_int32_t *size; // holds the size (number of elements) per individual dimension  
+        int elements=0; // total number of elements in all dimensions
+        int dimensions=0;
+        int *size; // holds the size (number of elements) per individual dimension  
     private:      
 };
 
@@ -57,15 +57,15 @@ class Array{
 template<typename T>
 class Vector : Array<T>{
     public:
-        void set(u_int32_t &index, T value) = delete;
-        T get(u_int32_t &index) = delete;
-        void set(u_int32_t index, T value);
-        T get(u_int32_t index);
+        void set(int* index, T value) = delete;
+        T get(int* index) = delete;
+        void set(int index, T value);
+        T get(int index);
         // constructor declarations
         Vector() = delete;
-        Vector(u_int32_t elements);
+        Vector(int elements);
         // destructor declarations
-        ~Vector(u_int32_t);
+        ~Vector();
 };
 
 // derived class from Array<T>,
@@ -73,15 +73,15 @@ class Vector : Array<T>{
 template<typename T>
 class Matrix : Array<T>{
     public:
-        void set(u_int32_t &index, T value) = delete;
-        T get(u_int32_t &index) = delete;
-        void set(u_int32_t index_x, u_int32_t index_y, T value);
-        T get(u_int32_t index_x, u_int32_t index_y);
+        void set(int* index, T value) = delete;
+        T get(int* index) = delete;
+        void set(int index_x, int index_y, T value);
+        T get(int index_x, int index_y);
         Matrix<T> dotproduct(const Matrix& other);
         Matrix<T> transpose();
         // constructor declarations
         Matrix() = delete;
-        Matrix(u_int32_t elements_x, u_int32_t elements_y);
+        Matrix(int elements_x, int elements_y);
         // destructor declarations
-        ~Matrix(u_int32_t, u_int32_t);
+        ~Matrix();
 };

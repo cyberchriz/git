@@ -2,8 +2,6 @@
 //|      cumulative distribution functions (cdf)                     |
 //+------------------------------------------------------------------+
 
-#pragma once
-#include <cmath>
 #include "../headers/cumulative_distribution_functions.h"
 
 // returns the probability of a random value

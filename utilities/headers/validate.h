@@ -12,43 +12,8 @@
 // replace expression with given alternative
 // =============================================
 
-double validate(double expression, double alternative){
-    if (std::isnan(expression) || std::isinf(expression)){
-        return alternative;
-    }
-    else{
-        return expression;
-    }
-}
-
-long double validate(long double expression, long double alternative){
-    if (std::isnan(expression) || std::isinf(expression)){
-        return alternative;
-    }
-    else{
-        return expression;
-    }
-}
-
-float validate(float expression, float alternative){
-    if (isnanf(expression) || isinff(expression)){
-        return alternative;
-    }
-    else{
-        return expression;
-    }
-}
-
-int validate(int expression, int alternative){
-    if (std::isnan(expression) || std::isinf(expression)){
-        return alternative;
-    }
-    else{
-        return expression;
-    }
-}
-
-long validate(long expression, long alternative){
+template<typename T>
+T validate(T expression, T alternative){
     if (std::isnan(expression) || std::isinf(expression)){
         return alternative;
     }
@@ -214,10 +179,10 @@ void validate_r(int& expression){
 
 void validate_r(uint& expression){
     if (expression!=expression){expression = 0;}
-    if (std::isinf(expression)){expression = 2* __INT_MAX__;}
+    if (std::isinf(expression)){expression = __INT_MAX__;}
 }
 
-long validate_r(long& expression){
+void validate_r(long& expression){
     if (expression!=expression){expression = 0;}
     if (std::isinf(expression)){
         if (expression>__LONG_MAX__){

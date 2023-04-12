@@ -17,9 +17,8 @@ template<typename T>
 class PdfObject{
     public: 
         static_assert(std::is_same<T, float>::value ||
-                      std::is_same<T, double>::value ||
-                      std::is_same<T, double double>::value,
-                      "T must be either float, double or double double");       
+                      std::is_same<T, double>::value,
+                      "T must be either type <float> or <double>");       
         // methods
         static T gaussian(T x_val,T mu=0, T sigma=1);
         static T cauchy(T x_val,T x_peak, T gamma);

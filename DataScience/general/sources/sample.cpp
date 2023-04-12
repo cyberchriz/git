@@ -1,9 +1,4 @@
-#pragma once
 #include "../headers/sample.h"
-#include <numeric>
-#include <vector>
-#include <cmath>
-#include "distributions/headers/random_distributions.h"
 
 // returns the arithmetic mean of a sample
 //that has been provided with the parametric constructor
@@ -32,7 +27,7 @@ double Sample<T>::median(){
 // returns the weighted average of a sample
 // that has been provided with the parametric constructor
 template<typename T>
-double Sample<T>::weighted_average(bool as_series=false){
+double Sample<T>::weighted_average(bool as_series){
     double weight=0, weight_sum, sum=0;
     if (!as_series) //=indexing from zero, lower index means lower attributed weight
     {
@@ -72,7 +67,7 @@ std::vector<int> Sample<T>::ranking(bool ascending) {
         ranking_completed=true; //=let's assume this until a wrong order is found
         for (int i=0;i<elements-1;i++){
             // pairwise comparison:
-            if (low_to_high){
+            if (ascending){
                 if ((*data_vect)[rank[i]]>(*data_vect)[rank[i+1]]){
                     ranking_completed=false;
                     int higher_ranking=rank[i+1];
@@ -96,7 +91,7 @@ std::vector<int> Sample<T>::ranking(bool ascending) {
 // returns a modified copy of a numeric data sample (provided with the parametric constructor)
 // with exponential smoothing (e.g. for time series)
 template<typename T>
-std::vector<T> Sample<T>::exponential_smoothing(bool as_series=false){
+std::vector<T> Sample<T>::exponential_smoothing(bool as_series){
     double alpha=2/(elements);
     std::vector<T> result(elements);
     
@@ -297,7 +292,7 @@ std::vector<T> Sample<T>::sort(bool ascending){
                     data_copy[i]=data_copy[i+1];
                     data_copy[i+1]=temp;
                 }
-            }s
+            }
             else{
                 if (data_copy[i]<data_copy[i+1]){
                     completed=false;
@@ -319,7 +314,7 @@ std::vector<T> Sample<T>::shuffle(){
     // make a copy
     std::vector<T> result = *data_vect;
     for (int i=0;i<elements;i++){
-        int new_position=std::floor(Random::uniform()*elements);
+        int new_position=std::floor(Random<double>::uniform()*elements);
         T temp=(*data_vect)[new_position];
         result[new_position]=(*data_vect)[i];
         (*data_vect)[i]=temp;
@@ -352,7 +347,7 @@ double Sample<T>::Engle_Granger(){
         log_x[i]=std::log((*x_vect)[i]);
         log_y[i]=std::log((*y_vect)[i]);
     }
-    Sample<T>(log_x,log_y) res;
+    std::unique_ptr<Sample<T>> res(new Sample<T>(log_x,log_y));
     res.linear_regression();
     return Sample<T>(res.residuals).Dickey_Fuller();
 }        
@@ -493,8 +488,8 @@ void Sample<T>::linear_regression(){
 // assuming a linear dependence of two samples
 // (as provided via the parametric constructor);
 template<typename T>
-T linear_predict(T x){
-    if (!linear_reg_completed){this->linear_regression();}
+T Sample<T>::linear_predict(T x){
+    if (!this->linear_reg_completed){this->linear_regression();}
     return slope * x + y_intercept;
 }
 
@@ -514,12 +509,12 @@ Histogram<T> Sample<T>::histogram(uint bars){
 
     // get histogram x-axis scaling
     T range = histogram.max-histogram.min;
-    double bar_width = double(range) / bar;
+    double bar_width = double(range) / bars;
     
     // set histogram x values, initialize count to zero
     for (int i=0;i<bars;i++){
-        histogram.bar[i].from=histogram.min+histogram.bar_width*i;
-        histogram.bar[i].to=histogram.min+histogram.bar_width*(i+1);
+        histogram.bar[i].lower_boundary=histogram.min+histogram.bar_width*i;
+        histogram.bar[i].upper_boundary=histogram.min+histogram.bar_width*(i+1);
         histogram.bar[i].count=0;
     }
 

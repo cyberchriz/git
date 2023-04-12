@@ -6,8 +6,6 @@
 of a random variable taking on any particular value.
 It is the derivative of the cumulative distribution function */
 
-#pragma once
-#include <cmath>
 #include "../headers/probability_density_functions.h"
 
 // gaussian normal probability density function

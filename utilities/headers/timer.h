@@ -5,15 +5,16 @@
 #include <chrono>
 #include <iostream>
 
-// in order to use this code, simply define the DEBUG flag as a preprocessor directive,
-// then write the macro keyword 'TIMER' in any function;
-// alternatively (including outside debugging) just create a Timer object without the macro;
-// once the local scope of the Timer call ends, the Timer destructor will print out the duration of the Timer's lifetime
+// this code can be used in 2 ways:
+// 1. create an instance of Timer, then use the methods elapsed_sec(), elapsed_millisec() or elapsed_microsec on this instance
+// define the flag 'TIMELOG' as a preprocessor directive, then use the macro 'TIMER' anywhere in the code start a timer
+// --> it will print its lifetime on the console once it goes out of scope, i.e. when the function it lives in ends
 
-//#define DEBUG
+//#define TIMELOG
 
-#ifdef DEBUG
-#define TIMER Timer timer;
+#ifdef TIMELOG
+#define TIMER   Timer timer;\
+                std::cout << "timer started in scope " << __PRETTY_FUNCTION__ << "; ";
 #else
 #define TIMER
 #endif
@@ -27,12 +28,12 @@ struct Timer {
         return (end-start).count();          
     }
 
-    double elapsed_ms(){
+    double elapsed_millisec(){
         end = std::chrono::high_resolution_clock::now();
         return (end-start).count() * 1000;          
     }
 
-    double elapsed_µs(){
+    double elapsed_microsec(){
         end = std::chrono::high_resolution_clock::now();
         return (end-start).count() * 1000000;          
     }           
@@ -43,7 +44,6 @@ struct Timer {
     }
     // destructor
     ~Timer() {
-        end = std::chrono::high_resolution_clock::now();
-        std::cout << "timer lifetime: " << (end-start).count()*1000 << "ms\n";
+        std::cout << "end of timer lifetime: " << elapsed_millisec() << "ms\n";
     }
 };

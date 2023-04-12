@@ -1,6 +1,9 @@
 #pragma once
 #include <vector>
 #include <cmath>
+#include <numeric>
+#include <memory>
+#include "../../distributions/headers/random_distributions.h"
 
 // list of time series differencing methods for stationarity transformation
 enum DIFFERENCING
@@ -16,10 +19,10 @@ enum DIFFERENCING
 // histo_x: right(=upper) border of given bar 
 template<typename T>
 struct Histogram_bar{
-    T from,
-    T to,
-    int abs_count,
-    double rel_count
+    T lower_boundary;
+    T upper_boundary;
+    int abs_count;
+    double rel_count;
 };
 
 // histogram structure
@@ -28,10 +31,10 @@ struct Histogram{
     T min;
     T max;
     T bar_width;
-    vector<Histogram_bar<T>> bar;
+    std::vector<Histogram_bar<T>> bar;
     Histogram(int bars){
         for (int n=0;n<bars;n++){
-            bar.push_back(Histogram_bar<T>);
+            bar.push_back(Histogram_bar<T>());
         }
     }
 };
@@ -90,7 +93,7 @@ class Sample{
         // parametric constructor for single array-type sample
         // - T must be a numeric type!
         // - array must be 1-dimensional!
-        Sample(const T *data_array){
+        Sample(const T* data_array){
             // copy as std::vector
             elements = sizeof(data_array)/sizeof(T);
             this->data_vect->reserve(elements);
@@ -101,7 +104,7 @@ class Sample{
         // parametric constructor for two array-type samples
         // - T must be a numeric type!
         // - arrays must be 1-dimensional!
-        Sample(T *x_array, T *y_array){
+        Sample(T* x_array, T* y_array){
             // copy as std::vector
             elements = std::fmin(sizeof(x_array)/sizeof(T),sizeof(y_array)/sizeof(T));
             this->x_vect->reserve(elements);
