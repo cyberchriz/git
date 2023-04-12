@@ -1,6 +1,5 @@
 author: cyberchriz (Christian Suer)
 language: C++
-___
 ## OVERVIEW
 This repository provides functionality for
 - Data Science
