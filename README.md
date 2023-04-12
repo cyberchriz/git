@@ -1,4 +1,4 @@
-author: cyberchriz (Christian Suer)
+author: cyberchriz (Christian Suer);
 language: C++
 ## OVERVIEW
 This repository provides functionality for
