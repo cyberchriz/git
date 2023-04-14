@@ -2,32 +2,8 @@
 #include <cmath>
 #include "../headers/mlp.h"
 #include "../../autoencoder/headers/autoencoder.h"
-#include "../../../../utilities/headers/memlog.h"
-
-#define MEMLOG
 
 int main(){
-    /*
-    // set up a test network
-    Autoencoder ae = Autoencoder(5,5,1,1,f_LReLU,false,0);
- 
-    // test iterations 
-    for (int i=0;i<=10000000; i++){
-        // fill inputs with random numbers
-        for (int r=0;r<5;r++){
-            ae.set_input(r,((double)rand())/RAND_MAX);
-        }
-        ae.sweep();
-        if (i<30 || i%100000==0){
-            std::cout << "iteration: " << i << ", loss: " << ae.get_loss_avg() <<  ========================================================================================================\n";
-            std::cout << "inputs:    " << ae.get_input(0) << " | " << ae.get_input(1) << " | " << ae.get_input(2) << " | " << ae.get_input(3) << " | " << ae.get_input(4) << "\n";
-            std::cout << "outputs:   " << ae.get_decoded(0) << " | " << ae.get_decoded(1) << " | " << ae.get_decoded(2) << " | " << ae.get_decoded(3) << " | " << ae.get_decoded(4) << "\n";
-        }
-    }
-    std::cout << "[...done]\n\n\n"; 
-    */   
-
-
     // set up a test network
     MLP network = MLP("");
     
@@ -54,8 +30,11 @@ int main(){
         for (int r=0;r<5;r++){
             network.set_input(r,((double)rand())/RAND_MAX);
         }
+        // feed inputs through network
         network.feedforward();
+        // trying to recreate the inputs as a simple test to confirm the program is calculating correctly
         network.autoencode();
+        // update weights according to their contribution to the output error
         network.backpropagate();
         if (i<30 || i%100000==0){
             std::cout << "==============================================================\n";
