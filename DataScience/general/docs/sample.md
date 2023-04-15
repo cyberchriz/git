@@ -1,5 +1,13 @@
-## Sample Analysis        
-- single sample
+## Sample Analysis     
+usage: `#include <sample.h>` or include as part of `<datascience.h>`
+
+description:
+The class `Sample<T>` allows basic statistical analysis on
+- 1d / single variable numeric data ("series" or "bag of numbers") or
+- 2d / dual variable numberic data (vectors x+y, with equal number of elements)
+
+
+### class `Sample<T>` (alias: `Sample1d<T>`): for 1d samples (vector x)
     - linear regression
         - slope + y-axis intercept
         - r squared + goodness of fit
@@ -19,7 +27,8 @@
     - find (=number of occurences of a given value)
     - shuffle
     - sort
-- two samples
+
+### class `Sample2d<T>`: for two 2d samples (vectors x+y)
     - correlation
         - Pearson
         - Spearman

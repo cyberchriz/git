@@ -1,5 +1,6 @@
 ## Custom Vectors, 2d Matrices and n-dimensional Arrays
 usage: `#include <array.h>` or include as part of `<datascience.h>`
+
 description:
 - this class implements fast static stack-allocated numeric vectors, matrices and arrays
 - 'under the hood' these are simple one-dimensional arrays
@@ -49,20 +50,25 @@ Methods:
 ## `class Matrix`
 This is a derived class of `class Array<T>`. It inherits all its methods, but deals with the specific case of 2d arrays.
 The constructor is slightly different: because the dimensions are already known to be 2d, they don't need to be passed in as an array of integers, but simply the size of the x and y dimensions instead.
-The `.get()` and `.set()` methods equally only need two integers for the x and y indices they refer to.
+The `.get()` method equally only needs two integers for the x and y indices it refers to.
+The `.set()` method needs two integers for the x and y indices, followed by the assigned value as a third argument.
+
 For example a 2d matrix of size 4x4 and data type `<float>` can be instantiated like this:
 ```
 Matrix<float> myMatrix(4,4);
 ```
 On top of all the methods given above, inherited from `class Array<T>`, the Matrix class additionally implements:
+
 | method | description |
 | `Matrix<T>::dotproduct(const Matrix& other)` | returns the resulting new `Matrix<T>` given by the dotproduct of the current matrix and a second matrix |
 | `Matrix<T>::transpose()` | returns the transpose of the current matrix as the resulting new `Matrix<T>` |
 
 ## `class Vector`
-This is a derived class of `class Array<T>`. It inherits all its methods, but deals with the specific case of 1d arrays.
+This is also a derived class of `class Array<T>` and it also inherits all its methods, but deals with the specific case of 1d arrays.
 The constructor is slightly different: because the dimensions are already known to be 1d, only the number of elements is required.
-The `.get()` and `.set()` methods equally only need a single integer for the index they refer to.
+The `.get()` method equally only needs a single integer for the index it refers to.
+The `.set()` methods needs an integer for the index it refers to, followed by the assigned value as a second argument.
+
 For example a 1d `Vector` with 100 elements of type `<double>` can be instantiated like this:
 ```
 Vector<double> myVec(100);

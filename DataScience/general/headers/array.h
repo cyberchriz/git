@@ -55,7 +55,7 @@ class Array{
 // derived class from Array<T>,
 // for 1d vectors
 template<typename T>
-class Vector : Array<T>{
+class Vector : public Array<T>{
     public:
         void set(int* index, T value) = delete;
         T get(int* index) = delete;
@@ -71,7 +71,7 @@ class Vector : Array<T>{
 // derived class from Array<T>,
 // for 2d matrix
 template<typename T>
-class Matrix : Array<T>{
+class Matrix : public Array<T>{
     public:
         void set(int* index, T value) = delete;
         T get(int* index) = delete;
@@ -89,3 +89,4 @@ class Matrix : Array<T>{
 // include .cpp resource (required due to this being a template class)
 // -> thus mitigating 'undefined reference' compiler errors
 #include "../sources/array.cpp"
+

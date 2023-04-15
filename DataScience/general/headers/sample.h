@@ -46,102 +46,135 @@ class Sample{
         double mean();
         double median();   
         double weighted_average(bool as_series=false);
-        std::vector<int> ranking(bool ascending=true);
-        std::vector<T> exponential_smoothing(bool as_series=false);
+        int* ranking(bool ascending=true);
+        T* exponential_smoothing(bool as_series=false);
         double variance();
         double stddev();    
         unsigned int find(T value,int index_from=0,int index_to=__INT_MAX__);
         double Dickey_Fuller();
-        void correlation();
-        std::vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
-        std::vector<T> sort(bool ascending=true);
-        std::vector<T> shuffle();
-        std::vector<T> log_transform();
-        double Engle_Granger();
+        T* stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
+        T* sort(bool ascending=true);
+        T* shuffle();
+        T* log_transform();
         T polynomial_predict(T x);
         double polynomial_MSE();
         bool isGoodFit(double threshold=0.95);
         void polynomial_regression(int power=5);
         void linear_regression();
         T linear_predict(T x);
-        double get_Pearson_R();
         double get_slope(); 
         double get_y_intercept();
         double get_r_squared();
-        double get_z_score();
-        double get_t_score();
-        double get_Spearman_Rho();
-        double get_x_mean();
-        double get_y_mean();
-        double get_covariance();
         Histogram<T> histogram(uint bars);
         // delete non-parametric default constructor (a sample without data would be useless!)
         Sample() = delete;
+
         // parametric constructor for single std::vector-type sample
         // note: T must be a numeric type!
-        Sample(const std::vector<T>& data_vect){
-            this->data_vect = data_vect;
+        Sample(const std::vector<T>& data){
             elements = data_vect->size();
-        }
-        // parametric constructor for two std::vector-type samples
-        // note: T must be a numeric type!
-        Sample(const std::vector<T>& x_vect, const std::vector<T>& y_vect){
-            this->x_vect = x_vect;
-            this->y_vect = y_vect;
-            elements = fmin(x_vect->size(),y_vect->size());
-        }       
+            this->data.resize(elements);
+            for (int n=0;n<elements;n++){
+                this->data[n] = data[n];
+            }
+            coefficients.resize(elements);
+            y_regression.resize(elements);
+            residuals.resize(elements);
+        }   
+
         // parametric constructor for single array-type sample
         // - T must be a numeric type!
         // - array must be 1-dimensional!
-        Sample(const T* data_array){
-            // copy as std::vector
-            elements = sizeof(data_array)/sizeof(T);
-            this->data_vect->reserve(elements);
-            for (int i=0;i<elements;i++){
-                this->data_vect.push_back(data_array[i]);
-            }
+        Sample(const T* data){
+            this->data=data;
+            elements = sizeof(data)/sizeof(T);
+            coefficients.resize(elements);
+            y_regression.resize(elements);
+            residuals.resize(elements);            
         }
-        // parametric constructor for two array-type samples
-        // - T must be a numeric type!
-        // - arrays must be 1-dimensional!
-        Sample(T* x_array, T* y_array){
-            // copy as std::vector
-            elements = std::fmin(sizeof(x_array)/sizeof(T),sizeof(y_array)/sizeof(T));
-            this->x_vect->reserve(elements);
-            this->y_vect->reserve(elements);
-            for (int i=0;i<elements;i++){
-                this->x_vect.push_back(x_array[i]);
-                this->y_vect.push_back(y_array[i]);
-            }
-        }            
+         
         // destructor
         ~Sample(){};
 
     protected:
 
     private:
-        std::vector<T>* x_vect;
-        std::vector<T>* y_vect;
-        std::vector<T>* data_vect;
-        std::vector<double> coefficients; //for polynomial regression
-        std::vector<double> y_regression;
-        std::vector<double> residuals;        
+        T* data;
+        double* coefficients; //for polynomial regression
+        double* y_regression;
+        double* residuals;        
         int elements;
-        double Pearson_R;
         double slope;
         double y_intercept;
         double r_squared;
+        double standard_deviation;
+        double RSS;        
+        bool lin_reg_completed=false;
+        bool poly_reg_completed=false;        
+};
+
+// 1d sample alias class
+template<typename T>
+class Sample1d : public Sample<T> {};
+
+// class for 2d samples (vectors x+y)
+template <typename T>
+class Sample2d {
+    public:
+        double Engle_Granger();
+        void correlation();
+        double get_Pearson_R();
+        double get_Spearman_Rho();
+        double get_z_score();
+        double get_t_score();
+        double get_x_mean();
+        double get_y_mean();
+        double get_covariance();
+        double get_slope(); 
+        double get_y_intercept();
+        double get_r_squared();        
+
+        // parametric constructor for two std::vector-type samples
+        // - T must be a numeric type!
+        // - the vectors x and y should be of equal size!
+        // - if the size is unequal, the surplus elements of the larger vector
+        //   will be ignored
+        Sample(const std::vector<T>& x_data, const std::vector<T>& y_data){
+            this->elements = std::fmin(x_vect->size(),y_vect->size());
+            // copy vectors into stack-allocated static arrays
+            this->x_data.resize(elements);
+            this->y_data.resize(elements);
+            for (int n=0;n<elements;n++){
+                this->x_data[n]=x_data[n];
+                this->y_data[n]=y_data[n];
+            }
+        }    
+        // parametric constructor for two array-type samples
+        // - T must be a numeric type!
+        // - arrays must be 1-dimensional!
+        // - the arrays x and y should be of equal size!
+        // - if the size is unequal, the surplus elements of the larger array
+        //   will be ignored        
+        Sample(T* x_data, T* y_data){
+            this->x_data=x_data;
+            this->y_data=y_data;
+            this->elements=std::fmin(sizeof(x_data), sizeof(y_data))/sizeof(T);
+        }           
+    private:
+        int elements;
+        T* x_data;
+        T* y_data; 
+        bool correlation_completed=false;
         double z_score;
         double t_score;
         double Spearman_Rho; 
         double x_mean;
         double y_mean;   
         double covariance;
-        double standard_deviation;
-        double RSS;        
-        bool lin_reg_completed=false;
-        bool poly_reg_completed=false;
-        bool correlation_completed=false;        
+        double Pearson_R;   
+        double slope;
+        double r_squared;
+        double y_intercept;                 
 };
 
 // include .cpp resource (required due to this being a template class)
