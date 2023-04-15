@@ -2,9 +2,7 @@
 
 // this code logs any heap memory allocations to the console
 // by overriding the `new` operator;
-// in order to use this, simply #include this file and define a MEMLOG flag as a preprocessor directive
-
-// #define MEMLOG
+// in order to use this, simply define a MEMLOG flag as a preprocessor directive before including this file
 
 #ifdef MEMLOG
 #pragma once

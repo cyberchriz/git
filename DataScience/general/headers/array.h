@@ -24,7 +24,7 @@ class Array{
         double stddev(){return Sample<T>(data).stddev();};
         T sum();
         void add(T value);
-        void add(const Array& array);
+        void add(const Array& other);
         T product();
         void multiply(T factor);
         void multiply(const Array& other);
