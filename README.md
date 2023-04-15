@@ -20,7 +20,7 @@ This repository provides functionality for
         - support vector machine
         - naive Bayes
         - (random forrests: not yet implemented)
-        - (gradient boosting machine: not yet implemented)
+        - gradient boosting machines
     - sample analysis
         - single sample
             - linear regression
