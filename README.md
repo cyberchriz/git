@@ -15,7 +15,12 @@ This repository provides functionality for
                 sigmoid, ELU, ReLU, leaky ReLU, tanh, oblique tanh, tanh rectifier, arctan, arsinh, softsign (Elliot), ISRU, ISRLU, softsign, softplus, ident, bent ident, sinusoid, sinc, gaussian, differentiable hardstep, leaky diff. hardstep, log rectifier, leaky log rectifier, ramp
             - weight initializers
     - classification
-        - k nearest neighbors algorithm
+        - k nearest neighbors
+        - decision tree
+        - support vector machine
+        - (naive Bayes: not yet implemented)
+        - (random forrests: not yet implemented)
+        - (gradient boosting machine: not yet implemented)
     - sample analysis
         - single sample
             - linear regression
