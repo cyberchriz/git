@@ -18,7 +18,7 @@ This repository provides functionality for
         - k nearest neighbors
         - decision tree
         - support vector machine
-        - (naive Bayes: not yet implemented)
+        - naive Bayes
         - (random forrests: not yet implemented)
         - (gradient boosting machine: not yet implemented)
     - sample analysis
