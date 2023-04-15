@@ -1,29 +1,30 @@
-        - single sample
-            - linear regression
-                - slope + y-axis intercept
-                - r squared + goodness of fit
-                - prediction
-            - polynomial regression
-                - r squared + goodness of fit
-                - mean squared error (MSE)
-                - prediction
-            - stationary transformation
-            - Dickey-Fuller test (for stationarity)
-            - logarithmic transformation
-            - exponential smoothing
-            - mean, median, weighted average
-            - variance, standard deviation
-            - histogram
-            - ranking
-            - find (=number of occurences of a given value)
-            - shuffle
-            - sort
-        - two samples
-            - correlation
-                - Pearson
-                - Spearman
-                - Student's t-score
-                - z-score
-            - covariance
-            - Engle-Granger test (for cointegration)
-            - x_mean, y_mean
+## Sample Analysis        
+- single sample
+    - linear regression
+        - slope + y-axis intercept
+        - r squared + goodness of fit
+        - prediction
+    - polynomial regression
+        - r squared + goodness of fit
+        - mean squared error (MSE)
+        - prediction
+    - stationary transformation
+    - Dickey-Fuller test (for stationarity)
+    - logarithmic transformation
+    - exponential smoothing
+    - mean, median, weighted average
+    - variance, standard deviation
+    - histogram
+    - ranking
+    - find (=number of occurences of a given value)
+    - shuffle
+    - sort
+- two samples
+    - correlation
+        - Pearson
+        - Spearman
+        - Student's t-score
+        - z-score
+    - covariance
+    - Engle-Granger test (for cointegration)
+    - x_mean, y_mean

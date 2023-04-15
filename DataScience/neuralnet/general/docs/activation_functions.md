@@ -1,0 +1,2 @@
+    - [activation functions] (+corresponding derivatives)
+    sigmoid, ELU, ReLU, leaky ReLU, tanh, oblique tanh, tanh rectifier, arctan, arsinh, softsign (Elliot), ISRU, ISRLU, softsign, softplus, ident, bent ident, sinusoid, sinc, gaussian, differentiable hardstep, leaky diff. hardstep, log rectifier, leaky log rectifier, ramp

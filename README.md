@@ -3,7 +3,7 @@ language: C++
 ## OVERVIEW
 This repository provides functionality for
 - Data Science (-> `#include <datascience.h>`)
-    - [neural networks](DataScience/neuralnet/docs/README.md)
+    - [neural networks](DataScience/neuralnet/docs/neuralnet.md)
     - [classification](DataScience/classification/docs/classification.md)
     - [sample analysis](DataScience/general/docs/sample.md)
     - [distributions](DataScience/distributions/docs/distributions.md)
