@@ -1,0 +1,11 @@
+    - [neural networks](neuralnet/docs/neuralnet.md) of various topologies
+        - multilayer perceptron
+            - full flexibility for layers and neurons
+            - optimizers: Vanilla, Nesterov, ADAM, ADADELTA, Adagrad, RMSprop
+            - input & label scaling
+        - recurrent neural networks (RNN)
+        - autoencoder
+        - general:
+            - activation functions (+corresponding derivatives):
+                sigmoid, ELU, ReLU, leaky ReLU, tanh, oblique tanh, tanh rectifier, arctan, arsinh, softsign (Elliot), ISRU, ISRLU, softsign, softplus, ident, bent ident, sinusoid, sinc, gaussian, differentiable hardstep, leaky diff. hardstep, log rectifier, leaky log rectifier, ramp
+            - weight initializers

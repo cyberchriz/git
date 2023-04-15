@@ -1,0 +1,10 @@
+        - fill (zeros, value, identity, random gaussian, random uniform)
+        - mean, median, variance, standard deviation
+        - sum, product
+        - find, replace
+        - elementwise add / substract / multiply / divide / power / square root
+        - elementwise apply custum function
+        - 1d vector
+        - 2d matrix
+            - dotproduct
+            - transpose
