@@ -58,14 +58,14 @@ Methods:
 |method | description |
 |-------|-------------|
 | `Sample2d::Engle_Granger()` | performs an Engle-Granger test for cointegration|
-| `Sample2d::correlation() | performs a correlation analysis of x and y |
-| `Sample2d::get_Pearson_R() | returns Pearson's R value (coefficient of correlation) of x and y |
-| `Sample2d::get_Spearman_Rho() | returns Spearman's Rho value (rank correlation coefficient) of x and y|
-| `Sample2d::get_z_score() | returns the z-score |
-| `Sample2d::get_t_score() | return Students t-score |
-| `Sample2d::get_x_mean() | returns the arrithmetic mean of the x values |
-| `Sample2d::get_y_mean() | returns the arrithmetic mean of the y values |
-| `Sample2d::get_covariance() | returns the corvariance |
-| `Sample2d::get_slope() | returns the slope of an assumed linear correlation |
-| `Sample2d::get_y_intercept() | returns the y-axis intercept of an assumed linear correlation |
-| `Sample2d::get_r_squared() | returns the r_squared (=coefficient of determination) of correlation | 
+| `Sample2d::correlation()` | performs a correlation analysis of x and y |
+| `Sample2d::get_Pearson_R()` | returns Pearson's R value (coefficient of correlation) of x and y |
+| `Sample2d::get_Spearman_Rho()` | returns Spearman's Rho value (rank correlation coefficient) of x and y|
+| `Sample2d::get_z_score()` | returns the z-score |
+| `Sample2d::get_t_score()` | return Students t-score |
+| `Sample2d::get_x_mean()` | returns the arrithmetic mean of the x values |
+| `Sample2d::get_y_mean()` | returns the arrithmetic mean of the y values |
+| `Sample2d::get_covariance()` | returns the corvariance |
+| `Sample2d::get_slope()` | returns the slope of an assumed linear correlation |
+| `Sample2d::get_y_intercept()` | returns the y-axis intercept of an assumed linear correlation |
+| `Sample2d::get_r_squared()` | returns the r_squared (=coefficient of determination) of correlation | 
