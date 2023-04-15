@@ -2,11 +2,11 @@
 usage: `#include <sample.h>` or include as part of `<datascience.h>`
 
 description:
-The class `Sample<T>` allows basic statistical analysis on
-- 1d numeric data ("series" or "bag of numbers") or
-- 2d numberic data (vectors x+y, with equal number of elements)
+The library allows basic statistical analysis on
+- 1d numeric data ("series" or "bag of numbers"): `class Sample<T>`, alias `class Sample1d<T>`
+- 2d numberic data (vectors x+y, with equal number of elements): `class Sample2d<T>`
 
-## class `Sample<T>` (alias: `Sample1d<T>`): for 1d samples (vector x)
+## class `Sample<T>` (alias: `Sample1d<T>`)
 
 Constructor:
 - `Sample<T>::Sample(const T* data)` or
@@ -44,12 +44,28 @@ Methods:
 | `Sample<T>::get_r_squared()` | returns the r_squared value from linear or polynomial regression (run regression first!) |
 | `Sample<T>::histogram(uint bars)` | returns a `struct Histogram<T>` object that holds the data of a histogram of the given sample with the specified number of bars |
 
-## class `Sample2d<T>`: for two 2d samples (vectors x+y)
-    - correlation
-        - Pearson
-        - Spearman
-        - Student's t-score
-        - z-score
-    - covariance
-    - Engle-Granger test (for cointegration)
-    - x_mean, y_mean
+## class `Sample2d<T>`
+Constructor:
+- `Sample2d<T>::Sample2d(const T* x_data, const T* y_data)` or
+- `Sample2d<T>::Sample2d(const std::vector<T>& x_data, const std::vector<T>& y_data)`
+
+  note that the first method has less overhead, because the second will
+  create an internal copy of the vector as a stack-allocated static array,
+  whilst the first method takes an array as it is 'by reference',
+  without making a copy
+
+Methods:
+|method | description |
+|-------|-------------|
+| `Sample2d::Engle_Granger()` | performs an Engle-Granger test for cointegration|
+| `Sample2d::correlation() | performs a correlation analysis of x and y |
+| `Sample2d::get_Pearson_R() | returns Pearson's R value (coefficient of correlation) of x and y |
+| `Sample2d::get_Spearman_Rho() | returns Spearman's Rho value (rank correlation coefficient) of x and y|
+| `Sample2d::get_z_score() | returns the z-score |
+| `Sample2d::get_t_score() | return Students t-score |
+| `Sample2d::get_x_mean() | returns the arrithmetic mean of the x values |
+| `Sample2d::get_y_mean() | returns the arrithmetic mean of the y values |
+| `Sample2d::get_covariance() | returns the corvariance |
+| `Sample2d::get_slope() | returns the slope of an assumed linear correlation |
+| `Sample2d::get_y_intercept() | returns the y-axis intercept of an assumed linear correlation |
+| `Sample2d::get_r_squared() | returns the r_squared (=coefficient of determination) of correlation | 
