@@ -1,3 +1,4 @@
+[[return to main page]](../../../README.md)
 ## Custom Vectors, 2d Matrices and n-dimensional Arrays
 usage: `#include <array.h>` or include as part of `<datascience.h>`
 
@@ -73,3 +74,5 @@ For example a 1d `Vector` with 100 elements of type `<double>` can be instantiat
 ```
 Vector<double> myVec(100);
 ```
+
+[[return to main page]](../../../README.md)

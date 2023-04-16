@@ -1,3 +1,4 @@
+[[return to main page]](../../../../README.md)
 ## Neural Network (type: Multilayer Perceptron)
 ## `class MLP`
 - a class for fully connected neural networks
@@ -62,3 +63,5 @@ enum SCALING {
    maxabs             // minmax, range -1 to +1
 };
 ```
+
+[[return to main page]](../../../../README.md)

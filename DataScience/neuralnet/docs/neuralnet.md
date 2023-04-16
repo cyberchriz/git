@@ -1,3 +1,4 @@
+[[return to main page]](../../../README.md)
 ## Neural Networks
 - [multilayer perceptron](../MLP/docs/mlp.md)
 - [recurrent neural networks (RNN)](rnn.md)

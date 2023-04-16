@@ -1,3 +1,4 @@
+[[return to main page]](../../../README.md)
 # Sample Analysis     
 usage: `#include <sample.h>` or include as part of `<datascience.h>`
 
@@ -69,3 +70,5 @@ Methods:
 | `Sample2d::get_slope()` | returns the slope of an assumed linear correlation |
 | `Sample2d::get_y_intercept()` | returns the y-axis intercept of an assumed linear correlation |
 | `Sample2d::get_r_squared()` | returns the r_squared (=coefficient of determination) of correlation | 
+
+[[return to main page]](../../../README.md)

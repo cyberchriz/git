@@ -21,7 +21,7 @@ enum ACTIVATION_FUNC {
    f_bentident,    // bent identity
    f_sinusoid,     // sinusoid
    f_sinc,         // cardinal sine (sinc)
-   f_gaussian,     // gaussian
+   f_gaussian,     // gaussian normal
    f_differentiable_hardstep, // differentiable hardstep
    f_leaky_diff_hardstep, // leaky differentiable hardstep
    f_softmax,      // normalized exponential (softmax)
