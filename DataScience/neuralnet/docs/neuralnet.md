@@ -1,5 +1,5 @@
 ## Neural Networks
-- [multilayer perceptron](mlp.md)
+- [multilayer perceptron](../MLP/docs/mlp.md)
 - [recurrent neural networks (RNN)](rnn.md)
 - [autoencoder](../autoencoder/docs/autoencoder.md)
 - general:
