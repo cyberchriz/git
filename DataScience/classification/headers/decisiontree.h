@@ -24,8 +24,6 @@ public:
     // Predict the class labels for the test data
     std::vector<T> predict(const std::vector<std::vector<T>>& X) const;
 
-    std::vector<T> DecisionTree<T>::get_unique_values(const std::vector<T>& v) const;
-
 private:
     struct Node {
         bool is_leaf;
@@ -55,6 +53,8 @@ private:
 
     // Split the dataset based on the best feature and split value
     std::pair<std::vector<std::vector<T>>, std::vector<T>> split_dataset(const std::vector<std::vector<T>>& X, const std::vector<T>& y, int feature_index, T split_value) const;
+
+    std::vector<T> get_unique_values(const std::vector<T>& v) const;
 };
 
 

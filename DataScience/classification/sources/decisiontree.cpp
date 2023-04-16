@@ -38,7 +38,7 @@ typename DecisionTree<T>::Node* DecisionTree<T>::build_tree(const std::vector<st
     // Base case: if all the labels are the same, return a leaf node with that label
     if (std::adjacent_find(y.begin(), y.end(), std::not_equal_to<>()) == y.end()) {
         Node* leaf = new Node();
-        leaf->is_leaf = true
+        leaf->is_leaf = true;
         leaf->label = y[0];
         leaf->left_child = nullptr;
         leaf->right_child = nullptr;
