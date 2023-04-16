@@ -1,6 +1,7 @@
 [[return to main page]](../../../README.md)
 ## Distributions
 Usage:
+
 -`#include <distributions.h>`
 - or include any of the sub-libraries
     - `#include <random_distributions.h>`
