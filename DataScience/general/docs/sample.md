@@ -18,7 +18,7 @@ Constructor:
   whilst the first method takes an array as it is 'by reference',
   without making a copy
 
-Methods:
+Public Methods:
 |method | description |
 |-------|-------------|
 | `Sample<T>::mean()` | returns the arrithmetic mean as type double|

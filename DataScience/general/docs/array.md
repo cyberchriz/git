@@ -10,11 +10,11 @@ description:
 
 ## `class Array`
 An instance of the class can be created by passing an array of the array dimensions as a an argument to the constructor.
-For example, for a 3x3x4 array of type <double> we can write:
+For example, for a 3x3x4 array of type `<double>` we can write:
 ```
 Array<double> myArr({3,3,4});
 ```
-Methods:
+Public Methods:
 |method|description|
 |------|-----------|
 | `Array<T>::set(int* index, T value)` | assigns the value at the given index |
@@ -60,9 +60,10 @@ Matrix<float> myMatrix(4,4);
 ```
 On top of all the methods given above, inherited from `class Array<T>`, the Matrix class additionally implements:
 
-| method | description |
-| `Matrix<T>::dotproduct(const Matrix& other)` | returns the resulting new `Matrix<T>` given by the dotproduct of the current matrix and a second matrix |
-| `Matrix<T>::transpose()` | returns the transpose of the current matrix as the resulting new `Matrix<T>` |
+|method|description|
+|------|-----------|
+|`Matrix<T>::dotproduct(const Matrix& other)`|returns the resulting new `Matrix<T>` given by the dotproduct of the current matrix and a second matrix|
+|`Matrix<T>::transpose()`|returns the transpose of the current matrix as the resulting new `Matrix<T>`|
 
 ## `class Vector`
 This is also a derived class of `class Array<T>` and it also inherits all its methods, but deals with the specific case of 1d arrays.
