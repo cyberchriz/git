@@ -209,7 +209,7 @@ void MLP::feedforward(uint start_layer, uint end_layer){
 void MLP::backpropagate(){
     if (!training_mode){return;}
     backprop_iterations++;
-    lr=lr/(1+lr_decay*backprop_iterations);
+    lr*=std::pow(0.5,(double(backprop_iterations))/lr_decay);
 
     // (I) cycle backwards through layers
     for (int l=layers-1;l>=1;l--){

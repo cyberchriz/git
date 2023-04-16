@@ -32,7 +32,7 @@ class MLP{
         double get_loss_avg();
         void set_training_mode(bool active=true){training_mode=active;}
         void set_learning_rate(double value){lr=fmin(fmax(0,value),1.0);}
-        void set_learning_rate_decay(double value){lr_decay=fmin(fmax(0,value),1.0);}
+        void set_learning_rate_decay(uint value){lr_decay=value;}
         void set_learning_momentum(double value){lr_momentum=fmin(fmax(0,value),1.0);}
         void set_learning_rate_auto(bool active=true){lr_auto=active;}
         void set_scaling_method(SCALING method=normalized){scaling_method=method;}
@@ -54,7 +54,7 @@ class MLP{
         SCALING scaling_method=none;
         double lr=0.005;
         double lr_momentum=0.0;
-        double lr_decay=0.0;
+        double lr_decay=1000000;
         bool lr_auto=false;
         double opt_beta1=0.9;
         double opt_beta2=0.99;
