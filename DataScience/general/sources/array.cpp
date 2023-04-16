@@ -3,19 +3,22 @@
 // constructor for multi-dimensional array;
 // pass dimensions (elements per dimension) as array
 template<typename T>
-Array<T>::Array(int* dim_size){
-    this->size = dim_size;
-    this->dimensions = sizeof(dim_size) / sizeof(int);
+Array<T>::Array(std::initializer_list<int> dim_size){
+    this->dimensions = (int)dim_size.size();
+    size.resize(dimensions);
+    for (int n=0, auto iterator=dim_size.begin();iterator!=dim_size.end();n++, iterator++){
+        this->size[n]=*iterator;
+    }
     this->elements=1;
     for (int d=0;d<dimensions;d++){
-        this->elements*=dim_size[d];
+        this->elements*=std::fmax(1,size[d]);
     }
     this->data.resize(elements);
 };
 
 // constructor for 1d vector
 template<typename T>
-Vector<T>::Vector(int elements){
+Vector<T>::Vector(const int elements){
     this->size.resize(1);
     this->elements = elements;
     this->size[0] = elements;
@@ -25,7 +28,7 @@ Vector<T>::Vector(int elements){
 
 // constructor for 2d matrix
 template<typename T>
-Matrix<T>::Matrix(int elements_x, int elements_y){
+Matrix<T>::Matrix(const int elements_x, const int elements_y){
     this->size.resize(2);
     this->elements = elements_x * elements_y;
     this->size[0] = elements_x;
@@ -37,26 +40,26 @@ Matrix<T>::Matrix(int elements_x, int elements_y){
 // set a value by array index
 // (for multi-dimensional arrays)
 template<typename T>
-void Array<T>::set(int* index, T value){
+void Array<T>::set(std::initializer_list<int> index, const T value){
     data[get_element(index)] = value;
 };
 
 // set a value by index for 1d vector
 template<typename T>
-void Vector<T>::set(int index, T value){
+void Vector<T>::set(const int index, const T value){
     this->data[index] = value;
 };
 
 // set a value by index for 2d matrix
 template<typename T>
-void Matrix<T>::set(int index_x, int index_y, T value){
+void Matrix<T>::set(const int index_x, const int index_y, const T value){
     this->data[this->get_element({index_x,index_y})] = value;
 }
 
 // get value from array index
 // (pass array index as array)
 template<typename T>
-T Array<T>::get(int* index){
+T Array<T>::get(std::initializer_list<int> index){
     int element=get_element(index);
     if (std::isnan(element) || element>elements){return NAN;}
     return data[element];
@@ -64,17 +67,17 @@ T Array<T>::get(int* index){
 
 // get 1d element index from multidimensional index
 template<typename T>
-int Array<T>::get_element(int* index){
+int Array<T>::get_element(std::initializer_list<int> index){
     // confirm valid number of dimensions
-    if (sizeof(index)/sizeof(int) > dimensions){
+    if (index.size() > dimensions){
         return NAN;
     }
     // principle: result=index[0] + index[1]*size[0] + index[2]*size[0]*size[1] + index[3]*size[0]*size[1]*size[2] + ...
     static int result;
     static int add;
-    result=index[0];
-    for (int i=1;i<dimensions;i++){
-        add=index[i];
+    result = *index.begin();
+    for (int i=1, auto iterator=index.begin()+1; iterator!=index.end(); i++, iterator++){
+        add = *iterator;
         for(int s=0;s<i;s++){
             add*=size[s];
         }
@@ -85,7 +88,7 @@ int Array<T>::get_element(int* index){
 
 // fill entire array with given value
 template<typename T>
-void Array<T>::fill_values(T value){
+void Array<T>::fill_values(const T value){
     for (int i=0;i<elements;i++){
         data[i]=value;
     }
@@ -110,7 +113,7 @@ void Array<T>::fill_identity(){
 
 // fill with random normal distribution
 template<typename T>
-void Array<T>::fill_random_gaussian(T mu, T sigma){
+void Array<T>::fill_random_gaussian(const T mu, const T sigma){
     for (int i=0;i<elements;i++){
         data[i] = Random<T>::gaussian(mu,sigma);
     }
@@ -118,7 +121,7 @@ void Array<T>::fill_random_gaussian(T mu, T sigma){
 
 // fill with random uniform distribution
 template<typename T>
-void Array<T>::fill_random_uniform(T min,T max){
+void Array<T>::fill_random_uniform(const T min, const T max){
     for (int i=0;i<elements;i++){
         data[i] = Random<T>::uniform(min,max);
     }
@@ -128,7 +131,7 @@ void Array<T>::fill_random_uniform(T min,T max){
 // the referred function to all its values
 // (this function should take a single type <T> as argument)
 template<typename T>
-void Array<T>::function(T (*pointer_to_function)(T)){
+void Array<T>::function(const T (*pointer_to_function)(T)){
     for (int i=0;i<elements;i++){
         data[i]=pointer_to_function(data[i]);
     }
@@ -158,7 +161,7 @@ T Array<T>::product(){
 
 // elementwise (scalar) multiplication by given factor
 template<typename T>
-void Array<T>::multiply(T factor){
+void Array<T>::multiply(const T factor){
     for (int i=0;i<elements;i++){
         data[i]*=factor;
     }
@@ -166,7 +169,7 @@ void Array<T>::multiply(T factor){
 
 // elementwise (scalar) division by given quotient
 template<typename T>
-void Array<T>::divide(T quotient){
+void Array<T>::divide(const T quotient){
     if (quotient==0){return;}
     for (int i=0;i<elements;i++){
         data[i]/=quotient;
@@ -175,7 +178,7 @@ void Array<T>::divide(T quotient){
 
 // elementwise (scalar) addition of specified value
 template<typename T>
-void Array<T>::add(T value){
+void Array<T>::add(const T value){
     for (int i=0;i<elements;i++){
         data[i]+=value;
     }
@@ -183,7 +186,7 @@ void Array<T>::add(T value){
 
 // elementwise (scalar) substraction of specified value
 template<typename T>
-void Array<T>::substract(T value){
+void Array<T>::substract(const T value){
     for (int i=0;i<elements;i++){
         data[i]-=value;
     }
@@ -235,7 +238,7 @@ void Array<T>::divide(const Array& other){
 
 // replace all findings of given value by specified new value
 template<typename T>
-void Array<T>::replace(T old_value, T new_value){
+void Array<T>::replace(const T old_value, const T new_value){
     for (int i=0;i<elements;i++){
         if (data[i]==old_value){
             data[i]=new_value;
@@ -245,7 +248,7 @@ void Array<T>::replace(T old_value, T new_value){
 
 // returns the number of occurrences of the specified value
 template<typename T>
-int Array<T>::find(T value){
+int Array<T>::find(const T value){
     int counter=0;
     for (int i=0;i<elements;i++){
         counter+=(data[i]==value);
@@ -255,7 +258,7 @@ int Array<T>::find(T value){
 
 // elementwise (scalar) exponentiation by given power
 template<typename T>
-void Array<T>::pow(T exponent){
+void Array<T>::pow(const T exponent){
     for (int i=0;i<elements;i++){
         data[i]=pow(data[i],exponent);
     }

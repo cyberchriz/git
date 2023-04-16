@@ -9,16 +9,16 @@ description:
 - the main benefit of the class comes with the wide variety of mathematic functions that can be applied to these arrays
 
 ## `class Array`
-An instance of the class can be created by passing an array of the array dimensions as a an argument to the constructor.
+An instance of the class can be created by passing its dimensions as type `std::initializer_list<int>` to the constructor.
 For example, for a 3x3x4 array of type `<double>` we can write:
 ```
-Array<double> myArr({3,3,4});
+Array<double> myArr{3,3,4};
 ```
 Public Methods:
 |method|description|
 |------|-----------|
-| `Array<T>::set(int* index, T value)` | assigns the value at the given index |
-| `Array<T>::get(int* index)` | returns the value at the given index |
+| `Array<T>::set(std::initializer_list<int> index, T value)` | assigns the value at the given index (with the index in curly braces) |
+| `Array<T>::get(std::intializer_list<int> index)` | returns the value at the given index (with the index in curly braces) |
 | `Array<T>::get_dimensions()` | returns an integer array that holds the array dimensions |
 | `Array<T>::get_size(int dimension)` | returns the size of the specified dimension as an integer |
 | `Array<T>::get_elements()` | returns the total number of elements of the entire array (all dimensions) |
@@ -50,7 +50,7 @@ Public Methods:
 
 ## `class Matrix`
 This is a derived class of `class Array<T>`. It inherits all its methods, but deals with the specific case of 2d arrays.
-The constructor is slightly different: because the dimensions are already known to be 2d, they don't need to be passed in as an array of integers, but simply the size of the x and y dimensions instead.
+The constructor is slightly different: because the dimensions are already known to be 2d, they don't need to be passed in as a `std::initializer_list`, but simply by passing the size of the x and y dimensions instead.
 The `.get()` method equally only needs two integers for the x and y indices it refers to.
 The `.set()` method needs two integers for the x and y indices, followed by the assigned value as a third argument.
 
