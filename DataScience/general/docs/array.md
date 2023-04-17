@@ -3,7 +3,7 @@
 usage: `#include <array.h>` or include as part of `<datascience.h>`
 
 description:
-- this class implements fast static stack-allocated numeric vectors, matrices and arrays
+- this class implements numeric vectors, matrices and arrays
 - 'under the hood' these are simple one-dimensional arrays
 - a multidimensional index will be internally converted into a 1d index
 - the main benefit of the class comes with the wide variety of mathematic functions that can be applied to these arrays
@@ -54,24 +54,22 @@ Public Methods:
 |method|description|
 |------|-----------|
 | `Array<T>::sum()` | returns the sum of all values of the array (all dimensions) |
-| `Array<T>::add(const T value)` | elementwise addition of the specified value to all values of the array |
-| `Array<T>::add(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array |
 | `Array<T> operator+(const T value)` | elementwise (scalar) addition of the specified value to all values of the array |
+| `Array<T>::operator+(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array |
 | `operator++()` | increment all values (elementwise) by +1 |
-| `operator+=(const T value)`| elementwise (scalar) addition of the specified value to all values of the array; alternative method to `.add(const T value)`|
-| `operator+=(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array; alternative method to `.add(const Array& other)`|
+| `operator+=(const T value)`| elementwise (scalar) addition of the specified value to all values of the array|
+| `operator+=(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array|
 
 
 ### Substraction
 
 |method|description|
 |------|-----------|
-| `Array<T>::substract(const T value)` | elementwise substraction of the specified value from all values of the array |
-| `Array<T>::substract(const Array& other)` | elementwise substraction of a second array of equal dimensions from the current array |
 |`Array<T> operator-(const T value)` | elementwise (scalar) substraction of the specified value from all values of the array |
+| `Array<T>::operator-(const Array& other)` | elementwise substraction of a second array of equal dimensions from the current array |
 |`operator--()`| decrement all values (elementwise) by -1 |
-|`operator-=(const T value)` | elementwise (scalar) substraction of the specified value from all values of the array; alternative method to `.substract(const T value)`|
-|`operator-=(const Array& other)`| elementwise (scalar) substraction of a second array of equal dimensions from the current array; alternative method to `.substract(const Array& other)`|
+|`operator-=(const T value)` | elementwise (scalar) substraction of the specified value from all values of the array|
+|`operator-=(const Array& other)`| elementwise (scalar) substraction of a second array of equal dimensions from the current array|
 
 
 ### Multiplication
@@ -79,22 +77,17 @@ Public Methods:
 |method|description|
 |------|-----------|
 | `Array<T>::product()` | returns the product of all values of the array |
-| `Array<T>::multiply(const T factor)` | elementwise multiplication of all values of the array with the given factor |
-| `Array<T>::multiply(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions, i.e. the Hadamard product |
-| `Array<T> operator*(const T factor)`| elementwise (scalar) multiplication of the individual values of the array by the specified factor |
-| `operator*=(const T factor)` | elementwise (scalar) multiplication of the individual values of the array by the specified factor; alternative method to `.multiply(const T factor)`|
-| `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions, resulting in the Hadamard product;  alternative method to `.multiply(const Array& other)`|
+| `Array<T>::operator*(const T factor)` | elementwise multiplication of all values of the array with the given factor |
+| `operator*=(const T factor)` | elementwise (scalar) multiplication of the individual values of the array by the specified factor|
+| `Array<T>::Hadamard(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions, i.e. the Hadamard product |
 
 
 ### Division
 
 |method|description|
 |------|-----------|
-| `Array<T>::divide(T quotient)` | divides all values of the array by the given quotient |
-| `Array<T>::divide(const Array& other)` | elementwise (scalar) division of the current array by a second array of equal dimensions |
-| `Array<T> operator/(const T quotient)`| elementwise (scalar) division of the individual values of the array by the specified quotint |
-| `operator/=(const T quotient)` | elementwise (scalar) division of the individual values of the array by the specified quotient; alternative method to `.divide(const T quotient)`|
-| `operator/=(const Array& other)`| elementwise (scalar) division of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.divied(const Array& other)`|
+| `Array<T>::operator/(T quotient)` | divides all values of the array elementwise by the given quotient |
+| `operator/=(const T quotient)` | elementwise (scalar) division of the individual values of the array by the specified quotient|
 
 
 ### Modulo
@@ -102,8 +95,7 @@ Public Methods:
 |method|description|
 |------|-----------|
 |`operator%=(const double num)`| sets all values of the array to the remainder of their division by the given number |
-| `Array<double> modulo(const double num)`| returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number |
-| Array<double> operator%(const double num) | returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number; alternative method to `.modulo(const double num)`|
+| `Array<double> operator%(const double num)`| returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number |
 
 
 ### Exponentiation
@@ -111,9 +103,17 @@ Public Methods:
 |method|description|
 |------|-----------|
 | `Array<T>::pow(const T exponent)` | exponentiates all values of the array by the specified power |
-| `Array<T> pow(const Array& other) | elementwise exponentiation of the values of the original array to the power of the corresponding values of the second array |
+| `Array<T> pow(const Array& other)` | elementwise exponentiation of the values of the original array to the power of the corresponding values of the second array |
 | `Array<T>::sqrt()` | applies the square roots to all values of the array |
 
+
+### Rounding
+
+|method|description|
+|------|-----------|
+| `Array<T>::round()`| rounds the values of the array elementwise to their nearest integer|
+| `ArrayyT>::floor()`| rounds the values of the array elementwise to their next lower integers|
+| `ArrayyT>::ceil()`| rounds the values of the array elementwise to their next higher integers|
 
 ### Find, Replace
 
@@ -179,8 +179,7 @@ Public Methods:
 |method|description|
 |------|-----------|
 // type casting
-| `template<typename C> operator Array<C>()`| returns an implicit type cast of the original array |
-| `template<typename C> explicit operator Array<C>()`| returns an explicit type cast, i.e. `static_cast<C>`of the original array |
+| `template<typename C> operator Array<C>()`| returns an explicit type cast of the original array |
 
 ___
 
@@ -200,6 +199,7 @@ On top of all the methods given above, inherited from `class Array<T>`, the Matr
 |method|description|
 |------|-----------|
 |`Matrix<T>::dotproduct(const Matrix& other)`|returns the resulting new `Matrix<T>` given by the dotproduct of the current matrix and a second matrix|
+|`Matrix<T>::operator*(const Matrix& other)`| alias method for the dotproduct|
 |`Matrix<T>::transpose()`|returns the transpose of the current matrix as the resulting new `Matrix<T>`|
 
 ___
@@ -222,13 +222,26 @@ Vector<double> myVec(100);
 | `set(const int index, const T value)` | assigns the given value to the element at the specified index |
 | `T get(const int index)`| returns the value of the element at the specified index |
 
+
 ### Dynamic Vector Handling
+
 |method|description|
 |------|-----------|
 | `int Vector<T>::push_back(T value)` | adds 1 element and assigns its value; returns the resulting number of elements |
 | `T Vector<T>::pop()` | removes the last element and returns its value |
 | `int Vector<T>::get_capacity()`| returns the available capacity without memory re-allocations |
 | `int Vector<T>::size()`| returns the number of elements; equivalent to `int Vector<T>::get_elements()`|
+
+
+### Special Vector Operations
+
+|method|description|
+|------|-----------|
+| `T Vector<T>::dotproduct(const Vector& other)`| returns the dotproduct |
+| `T Vector<T>::operator*(const Vector& other)`| alias method for the dotproduct |
+| `Matrix<T> Vector<T>::asMatrix()` | converts the vector as a single row 'horizontal' matrix (all data as columns) |
+| `Matrix<T> Vector<T>::transpose()`| converts the vector to a single column 'vertical' matrix (all data as rows)|
+
 
 ### Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
 
