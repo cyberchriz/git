@@ -15,6 +15,8 @@ For example, for a 3x3x4 array of type `<double>` we can write:
 Array<double> myArr{3,3,4};
 ```
 Public Methods:
+
+- Getters & Setters
 |method|description|
 |------|-----------|
 | `Array<T>::set(std::initializer_list<int> index, T value)` | assigns the value at the given index (with the index in curly braces) |
@@ -22,31 +24,131 @@ Public Methods:
 | `Array<T>::get_dimensions()` | returns an integer array that holds the array dimensions |
 | `Array<T>::get_size(int dimension)` | returns the size of the specified dimension as an integer |
 | `Array<T>::get_elements()` | returns the total number of elements of the entire array (all dimensions) |
+
+- Fill & Initialize
+|method|description|
+|------|-----------|
 | `Array<T>::fill_values(T value)` | fills the entire array with the specified value (of datatype T) |
 | `Array<T>::fill_zeros()` | fills the entire array with zeros |
 | `Array<T>::fill_identity()` | applies the identity matrix to the array |
 | `Array<T>::fill_random_gaussian(T mu=0, T sigma=1)` | fills the array with random values from a gaussian normal distribution with the given mean and sigma |
 | `Array<T>::fill_random_uniform(T min=0,T max=1.0)` | fills the array with values from a random uniform distribution within the given range |
+
+- Distribution Properties
+|method|description|
+|------|-----------|
 | `Array<T>::mean()` | returns the arrithmetic mean of all values of the array (all dimensions) |
 | `Array<T>::median()` | returns the Median of all values of the array (all dimensions) |
 | `Array<T>::variance()` | returns the variance of all values of the array (all dimensions) |
 | `Array<T>::stddev()` | returns the standard deviation of all values of the array (all dimensions) |
+
+- Addition
+|method|description|
+|------|-----------|
 | `Array<T>::sum()` | returns the sum of all values of the array (all dimensions) |
-| `Array<T>::add(T value)` | elementwise addition of the specified value to all values of the array |
+| `Array<T>::add(const T value)` | elementwise addition of the specified value to all values of the array |
 | `Array<T>::add(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array |
-| `Array<T>::product()` | returns the product of all values of the array |
-| `Array<T>::multiply(T factor)` | elementwise multiplication of all values of the array with the given factor |
-| `Array<T>::multiply(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions |
-| `Array<T>::substract(T value)` | elementwise substraction of the specified value from all values of the array |
+| `Array<T> operator+(const T value)` | elementwise (scalar) addition of the specified value to all values of the array |
+| `operator++()` | increment all values (elementwise) by +1 |
+| `operator+=(const T value)`| elementwise (scalar) addition of the specified value to all values of the array; alternative method to `.add(const T value)`|
+| `operator+=(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array; alternative method to `.add(const Array& other)`|
+
+- Substraction
+|method|description|
+|------|-----------|
+| `Array<T>::substract(const T value)` | elementwise substraction of the specified value from all values of the array |
 | `Array<T>::substract(const Array& other)` | elementwise substraction of a second array of equal dimensions from the current array |
+|`Array<T> operator-(const T value)` | elementwise (scalar) substraction of the specified value from all values of the array |
+|`operator--()`| decrement all values (elementwise) by -1 |
+|`operator-=(const T value)` | elementwise (scalar) substraction of the specified value from all values of the array; alternative method to `.substract(const T value)`|
+|`operator-=(const Array& other)`| elementwise (scalar) substraction of a second array of equal dimensions from the current array; alternative method to `.substract(const Array& other)`|
+
+- Multiplication
+|method|description|
+|------|-----------|
+| `Array<T>::product()` | returns the product of all values of the array |
+| `Array<T>::multiply(const T factor)` | elementwise multiplication of all values of the array with the given factor |
+| `Array<T>::multiply(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions |
+| `Array<T> operator*(const T factor)`| elementwise (scalar) multiplication of the individual values of the array by the specified factor |
+| `operator*=(const T factor)` | elementwise (scalar) multiplication of the individual values of the array by the specified factor; alternative method to `.multiply(const T factor)`|
+| `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.multiply(const Array& other)`|
+
+- Division
+|method|description|
+|------|-----------|
 | `Array<T>::divide(T quotient)` | divides all values of the array by the given quotient |
 | `Array<T>::divide(const Array& other)` | elementwise (scalar) division of the current array by a second array of equal dimensions |
-| `Array<T>::pow(T exponent)` | exponentiates all values of the array by the specified power |
+| `Array<T> operator/(const T quotient)`| elementwise (scalar) division of the individual values of the array by the specified quotint |
+| `operator/=(const T quotient)` | elementwise (scalar) division of the individual values of the array by the specified quotient; alternative method to `.divide(const T quotient)`|
+| `operator/=(const Array& other)`| elementwise (scalar) division of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.divied(const Array& other)`|
+
+- Modulo
+|method|description|
+|------|-----------|
+|`operator%=(const double num)`| sets all values of the array to the remainder of their division by the given number |
+| `Array<double> modulo(const double num)`| returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number |
+| Array<double> operator%(const double num) | returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number; alternative method to `.modulo(const double num)`|
+
+- Exponentiation
+|method|description|
+|------|-----------|
+| `Array<T>::pow(const T exponent)` | exponentiates all values of the array by the specified power |
+| `Array<T> pow(const Array& other) | elementwise exponentiation of the values of the original array to the power of the corresponding values of the second array |
 | `Array<T>::sqrt()` | applies the square roots to all values of the array |
-| `Array<T>::replace(T old_value, T new_value)` | replaces all findings of the specified old value by the specified new value |
-| `Array<T>::find(T value)` | returns the number of findings of the specified value across the entire array (all dimensions) |
-| `Array<T>::function(T (*pointer_to_function)(T))` | applies the specified function to all values of the array (elementwise) |
+
+- Find, Replace
+|method|description|
+|------|-----------|
+| `Array<T>::replace(const T old_value, const T new_value)` | replaces all findings of the specified old value by the specified new value |
+| `int Array<T>::find(const T value)` | returns the number of findings of the specified value across the entire array (all dimensions) |
+
+- Custom Functions
+|method|description|
+|------|-----------|
+| `Array<T>::function(const T (*pointer_to_function)(T))` | applies the specified function to all values of the array (elementwise) |
+
+- Assignment
+|method|description|
+|------|-----------|
 | `Array<T>::operator=(const Array& other)` | copies the values of the specified second array (of equal dimensions) into the current array |
+| `Array<T> copy()`| returns an identical copy of the original array |
+
+- Elementwise Comparison By Single Value
+|method|description|
+|------|-----------|
+| `Array<bool> operator>(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is greater than the given value |
+| `Array<bool> operator>=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is greater than or equal to the given value |
+| `Array<bool> operator==(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is equal to the given value |
+| `Array<bool> operator!=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is unequal to the given value |
+| `Array<bool> operator<(const T value)`|returns a boolean array with weach value representing whether the corresponding value in the original array is less than the given value |
+| `Array<bool> operator<=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the given value |
+
+- Elementwise Comparison With Second Array
+|method|description|
+|------|-----------|
+// elementwise comparison with second array
+| `Array<bool> operator>(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is greater than the corresponding value in the second array |
+| `Array<bool> operator>=(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is greater than or equal to the corresponding value in the second array |
+| `Array<bool> operator==(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is equal to the corresponding value in the second array |
+| `Array<bool> operator!=(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is unequal to the corresponding value in the second array |
+| `Array<bool> operator<(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than the corresponding value in the second array |
+| `Array<bool> operator<=(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the corresponding value in the second array |
+
+- Elementwise Logical Operations
+|method|description|
+|------|-----------|
+| `Array<bool> operator&&(const bool value)`|returns a boolean array with each value representing the logical `AND` between the corresponding values of the original array and the given value |
+| `Array<bool> operator||(const bool value)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and the given value |
+| `Array<bool> operator!()`|returns a boolean array with each value representing the logical `NOT` of the corresponding values of the original array |
+| `Array<bool> operator&&(const Array& other)`|returns a boolean array with each value representing the logical `AND` between the corresponding values of the original array and a second array |
+| `Array<bool> operator||(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
+
+- Type Casting
+|method|description|
+|------|-----------|
+// type casting
+| `template<typename C> operator Array<C>()`| returns an implicit type cast of the original array |
+| `template<typename C> explicit operator Array<C>()`| returns an explicit type cast, i.e. `static_cast<C>`of the original array |
 
 ## `class Matrix`
 This is a derived class of `class Array<T>`. It inherits all its methods, but deals with the specific case of 2d arrays.
@@ -75,5 +177,29 @@ For example a 1d `Vector` with 100 elements of type `<double>` can be instantiat
 ```
 Vector<double> myVec(100);
 ```
+- Vector Getters & Setters
+|method|description|
+|------|-----------|
+| `set(const int index, const T value)` | assigns the given value to the element at the specified index |
+| `T get(const int index)`| returns the value of the element at the specified index |
+
+- Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
+|method|description|
+|------|-----------|
+| `Vector<int> ranking(bool ascending=true)`| returns an integer Vector that holds a ranking of the corresponding values contained in the original Vector |
+| `Vector<T> exponential_smoothing(bool as_series=false)`| returns an exponentially smoothed copy of the original Vector |
+| `double Dickey_Fuller()`| returns the result of an augmented Dickey-Fuller unit root test for stationarity; a value of <0.05 usually implies that the Null hypothesis can be rejected, i.e. the sample is stationary |
+| `Vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2)`| returns a stationary copy (e.g. for time series data) of the original Vector|
+| `Vector<T> sort(bool ascending=true)`| returns a sorted copy of the original Vector |
+| `Vector<T> shuffle()`| returns a randomly shuffled copy of the original Vector|
+| `Vector<T> log_transform()`| returns a logarithmically transformed copy of the original Vector|
+| `T polynomial_predict(T x,int power=5)`|performs polynomial regression to the specified power on the Vector data and predicts the fitting value for a hypothetical new index x|
+| `double polynomial_MSE(int power=5)`| returns the Mean Squared Error (MSE) of polynomial regression to the specified power|
+| `bool isGoodFit_linear(double threshold=0.95)`| returns whether linear regression is a good fit with respect to the specified confidence interval|
+| `bool isGoodFit_polynomial(int power=5,double threshold=0.95)`| returns whether polynomial regression (to the specified power) is a good fit with respect to the specified confidence interval|
+| `T linear_predict(T x)`| predicts the result of a hypothetical new index x based on linear regression of the Vector data |
+| `double get_slope()`|returns the slope of linear regression of the vector data |
+| `double get_y_intercept()`| returns the y-axis intercept of linear regression of the vector data |
+| `double get_r_squared_linear()`| returns the coefficient of determination (r2) of linear regression of the Vector data|| `double get_r_squared_polynomial(int power=5)`| returns the coefficient of determination (r2) of polynomial regression (to the specified power) of the Vector data|
 
 [[return to main page]](../../../README.md)

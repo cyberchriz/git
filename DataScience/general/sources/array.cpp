@@ -4,6 +4,7 @@
 // pass dimensions (elements per dimension) as array
 template<typename T>
 Array<T>::Array(std::initializer_list<int> dim_size){
+    init_list=dim_size;
     this->dimensions = (int)dim_size.size();
     size.resize(dimensions);
     for (int n=0, auto iterator=dim_size.begin();iterator!=dim_size.end();n++, iterator++){
@@ -19,6 +20,7 @@ Array<T>::Array(std::initializer_list<int> dim_size){
 // constructor for 1d vector
 template<typename T>
 Vector<T>::Vector(const int elements){
+    init_list={elements};
     this->size.resize(1);
     this->elements = elements;
     this->size[0] = elements;
@@ -29,6 +31,7 @@ Vector<T>::Vector(const int elements){
 // constructor for 2d matrix
 template<typename T>
 Matrix<T>::Matrix(const int elements_x, const int elements_y){
+    init_list = {elements_x, elements_y};
     this->size.resize(2);
     this->elements = elements_x * elements_y;
     this->size[0] = elements_x;
