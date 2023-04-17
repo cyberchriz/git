@@ -16,6 +16,7 @@ Array<double> myArr{3,3,4};
 ```
 Public Methods:
 
+
 - Getters & Setters
 
 |method|description|
@@ -25,6 +26,7 @@ Public Methods:
 | `Array<T>::get_dimensions()` | returns an integer array that holds the array dimensions |
 | `Array<T>::get_size(int dimension)` | returns the size of the specified dimension as an integer |
 | `Array<T>::get_elements()` | returns the total number of elements of the entire array (all dimensions) |
+
 
 - Fill & Initialize
 
@@ -36,6 +38,7 @@ Public Methods:
 | `Array<T>::fill_random_gaussian(T mu=0, T sigma=1)` | fills the array with random values from a gaussian normal distribution with the given mean and sigma |
 | `Array<T>::fill_random_uniform(T min=0,T max=1.0)` | fills the array with values from a random uniform distribution within the given range |
 
+
 - Distribution Properties
 
 |method|description|
@@ -44,6 +47,7 @@ Public Methods:
 | `Array<T>::median()` | returns the Median of all values of the array (all dimensions) |
 | `Array<T>::variance()` | returns the variance of all values of the array (all dimensions) |
 | `Array<T>::stddev()` | returns the standard deviation of all values of the array (all dimensions) |
+
 
 - Addition
 
@@ -57,6 +61,7 @@ Public Methods:
 | `operator+=(const T value)`| elementwise (scalar) addition of the specified value to all values of the array; alternative method to `.add(const T value)`|
 | `operator+=(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array; alternative method to `.add(const Array& other)`|
 
+
 - Substraction
 
 |method|description|
@@ -67,6 +72,7 @@ Public Methods:
 |`operator--()`| decrement all values (elementwise) by -1 |
 |`operator-=(const T value)` | elementwise (scalar) substraction of the specified value from all values of the array; alternative method to `.substract(const T value)`|
 |`operator-=(const Array& other)`| elementwise (scalar) substraction of a second array of equal dimensions from the current array; alternative method to `.substract(const Array& other)`|
+
 
 - Multiplication
 
@@ -79,6 +85,7 @@ Public Methods:
 | `operator*=(const T factor)` | elementwise (scalar) multiplication of the individual values of the array by the specified factor; alternative method to `.multiply(const T factor)`|
 | `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.multiply(const Array& other)`|
 
+
 - Division
 
 |method|description|
@@ -89,6 +96,7 @@ Public Methods:
 | `operator/=(const T quotient)` | elementwise (scalar) division of the individual values of the array by the specified quotient; alternative method to `.divide(const T quotient)`|
 | `operator/=(const Array& other)`| elementwise (scalar) division of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.divied(const Array& other)`|
 
+
 - Modulo
 
 |method|description|
@@ -96,6 +104,7 @@ Public Methods:
 |`operator%=(const double num)`| sets all values of the array to the remainder of their division by the given number |
 | `Array<double> modulo(const double num)`| returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number |
 | Array<double> operator%(const double num) | returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number; alternative method to `.modulo(const double num)`|
+
 
 - Exponentiation
 
@@ -105,6 +114,7 @@ Public Methods:
 | `Array<T> pow(const Array& other) | elementwise exponentiation of the values of the original array to the power of the corresponding values of the second array |
 | `Array<T>::sqrt()` | applies the square roots to all values of the array |
 
+
 - Find, Replace
 
 |method|description|
@@ -112,11 +122,13 @@ Public Methods:
 | `Array<T>::replace(const T old_value, const T new_value)` | replaces all findings of the specified old value by the specified new value |
 | `int Array<T>::find(const T value)` | returns the number of findings of the specified value across the entire array (all dimensions) |
 
+
 - Custom Functions
 
 |method|description|
 |------|-----------|
 | `Array<T>::function(const T (*pointer_to_function)(T))` | applies the specified function to all values of the array (elementwise) |
+
 
 - Assignment
 
@@ -124,6 +136,7 @@ Public Methods:
 |------|-----------|
 | `Array<T>::operator=(const Array& other)` | copies the values of the specified second array (of equal dimensions) into the current array |
 | `Array<T> copy()`| returns an identical copy of the original array |
+
 
 - Elementwise Comparison By Single Value
 
@@ -135,6 +148,7 @@ Public Methods:
 | `Array<bool> operator!=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is unequal to the given value |
 | `Array<bool> operator<(const T value)`|returns a boolean array with weach value representing whether the corresponding value in the original array is less than the given value |
 | `Array<bool> operator<=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the given value |
+
 
 - Elementwise Comparison With Second Array
 
@@ -148,6 +162,7 @@ Public Methods:
 | `Array<bool> operator<(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than the corresponding value in the second array |
 | `Array<bool> operator<=(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the corresponding value in the second array |
 
+
 - Elementwise Logical Operations
 
 |method|description|
@@ -158,6 +173,7 @@ Public Methods:
 | `Array<bool> operator&&(const Array& other)`|returns a boolean array with each value representing the logical `AND` between the corresponding values of the original array and a second array |
 | `Array<bool> operator||(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
 
+
 - Type Casting
 
 |method|description|
@@ -165,6 +181,8 @@ Public Methods:
 // type casting
 | `template<typename C> operator Array<C>()`| returns an implicit type cast of the original array |
 | `template<typename C> explicit operator Array<C>()`| returns an explicit type cast, i.e. `static_cast<C>`of the original array |
+
+___
 
 ## `class Matrix`
 This is a derived class of `class Array<T>`. It inherits all its methods, but deals with the specific case of 2d arrays.
@@ -178,10 +196,13 @@ Matrix<float> myMatrix(4,4);
 ```
 On top of all the methods given above, inherited from `class Array<T>`, the Matrix class additionally implements:
 
+
 |method|description|
 |------|-----------|
 |`Matrix<T>::dotproduct(const Matrix& other)`|returns the resulting new `Matrix<T>` given by the dotproduct of the current matrix and a second matrix|
 |`Matrix<T>::transpose()`|returns the transpose of the current matrix as the resulting new `Matrix<T>`|
+
+___
 
 ## `class Vector`
 This is also a derived class of `class Array<T>` and it also inherits all its methods, but deals with the specific case of 1d arrays.
@@ -193,12 +214,14 @@ For example a 1d `Vector` with 100 elements of type `<double>` can be instantiat
 ```
 Vector<double> myVec(100);
 ```
+
 - Vector Getters & Setters
 
 |method|description|
 |------|-----------|
 | `set(const int index, const T value)` | assigns the given value to the element at the specified index |
 | `T get(const int index)`| returns the value of the element at the specified index |
+
 
 - Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
 
