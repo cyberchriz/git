@@ -80,10 +80,10 @@ Public Methods:
 |------|-----------|
 | `Array<T>::product()` | returns the product of all values of the array |
 | `Array<T>::multiply(const T factor)` | elementwise multiplication of all values of the array with the given factor |
-| `Array<T>::multiply(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions |
+| `Array<T>::multiply(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions, i.e. the Hadamard product |
 | `Array<T> operator*(const T factor)`| elementwise (scalar) multiplication of the individual values of the array by the specified factor |
 | `operator*=(const T factor)` | elementwise (scalar) multiplication of the individual values of the array by the specified factor; alternative method to `.multiply(const T factor)`|
-| `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.multiply(const Array& other)`|
+| `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions, resulting in the Hadamard product;  alternative method to `.multiply(const Array& other)`|
 
 
 ### Division
@@ -222,6 +222,13 @@ Vector<double> myVec(100);
 | `set(const int index, const T value)` | assigns the given value to the element at the specified index |
 | `T get(const int index)`| returns the value of the element at the specified index |
 
+### Dynamic Vector Handling
+|method|description|
+|------|-----------|
+| `int Vector<T>::push_back(T value)` | adds 1 element and assigns its value; returns the resulting number of elements |
+| `T Vector<T>::pop()` | removes the last element and returns its value |
+| `int Vector<T>::get_capacity()`| returns the available capacity without memory re-allocations |
+| `int Vector<T>::size()`| returns the number of elements; equivalent to `int Vector<T>::get_elements()`|
 
 ### Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
 

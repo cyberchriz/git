@@ -10,66 +10,64 @@ template<typename T>
 class Array{
     public:     
         // getters & setters
-        void set(std::initializer_list<int> index, T value);
+        void set(std::initializer_list<int> index, const T value);
         T get(std::initializer_list<int> index);
-        int get_dimensions(){return dimensions;};
-        int get_size(int dimension){return size[dimension];};
-        int get_elements(){return elements;};
+        int get_dimensions();
+        int get_size(int dimension);
+        int get_elements();
 
         // fill, initialize
         void fill_values(T value);
-        void fill_zeros(){fill_values(0);}
+        void fill_zeros();
         void fill_identity();
         void fill_random_gaussian(const T mu=0, const T sigma=1);
         void fill_random_uniform(const T min=0, const T max=1.0);
 
         // distribution properties
-        double mean(){return Sample<T>(data).mean();};
-        double median(){return Sample<T>(data).median();};
-        double variance(){return Sample<T>(data).variance();};
-        double stddev(){return Sample<T>(data).stddev();};
+        double mean();
+        double median();
+        double variance();
+        double stddev();
 
         // addition
         T sum();
-        void add(const T value);
-        void add(const Array& other);
-        Array<T> operator+(const T value){Array<T> result(init_list); result=this; return result.add(value);}
-        void operator++(){this->add(1);}
-        void operator+=(const T value){this->add(value);};
-        void operator+=(const Array& other){this->add(other);}
+        Array<T> operator+(const T value);
+        Array<T> operator+(const Array& other);
+        void operator++();
+        void operator+=(const T value);
+        void operator+=(const Array& other);
 
         // substraction
         void substract(const T value);
-        void substract(const Array& other);
-        Array<T> operator-(const T value){Array<T> result(init_list); result=this; return result.substract(value);}
-        void operator--(){this->substract(1);}
-        void operator-=(const T value){this->substract(value);}
-        void operator-=(const Array& other){this->substract(other);}
+        Array<T> operator-(const T value);
+        Array<T> operator-(const Array& other);
+        void operator--();
+        void operator-=(const T value);
+        void operator-=(const Array& other);
 
         // multiplication
         T product();
-        void multiply(const T factor);
-        void multiply(const Array& other);
-        Array<T> operator*(const T factor){Array<T> result(init_list); result=this; return result.multiply(factor);}
-        void operator*=(const T factor){this->multiply(factor);}
-        void operator*=(const Array& other){this->multiply(other);}
+        Array<T> operator*(const T factor);
+        void operator*=(const T factor);
+        Array<T> Hadamard(const Array& other);
         
         // division
-        void divide(const T quotient);
-        void divide(const Array& other);
-        Array<T> operator/(const T quotient){Array<T> result(init_list); result=this; return result.divide(quotient);}
-        void operator/=(const T quotient){this->divide(quotient);}
-        void operator/=(const Array& other){this->divide(other);}
+        Array<T> operator/(const T quotient);
+        void operator/=(const T quotient);
 
         // modulo
-        void operator%=(const double num){for (int i=0;i<elements;i++){data[i]%=num;}}
-        Array<double> modulo(const double num){Array<T> result(init_list); result=this; return result%=num;}
-        Array<double> operator%(const double num){Array<T> result(init_list); result=this; return result%num;}
+        void operator%=(const double num);
+        Array<double> operator%(const double num);
 
         // exponentiation
         void pow(const T exponent);
-        Array<T> pow(const Array& other){Array<T> result(init_list);for (int i=0;i<elements;i++){result.data[i]=pow(this->data[i],other->data[i]);};return result;}
+        void pow(const Array& other);
         void sqrt();
+
+        // rounding
+        void round();
+        void floor();
+        void ceil();
 
         // find, replace
         void replace(const T old_value, const T new_value);
@@ -80,48 +78,71 @@ class Array{
 
         // assignment
         void operator=(const Array& other);
-        Array<T> copy(){Array<T> result(init_list);result.data=this.data;return result;}
+        Array<T> copy();
 
         // elementwise comparison by single value
-        Array<bool> operator>(const T value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]>value;};return result}
-        Array<bool> operator>=(const T value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]>=value;};return result}
-        Array<bool> operator==(const T value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]==value;};return result}
-        Array<bool> operator!=(const T value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]!=value;};return result}
-        Array<bool> operator<(const T value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]<value;};return result}
-        Array<bool> operator<=(const T value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]<=value;};return result}
+        Array<bool> operator>(const T value);
+        Array<bool> operator>=(const T value);
+        Array<bool> operator==(const T value);
+        Array<bool> operator!=(const T value);
+        Array<bool> operator<(const T value);
+        Array<bool> operator<=(const T value);
 
         // elementwise comparison with second array
-        Array<bool> operator>(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]>other->data[i];};return result}
-        Array<bool> operator>=(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]>=other->data[i];};return result}
-        Array<bool> operator==(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]==other->data[i];};return result}
-        Array<bool> operator!=(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]!=other->data[i];};return result}
-        Array<bool> operator<(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]<other->data[i];};return result}
-        Array<bool> operator<=(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]<=other->data[i];};return result}
+        Array<bool> operator>(const Array& other);
+        Array<bool> operator>=(const Array& other);
+        Array<bool> operator==(const Array& other);
+        Array<bool> operator!=(const Array& other);
+        Array<bool> operator<(const Array& other);
+        Array<bool> operator<=(const Array& other);
 
         // elementwise logical operations
-        Array<bool> operator&&(const bool value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]&&value;};return result}
-        Array<bool> operator||(const bool value){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]||value;};return result}
-        Array<bool> operator!(){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=!this->data[i];};return result}
-        Array<bool> operator&&(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]&&other->data[i];};return result}
-        Array<bool> operator||(const Array& other){Array<bool> result(init_list);for (int i=0;i<elements;i++){result.data[i]=this->data[i]||other->data[i];};return result}
+        Array<bool> operator&&(const bool value);
+        Array<bool> operator||(const bool value);
+        Array<bool> operator!();
+        Array<bool> operator&&(const Array& other);
+        Array<bool> operator||(const Array& other);
 
         // type casting
-        template<typename C> operator Array<C>(){Array<C> result(init_list);for (int i=0;i<elements;i++){result.data[i]=C(this->data[i]);}; return result;}
-        template<typename C> explicit operator Array<C>(){Array<C> result(init_list);for (int i=0;i<elements;i++){result.data[i]=C(this->data[i]);}; return result;}
+        template<typename C> operator Array<C>();
 
         // constructor & destructor declarations
         Array() = delete;
         Array(std::initializer_list<int> dim_size);
         ~Array();
 
-    protected:
-        std::initializer_list<int> init_list;
+        // public member variables
+        T* _data; // 1dimensional array of source _data
+    
+    private:
+
+        // private member variables
+        bool equal_size(const Array& other);
+        std::initializer_list<int> _init_list;
+        int _elements=0; // total number of _elements in all _dimensions
+        int _dimensions=0;
+        int* _size; // holds the size (number of _elements) per individual dimension 
+        
+        // private methods
         int get_element(std::initializer_list<int> index);
-        T* data; // 1dimensional array of source data
-        int elements=0; // total number of elements in all dimensions
-        int dimensions=0;
-        int* size; // holds the size (number of elements) per individual dimension  
-    private:      
+        void Array<T>::resizeArray(T*& arr, int newSize);  
+};
+
+// derived class from Array<T>,
+// for 2d matrix
+template<typename T>
+class Matrix : public Array<T>{
+    public:
+        void set(const int row, const int col, T value);
+        T get(const int row, const int col);
+        Matrix<T> dotproduct(const Matrix& other);
+        Matrix<T> operator*(const Matrix& otehr);
+        Matrix<T> transpose();
+        // constructor declarations
+        Matrix() = delete;
+        Matrix(const int rows, const int cols);
+        // destructor declarations
+        ~Matrix(){};
 };
 
 // derived class from Array<T>,
@@ -135,46 +156,45 @@ class Vector : public Array<T>{
         void set(const int index, const T value);
         T get(const int index);
 
+        // dynamic handling
+        int push_back(T value);
+        T pop();
+        int get_capacity();
+        int size();
+
+        // Vector as Matrix
+        Matrix<T> transpose();
+        Matrix<T> asMatrix();
+
+        // Multiplication
+        T dotproduct(const Vector& other);
+        T operator*(const Vector& other);
+
         // sample analysis
-        Vector<int> ranking(bool ascending=true){Vector<int> result(elements); result.data=Sample(this->data)::ranking(ascending);return result;}
-        Vector<T> exponential_smoothing(bool as_series=false){Vector<T> result(elements);result.data=Sample(this->data)::exponential_smoothing(as_series);return result;} 
-        double Dickey_Fuller(){return Sample(this->data)::Dickey_Fuller();}
-        Vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2){Vector<T> result(elements);result.data=Sample(this->data)::stationary(method,degree,fract_exponent);return result;}
-        Vector<T> sort(bool ascending=true){Vector<T> result(elements);result.data=Sample(this->data)::sort(ascending);return result;}
-        Vector<T> shuffle(){Vector<T> result(elements);result.data=Sample(this->data)::shuffle();return result;}
-        Vector<T> log_transform(){Vector<T> result(elements);result.data=Sample(this->data)::log_transform();return result;}
-        T polynomial_predict(T x,int power=5){Sample temp(this->data);temp.polynomial_regression();return temp.polynomial_predict(x);}
-        double polynomial_MSE(int power=5){Sample temp(this->data);temp.polynomial_regression(power);return temp.polynomial_MSE();}
-        bool isGoodFit_linear(double threshold=0.95){Sample temp(this->data);temp.linear_regression();return temp.isGoodFit(threshold);}
-        bool isGoodFit_polynomial(int power=5,double threshold=0.95){Sample temp(this->data);temp.polynomial_regression(power);return temp.isGoodFit(threshold);}
-        T linear_predict(T x){return Sample(this->data)::linear_predict(x);}
-        double get_slope(){return Sample(this->data)::get_slope();} 
-        double get_y_intercept(){return Sample(this->data)::get_y_intercept();}
-        double get_r_squared_linear(){Sample temp(this->data);temp.linear_regression();return temp.get_r_squared()};
-        double get_r_squared_polynomial(int power=5){Sample temp(this->data);temp.polynomial_regression(power);return temp.get_r_squared();}
+        Vector<int> ranking(bool ascending=true);
+        Vector<T> exponential_smoothing(bool as_series=false);
+        double Dickey_Fuller();
+        Vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
+        Vector<T> sort(bool ascending=true);
+        Vector<T> shuffle();
+        Vector<T> log_transform();
+        T polynomial_predict(T x,int power=5);
+        double polynomial_MSE(int power=5);
+        bool isGoodFit_linear(double threshold=0.95);
+        bool isGoodFit_polynomial(int power=5,double threshold=0.95);
+        T linear_predict(T x);
+        double get_slope();
+        double get_y_intercept();
+        double get_r_squared_linear();
+        double get_r_squared_polynomial(int power=5);
 
         // constructor & destructor declarations
         Vector() = delete;
-        Vector(const int elements);
-        ~Vector();
-};
-
-// derived class from Array<T>,
-// for 2d matrix
-template<typename T>
-class Matrix : public Array<T>{
-    public:
-        void set(std::initializer_list<int> index, const T value) = delete;
-        T get(std::initializer_list<int> index) = delete;
-        void set(const int index_x, const int index_y, T value);
-        T get(const int index_x, const int index_y);
-        Matrix<T> dotproduct(const Matrix& other);
-        Matrix<T> transpose();
-        // constructor declarations
-        Matrix() = delete;
-        Matrix(const int elements_x, const int elements_y);
-        // destructor declarations
-        ~Matrix();
+        Vector(const int _elements);
+        ~Vector(){};
+    private:
+        const double _reserve = 0.5;
+        int _capacity;
 };
 
 // the corresponding file with the definitions must be included
