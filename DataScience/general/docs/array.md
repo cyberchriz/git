@@ -1,5 +1,5 @@
 [[return to main page]](../../../README.md)
-## Custom Vectors, 2d Matrices and n-dimensional Arrays
+# Custom Vectors, 2d Matrices and n-dimensional Arrays
 usage: `#include <array.h>` or include as part of `<datascience.h>`
 
 description:
@@ -8,7 +8,7 @@ description:
 - a multidimensional index will be internally converted into a 1d index
 - the main benefit of the class comes with the wide variety of mathematic functions that can be applied to these arrays
 
-## `class Array`
+# `class Array`
 An instance of the class can be created by passing its dimensions as type `std::initializer_list<int>` to the constructor.
 For example, for a 3x3x4 array of type `<double>` we can write:
 ```
@@ -17,7 +17,7 @@ Array<double> myArr{3,3,4};
 Public Methods:
 
 
-- Getters & Setters
+### Getters & Setters
 
 |method|description|
 |------|-----------|
@@ -28,7 +28,7 @@ Public Methods:
 | `Array<T>::get_elements()` | returns the total number of elements of the entire array (all dimensions) |
 
 
-- Fill & Initialize
+### Fill & Initialize
 
 |method|description|
 |------|-----------|
@@ -39,7 +39,7 @@ Public Methods:
 | `Array<T>::fill_random_uniform(T min=0,T max=1.0)` | fills the array with values from a random uniform distribution within the given range |
 
 
-- Distribution Properties
+### Distribution Properties
 
 |method|description|
 |------|-----------|
@@ -49,7 +49,7 @@ Public Methods:
 | `Array<T>::stddev()` | returns the standard deviation of all values of the array (all dimensions) |
 
 
-- Addition
+### Addition
 
 |method|description|
 |------|-----------|
@@ -62,7 +62,7 @@ Public Methods:
 | `operator+=(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array; alternative method to `.add(const Array& other)`|
 
 
-- Substraction
+### Substraction
 
 |method|description|
 |------|-----------|
@@ -74,7 +74,7 @@ Public Methods:
 |`operator-=(const Array& other)`| elementwise (scalar) substraction of a second array of equal dimensions from the current array; alternative method to `.substract(const Array& other)`|
 
 
-- Multiplication
+### Multiplication
 
 |method|description|
 |------|-----------|
@@ -86,7 +86,7 @@ Public Methods:
 | `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.multiply(const Array& other)`|
 
 
-- Division
+### Division
 
 |method|description|
 |------|-----------|
@@ -97,7 +97,7 @@ Public Methods:
 | `operator/=(const Array& other)`| elementwise (scalar) division of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.divied(const Array& other)`|
 
 
-- Modulo
+### Modulo
 
 |method|description|
 |------|-----------|
@@ -106,7 +106,7 @@ Public Methods:
 | Array<double> operator%(const double num) | returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number; alternative method to `.modulo(const double num)`|
 
 
-- Exponentiation
+### Exponentiation
 
 |method|description|
 |------|-----------|
@@ -115,7 +115,7 @@ Public Methods:
 | `Array<T>::sqrt()` | applies the square roots to all values of the array |
 
 
-- Find, Replace
+### Find, Replace
 
 |method|description|
 |------|-----------|
@@ -123,14 +123,14 @@ Public Methods:
 | `int Array<T>::find(const T value)` | returns the number of findings of the specified value across the entire array (all dimensions) |
 
 
-- Custom Functions
+### Custom Functions
 
 |method|description|
 |------|-----------|
 | `Array<T>::function(const T (*pointer_to_function)(T))` | applies the specified function to all values of the array (elementwise) |
 
 
-- Assignment
+### Assignment
 
 |method|description|
 |------|-----------|
@@ -138,7 +138,7 @@ Public Methods:
 | `Array<T> copy()`| returns an identical copy of the original array |
 
 
-- Elementwise Comparison By Single Value
+### Elementwise Comparison By Single Value
 
 |method|description|
 |------|-----------|
@@ -150,7 +150,7 @@ Public Methods:
 | `Array<bool> operator<=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the given value |
 
 
-- Elementwise Comparison With Second Array
+### Elementwise Comparison With Second Array
 
 |method|description|
 |------|-----------|
@@ -163,7 +163,7 @@ Public Methods:
 | `Array<bool> operator<=(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the corresponding value in the second array |
 
 
-- Elementwise Logical Operations
+### Elementwise Logical Operations
 
 |method|description|
 |------|-----------|
@@ -174,7 +174,7 @@ Public Methods:
 | `Array<bool> operator||(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
 
 
-- Type Casting
+### Type Casting
 
 |method|description|
 |------|-----------|
@@ -184,7 +184,7 @@ Public Methods:
 
 ___
 
-## `class Matrix`
+# `class Matrix`
 This is a derived class of `class Array<T>`. It inherits all its methods, but deals with the specific case of 2d arrays.
 The constructor is slightly different: because the dimensions are already known to be 2d, they don't need to be passed in as a `std::initializer_list`, but simply by passing the size of the x and y dimensions instead.
 The `.get()` method equally only needs two integers for the x and y indices it refers to.
@@ -204,7 +204,7 @@ On top of all the methods given above, inherited from `class Array<T>`, the Matr
 
 ___
 
-## `class Vector`
+# `class Vector`
 This is also a derived class of `class Array<T>` and it also inherits all its methods, but deals with the specific case of 1d arrays.
 The constructor is slightly different: because the dimensions are already known to be 1d, only the number of elements is required.
 The `.get()` method equally only needs a single integer for the index it refers to.
@@ -215,7 +215,7 @@ For example a 1d `Vector` with 100 elements of type `<double>` can be instantiat
 Vector<double> myVec(100);
 ```
 
-- Vector Getters & Setters
+### Vector Getters & Setters
 
 |method|description|
 |------|-----------|
@@ -223,7 +223,7 @@ Vector<double> myVec(100);
 | `T get(const int index)`| returns the value of the element at the specified index |
 
 
-- Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
+### Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
 
 |method|description|
 |------|-----------|
