@@ -17,6 +17,7 @@ Array<double> myArr{3,3,4};
 Public Methods:
 
 - Getters & Setters
+
 |method|description|
 |------|-----------|
 | `Array<T>::set(std::initializer_list<int> index, T value)` | assigns the value at the given index (with the index in curly braces) |
@@ -26,6 +27,7 @@ Public Methods:
 | `Array<T>::get_elements()` | returns the total number of elements of the entire array (all dimensions) |
 
 - Fill & Initialize
+
 |method|description|
 |------|-----------|
 | `Array<T>::fill_values(T value)` | fills the entire array with the specified value (of datatype T) |
@@ -35,6 +37,7 @@ Public Methods:
 | `Array<T>::fill_random_uniform(T min=0,T max=1.0)` | fills the array with values from a random uniform distribution within the given range |
 
 - Distribution Properties
+
 |method|description|
 |------|-----------|
 | `Array<T>::mean()` | returns the arrithmetic mean of all values of the array (all dimensions) |
@@ -43,6 +46,7 @@ Public Methods:
 | `Array<T>::stddev()` | returns the standard deviation of all values of the array (all dimensions) |
 
 - Addition
+
 |method|description|
 |------|-----------|
 | `Array<T>::sum()` | returns the sum of all values of the array (all dimensions) |
@@ -54,6 +58,7 @@ Public Methods:
 | `operator+=(const Array& other)` | elementwise (scalar) addition of a second array of equal dimensions to the current array; alternative method to `.add(const Array& other)`|
 
 - Substraction
+
 |method|description|
 |------|-----------|
 | `Array<T>::substract(const T value)` | elementwise substraction of the specified value from all values of the array |
@@ -64,6 +69,7 @@ Public Methods:
 |`operator-=(const Array& other)`| elementwise (scalar) substraction of a second array of equal dimensions from the current array; alternative method to `.substract(const Array& other)`|
 
 - Multiplication
+
 |method|description|
 |------|-----------|
 | `Array<T>::product()` | returns the product of all values of the array |
@@ -74,6 +80,7 @@ Public Methods:
 | `operator*=(const Array& other)`| elementwise (scalar) multiplication of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.multiply(const Array& other)`|
 
 - Division
+
 |method|description|
 |------|-----------|
 | `Array<T>::divide(T quotient)` | divides all values of the array by the given quotient |
@@ -83,6 +90,7 @@ Public Methods:
 | `operator/=(const Array& other)`| elementwise (scalar) division of the values of the current array by the values of a second array of equal dimensions;  alternative method to `.divied(const Array& other)`|
 
 - Modulo
+
 |method|description|
 |------|-----------|
 |`operator%=(const double num)`| sets all values of the array to the remainder of their division by the given number |
@@ -90,6 +98,7 @@ Public Methods:
 | Array<double> operator%(const double num) | returns an Array of type `<double>`that holds the remainders of the division of the original array by the given number; alternative method to `.modulo(const double num)`|
 
 - Exponentiation
+
 |method|description|
 |------|-----------|
 | `Array<T>::pow(const T exponent)` | exponentiates all values of the array by the specified power |
@@ -97,23 +106,27 @@ Public Methods:
 | `Array<T>::sqrt()` | applies the square roots to all values of the array |
 
 - Find, Replace
+
 |method|description|
 |------|-----------|
 | `Array<T>::replace(const T old_value, const T new_value)` | replaces all findings of the specified old value by the specified new value |
 | `int Array<T>::find(const T value)` | returns the number of findings of the specified value across the entire array (all dimensions) |
 
 - Custom Functions
+
 |method|description|
 |------|-----------|
 | `Array<T>::function(const T (*pointer_to_function)(T))` | applies the specified function to all values of the array (elementwise) |
 
 - Assignment
+
 |method|description|
 |------|-----------|
 | `Array<T>::operator=(const Array& other)` | copies the values of the specified second array (of equal dimensions) into the current array |
 | `Array<T> copy()`| returns an identical copy of the original array |
 
 - Elementwise Comparison By Single Value
+
 |method|description|
 |------|-----------|
 | `Array<bool> operator>(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is greater than the given value |
@@ -124,6 +137,7 @@ Public Methods:
 | `Array<bool> operator<=(const T value)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the given value |
 
 - Elementwise Comparison With Second Array
+
 |method|description|
 |------|-----------|
 // elementwise comparison with second array
@@ -135,6 +149,7 @@ Public Methods:
 | `Array<bool> operator<=(const Array& other)`|returns a boolean array with each value representing whether the corresponding value in the original array is less than or equal to the corresponding value in the second array |
 
 - Elementwise Logical Operations
+
 |method|description|
 |------|-----------|
 | `Array<bool> operator&&(const bool value)`|returns a boolean array with each value representing the logical `AND` between the corresponding values of the original array and the given value |
@@ -144,6 +159,7 @@ Public Methods:
 | `Array<bool> operator||(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
 
 - Type Casting
+
 |method|description|
 |------|-----------|
 // type casting
@@ -178,12 +194,14 @@ For example a 1d `Vector` with 100 elements of type `<double>` can be instantiat
 Vector<double> myVec(100);
 ```
 - Vector Getters & Setters
+
 |method|description|
 |------|-----------|
 | `set(const int index, const T value)` | assigns the given value to the element at the specified index |
 | `T get(const int index)`| returns the value of the element at the specified index |
 
 - Vector Sample Analysis Methods (=Implementations from `<sample.h>`)
+
 |method|description|
 |------|-----------|
 | `Vector<int> ranking(bool ascending=true)`| returns an integer Vector that holds a ranking of the corresponding values contained in the original Vector |
