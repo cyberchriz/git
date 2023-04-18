@@ -5,4 +5,4 @@ usage:
 1. first(!) set a preprocessor flag `#define MEMLOG`
 2. then `#include <memlog.h>`, alternatively include as part of the `<utilities.h>` library
 This will overide the `new` keyword: anytime memory is allocated on the heap this will be logged to the console
-3. the order above matters, because `<memlog.h>`will only compile (thus take effect) if the `MEMLOG` flag has been defined beforehand.
+3. the order above matters, because `<memlog.h>`will only compile (thus take effect) if the `MEMLOG` flag has been defined beforehand. The benefit is that the logging can easily be disabled by simply commenting out the `MEMLOG` define statement
