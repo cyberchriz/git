@@ -3,10 +3,9 @@
 usage: `#include <array.h>` or include as part of `<datascience.h>`
 
 description:
-- this class implements numeric vectors, matrices and arrays
+- a powerful library that offers a ton of operations for numeric vectors, matrices and arrays
 - 'under the hood' these are simple one-dimensional arrays
-- a multidimensional index will be internally converted into a 1d index
-- the main benefit of the class comes with the wide variety of mathematic functions that can be applied to these arrays
+  (a multidimensional index is internally converted to 1d)
 
 # `class Array`
 An instance of the class can be created by passing its dimensions as type `std::initializer_list<int>` to the constructor.
