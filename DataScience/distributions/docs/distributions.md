@@ -14,6 +14,11 @@ Make sure to update the include path or use relative paths instead.
 ### Random Numbers
 Class Name: `Random`, alias `rnd`
 
+Example:
+```
+int myNum1 = rnd<int>::uniform(0,100);
+double myNum2 = rnd<double>::gaussian();
+```
 Public Methods:
 ```
 static T gaussian(T mu=0, T sigma=1);
