@@ -32,8 +32,7 @@ static T sign();
 ```
 
 ### Cumulative Distribution Functions
-Description: A cumulative distribution function gives the probability of a random variable
-taking on values less than or equal to a given value.
+Description: A cumulative distribution function gives the probability of a random variable (as element of a specified distribution) taking on values less than or equal to a given value.
 
 Class Name: `CdfObject`, alias `cdf`
 
