@@ -49,9 +49,8 @@ static T lomax(T x_val,T alpha=1, T tail_index=1);
 
 ### Probability Density Functions
 Description: A probability density function (PDF) is a statistical function that gives the probability
-of a random variable taking on any particular value.
-It is the derivative of the cumulative distribution function and is used to analyze
-the probability of a random variable taking on a particular value.
+of a random variable (as element of a specified distribution) taking on any particular value.
+It is the derivative of the cumulative distribution function.
 
 Class Name: `PdfObject`, alias `pdf`
 
