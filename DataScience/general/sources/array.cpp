@@ -911,6 +911,139 @@ Array<T>::operator Array<C>(){
 }
 
 // +=================================+   
+// | Class Conversion                |
+// +=================================+
+
+// flattens an array or matrix into a one-dimensional vector
+template<typename T>
+Vector<T> Array<T>::flatten(){
+    Vector<T> result(this->_elements);
+    result._data=this->_data;
+    return result;
+}
+
+// converts an array, matrix or vector into a 2d matrix
+// of the specified size; if the new matrix has less
+// elements in any of the dimensions, the surplus elements
+// of the source will be ignored; if the new matrix has more elements, these
+// additional elements will be initialized with zeros;
+// this method can also be used to get a resized copy from
+// a 2d source matrix
+template<typename T>
+Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
+    Matrix<T> result(rows,cols);
+    result.fill_zeros();
+    if (this->_dimensions==1){
+        for (int i=0;i<std::fmin(this->_elements,cols)){
+            result.set(0,i,this->data[i]);
+        }
+    }
+    else if (this->dimensions==2){
+        for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
+            for (int c=0;c<std::fmin(cols,this->size[1])){
+                result.set(r,c,this->get(r,c));
+            }
+        }
+    }
+    else {
+        int index[this->_dimensions];
+        // reset index to all zeros
+        for (int d=0;d<this->_dimensions;d++)[
+            index[d]=0;
+        ]
+        // cycle through first and second dimension, i.e. keeping
+        // the higher dimensions at index zero
+        for (int row=0;row<this->_size[0];row++){
+            index[0]=row;
+            for (int col=0;col<this->_size[1];col++){
+                index[1]=col;
+                // get the source value by implicitly converting
+                // the index array into std::intializer_list<int>
+                result.set(row,col,this->get({std::begin(index), std::end(index)}));
+            }
+        }
+    }
+    return result;
+}
+
+// converts an array, matrix or vector into a 2d matrix;
+// the exact behavior will depend on the source dimensions:
+// 1. if the source is one-dimensional (=Vector), the result
+// will be a matrix with a single row;
+// 2. if the source already is 2-dimensional, the total size
+// and the size per dimension will remain unchanged, only the
+// datatype of the returned object is now 'Matrix<T>'
+// 3. if the source has more than 2 dimensions, only values from
+// index 0 of the higher dimensions will be copied into the
+// returned result
+template<typename T>
+Matrix<T> Array<T>::asMatrix(){
+    Matrix<T> result;
+    if (this->_dimensions==1){
+        result=Matrix(1,this->_elements);
+        result._data=this->_data;
+    }
+    else if (this->dimensions==2){
+        result=Matrix(this->_size[0],this->_size[1]);
+        result._data=this->_data;
+    }
+    else {
+        result=Matrix(this->_size[0],this->_size[1]);
+        int index[this->_dimensions];
+        // reset index to all zeros
+        for (int d=0;d<this->_dimensions;d++)[
+            index[d]=0;
+        ]
+        // cycle through first and second dimension, i.e. keeping
+        // the higher dimensions at index zero
+        for (int row=0;row<this->_size[0];row++){
+            index[0]=row;
+            for (int col=0;col<this->_size[1];col++){
+                index[1]=col;
+                // get the source value by implicitly converting
+                // the index array into std::intializer_list<int>
+                result.set(row,col,this->get({std::begin(index), std::end(index)}));
+            }
+        }
+    }
+    return result;
+}
+
+// converts a vector or matrix into an array
+// or converts a preexisting array into an array of
+// the specified new size;
+// surplus elements of the source that go beyond the
+// limits of the target will be cut off; if the target
+// is bigger, the surplus target elements that have no
+// corresponding index at the source will be initialized
+// with zeros
+template<typename T>
+Array<T> Array<T>::asArray(std::initializer_list<int> dim_size){
+    Array<T> result(dim_size);
+    result.fill_zeros();
+    // reset result index to all zeros
+    result_index int[result.get_dimensions()];
+    for (int d=0;d<result.get_dimensions();d++){
+        result_index[d]=0;
+    }
+    // reset source index to all zeros
+    source_index int[this->_dimensions];
+    for (int d=0;d<this->_dimensions;d++){
+        source_index[d]=0;
+    }
+    // cycle through source dimensions
+    for (int d=0;d<std::fmin(this->_dimensions,result.get_dimensions());d++){
+        // cycle through elements of given dimension
+        for (int i=0;i<std::fmin(this->_size[d],result.get_size(d));i++){
+            result_index[d]=i;
+            source_index[d]=i;
+            result.set({std::begin(result_index),std::end(result_index)},this->_data[get_element({std::begin(source_index),std::end(source_index)})]);
+        }
+    }
+    return result;
+}
+
+// +=================================+   
 // | Constructors & Destructors      |
 // +=================================+
 
@@ -1085,7 +1218,7 @@ int Vector<T>::size(){
 }
 
 // +=================================+   
-// | Vector as Matrix                |
+// | Vector Transpose                |
 // +=================================+
 
 // returns the vector as a single column matrix, 
@@ -1095,16 +1228,6 @@ Matrix<T> Vector<T>::transpose(){
     Matrix<T> result(this->_elements,1);
     for (int i=0; i<this->_elements; i++){
         result.set(i,0,this->_data[i]);
-    }
-    return result;
-}
-
-// returns a copy of the vector as a single row matrix
-template<typename T>
-Matrix<T> Vector<T>::asMatrix(){
-    Matrix<T> result(1, this->_elements);
-    for (int col=0; col<this->_elements; col++){
-        result.set(0,col,this->_data[col]);
     }
     return result;
 }

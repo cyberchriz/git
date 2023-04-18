@@ -5,6 +5,10 @@
 #include "sample.h"
 #include "../../distributions/headers/random_distributions.h"
 
+// forward declarations
+template<typename T> class Matrix;
+template<typename T> class Vector;
+
 // class for multidimensional arrays
 template<typename T>
 class Array{
@@ -106,6 +110,12 @@ class Array{
         // type casting
         template<typename C> operator Array<C>();
 
+        // conversion
+        Vector<T> flatten();
+        Matrix<T> asMatrix(const int rows, const int cols);
+        Matrix<T> asMatrix();
+        Array<T> asArray(std::initializer_list<int> dim_size);
+
         // constructor & destructor declarations
         Array() = delete;
         Array(std::initializer_list<int> dim_size);
@@ -128,8 +138,7 @@ class Array{
         void Array<T>::resizeArray(T*& arr, int newSize);  
 };
 
-// derived class from Array<T>,
-// for 2d matrix
+// derived class from Array<T>, for 2d matrix
 template<typename T>
 class Matrix : public Array<T>{
     public:
@@ -140,13 +149,13 @@ class Matrix : public Array<T>{
         Matrix<T> transpose();
         // constructor declarations
         Matrix() = delete;
+        Matrix<T> asMatrix() = delete;
         Matrix(const int rows, const int cols);
         // destructor declarations
         ~Matrix(){};
 };
 
-// derived class from Array<T>,
-// for 1d vectors
+// derived class from Array<T>, for 1d vectors
 template<typename T>
 class Vector : public Array<T>{
     public:
@@ -165,9 +174,8 @@ class Vector : public Array<T>{
         int grow(const int additional_elements,T value=0);
         int shrink(const int remove_amount);
 
-        // Vector as Matrix
+        // transpose
         Matrix<T> transpose();
-        Matrix<T> asMatrix();
 
         // Multiplication
         T dotproduct(const Vector& other);
@@ -193,6 +201,7 @@ class Vector : public Array<T>{
 
         // constructor & destructor declarations
         Vector() = delete;
+        Vector<T> asVector() = delete;
         Vector(const int _elements);
         ~Vector(){};
     private:

@@ -180,6 +180,14 @@ Public Methods:
 |------|-----------|
 | `template<typename C> operator Array<C>()`| returns an explicit type cast of the original array |
 
+### Class Conversion
+
+|method|description|
+|------|-----------|
+|`Vector<T> flatten()`| flattens the array (or matrix) by concatenating its data into a 1d Vector|
+|`Matrix<T> asMatrix(const int rows, const int cols)`|converts an array, matrix or vector into a 2d matrix of the specified size; if the new matrix has less elements in any of the dimensions, the surplus elements of the source will be ignored; if the new matrix has more elements, these additional elements will be initialized with zeros; this method can also be used to get a resized copy from a 2d source matrix|
+|`Matrix<T> asMatrix()`|converts an array, matrix or vector into a 2d matrix; the exact behavior will depend on the source dimensions: (1.) if the source is one-dimensional (=Vector), the result will be a matrix with a single row; (2.) if the source already is 2-dimensional, the total size and the size per dimension will remain unchanged, only the datatype of the returned object is now 'Matrix<T>'; (3.) if the source has more than 2 dimensions, only values from index 0 of the higher dimensions will be copied into the returned result |
+|`Array<T> asArray(std::initializer_list<int> dim_size)`|converts a vector or matrix into an array or converts a preexisting array into an array of the specified new size; surplus elements of the source that go beyond the limits of the target will be cut off; if the target is bigger, the surplus target elements that have no corresponding index at the source will be initialized with zeros|
 ___
 
 # `class Matrix`
@@ -241,7 +249,6 @@ Vector<double> myVec(100);
 |------|-----------|
 | `T Vector<T>::dotproduct(const Vector& other)`| returns the dotproduct |
 | `T Vector<T>::operator*(const Vector& other)`| alias method for the dotproduct |
-| `Matrix<T> Vector<T>::asMatrix()` | converts the vector as a single row 'horizontal' matrix (all data as columns) |
 | `Matrix<T> Vector<T>::transpose()`| converts the vector to a single column 'vertical' matrix (all data as rows)|
 
 
