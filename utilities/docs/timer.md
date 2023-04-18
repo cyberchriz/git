@@ -1,3 +1,5 @@
+[[back to main page]](../../README.md)
+
 ## Timer
 dependencies: `<chrono>`, `<iostream>`;
 
