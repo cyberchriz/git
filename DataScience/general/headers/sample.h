@@ -3,6 +3,7 @@
 #include <cmath>
 #include <numeric>
 #include <memory>
+#include "array.h"
 #include "../../distributions/headers/random_distributions.h"
 
 // list of time series differencing methods for stationarity transformation
@@ -72,15 +73,24 @@ class Sample{
         // parametric constructor for single std::vector-type sample
         // note: T must be a numeric type!
         Sample(const std::vector<T>& data){
-            elements = data_vect->size();
-            this->data.resize(elements);
+            elements = data.size();
+            this->data = T(elements);
             for (int n=0;n<elements;n++){
                 this->data[n] = data[n];
             }
-            coefficients.resize(elements);
-            y_regression.resize(elements);
-            residuals.resize(elements);
+            coefficients=double(elements);
+            y_regression=double(elements);
+            residuals=double(elements);
         }   
+
+        // parametric constructor for custom Vector type (as part of array.h)
+        Sample(const Vector<T>& data){
+            elements = data.get_elements();
+            this->data=data._data;
+            coefficients=double(elements);
+            y_regression=double(elements);
+            residuals=double(elements);            
+        }
 
         // parametric constructor for single array-type sample
         // - T must be a numeric type!
@@ -88,9 +98,9 @@ class Sample{
         Sample(const T* data){
             this->data=data;
             elements = sizeof(data)/sizeof(T);
-            coefficients.resize(elements);
-            y_regression.resize(elements);
-            residuals.resize(elements);            
+            coefficients=double(elements);
+            y_regression=double(elements);
+            residuals=double(elements);           
         }
          
         // destructor
@@ -142,13 +152,30 @@ class Sample2d {
         Sample(const std::vector<T>& x_data, const std::vector<T>& y_data){
             this->elements = std::fmin(x_vect->size(),y_vect->size());
             // copy vectors into stack-allocated static arrays
-            this->x_data.resize(elements);
-            this->y_data.resize(elements);
+            this->x_data=T(elements);
+            this->y_data=T(elements);
             for (int n=0;n<elements;n++){
                 this->x_data[n]=x_data[n];
                 this->y_data[n]=y_data[n];
             }
         }    
+
+        // parametric constructor for two vectors of
+        // custom Vector type (as part of array.h)
+        // - T must be a numeric type!
+        // - the vectors x and y should be of equal size!
+        // - if the size is unequal, the surplus elements of the larger vector
+        //   will be ignored        
+        Sample(const Vector<T>& x_data, const Vector<T>& y_data){
+            this->elements = std::fmin(x_data.get_elements(), y_data.get_elements());
+            this->x_data=T(elements);
+            this->y_data=T(elements);            
+            for (int n=0;n<elements;n++){
+                this->x_data[n]=x_data.get(n);
+                this->y_data[n]=y_data.get(n);
+            }
+        }
+
         // parametric constructor for two array-type samples
         // - T must be a numeric type!
         // - arrays must be 1-dimensional!

@@ -11,7 +11,8 @@ The library allows basic statistical analysis on
 
 Constructor:
 - `Sample<T>::Sample(const T* data)` or
-- `Sample<T>::Sample(const std::vector<T>& data)`
+- `Sample<T>::Sample(const std::vector<T>& data)` or
+- `Sample<T>::Sample(const Vector<T>& data)`
 
   note that the first method has less overhead, because the second will
   create an internal copy of the vector as a stack-allocated static array,
@@ -48,12 +49,8 @@ Public Methods:
 ## class `Sample2d<T>`
 Constructor:
 - `Sample2d<T>::Sample2d(const T* x_data, const T* y_data)` or
-- `Sample2d<T>::Sample2d(const std::vector<T>& x_data, const std::vector<T>& y_data)`
-
-  note that the first method has less overhead, because the second will
-  create an internal copy of the vector as a stack-allocated static array,
-  whilst the first method takes an array as it is 'by reference',
-  without making a copy
+- `Sample2d<T>::Sample2d(const std::vector<T>& x_data, const std::vector<T>& y_data)` or
+- `Sample<T>::Sample(const Vector<T>& x_data, const Vector<T>& y_data)`
 
 Methods:
 |method | description |
