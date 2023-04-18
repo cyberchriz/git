@@ -114,16 +114,16 @@ class Array{
         // public member variables
         T* _data; // 1dimensional array of source _data
     
-    private:
+    protected:
 
-        // private member variables
+        // protected member variables
         bool equal_size(const Array& other);
         std::initializer_list<int> _init_list;
         int _elements=0; // total number of _elements in all _dimensions
         int _dimensions=0;
         int* _size; // holds the size (number of _elements) per individual dimension 
         
-        // private methods
+        // protected methods
         int get_element(std::initializer_list<int> index);
         void Array<T>::resizeArray(T*& arr, int newSize);  
 };
@@ -161,6 +161,9 @@ class Vector : public Array<T>{
         T pop();
         int get_capacity();
         int size();
+        void resize(const int new_size);
+        int grow(const int additional_elements,T value=0);
+        int shrink(const int remove_amount);
 
         // Vector as Matrix
         Matrix<T> transpose();
@@ -193,7 +196,7 @@ class Vector : public Array<T>{
         Vector(const int _elements);
         ~Vector(){};
     private:
-        const double _reserve = 0.5;
+        const static double _reserve = 0.5;
         int _capacity;
 };
 

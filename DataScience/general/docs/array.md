@@ -178,7 +178,6 @@ Public Methods:
 
 |method|description|
 |------|-----------|
-// type casting
 | `template<typename C> operator Array<C>()`| returns an explicit type cast of the original array |
 
 ___
@@ -228,9 +227,12 @@ Vector<double> myVec(100);
 |method|description|
 |------|-----------|
 | `int Vector<T>::push_back(T value)` | adds 1 element and assigns its value; returns the resulting number of elements |
+| `int Vector<T>::grow(const int additional_elements,T value=0)`|grows the vector size by the specified number of additional elements and initializes these new elements to the specified value (default=0); will only re-allocate memory if the new size exceeds the capacity; returns the resulting new total number of elements|
+| `int Vector<T>::shrink(const int remove_amount)`|shrinks the vector size by the specified number of elements and returns the resulting new number of remaining total elements|
 | `T Vector<T>::pop()` | removes the last element and returns its value |
 | `int Vector<T>::get_capacity()`| returns the available capacity without memory re-allocations |
 | `int Vector<T>::size()`| returns the number of elements; equivalent to `int Vector<T>::get_elements()`|
+| `Vector<T>::resize(const int new_size)`| changes the vector size to the new number of elements; re-allocation only takes place if the new size exceeds the capacity|
 
 
 ### Special Vector Operations

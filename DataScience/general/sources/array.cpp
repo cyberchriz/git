@@ -1015,10 +1015,51 @@ int Vector<T>::push_back(const T value){
     this->_elements++;
     if (this->_elements>this->_capacity){
         this->_capacity=int(this->_elements*(1.0+this->_reserve));
-        resizeArray(&this_data, this->_capacity);
+        resizeArray(&this->_data, this->_capacity);
     }
     this->_data[_elements-1]=value;
     return this->_elements;
+}
+
+// resize the vector to a new number of elements
+template<typename T>
+void Vector<T>::resize(const int new_size){
+    this->_elements=new_size;
+    if (this->_elements>this->_capacity){
+        this->_capacity=int(this->_elements*(1.0+this->_reserve));
+        resizeArray(&this->_data, this->_capacity);
+    }    
+}
+// grows the vector size by the specified number of
+// additional elements and initializes these new elements
+// to the specified value (default=0);
+// will only re-allocate memory if the new size exceeds
+// the capacity; returns the new total number of elements
+template<typename T>
+int Vector<T>::grow(const int additional_elements,T value){
+    if (additional_elements<1){return 0;}
+    int new_size=this->_elements+additional_elements;
+    // re-allocate memory if the new size exceeds the capacity
+    if (new_size>this->_capacity){
+        this->capacity=int(this->_elements*(1.0+this->_reserve));
+        resizeArray(&this->_data, this->_capacity);
+    }
+    // initialize the new elements
+    for (int i=this->_elements;i<new_size;i++){
+        this->_data[i]=value;
+    }
+    this->_elements=new_size;
+    return new_size;
+}
+
+// shrinks the vector size by the specified number of
+// elements and returns the resulting new number of
+// remaining total elements
+template<typename T>
+int Vector<T>::shrink(const int remove_amount){
+    int new_size=std::fmax(0,this->_elements-remove_amount);
+    this->_elements=new_size;
+    return new_size;
 }
 
 // pop 1 element from the end the Vector
