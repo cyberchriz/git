@@ -4,33 +4,80 @@
 // by overriding the `new` operator;
 // in order to use this, simply define a MEMLOG flag as a preprocessor directive before including this file
 
-#ifdef MEMLOG
-#pragma once
-    #include <iostream>
-    #include <boost/stacktrace.hpp>
+#define MEMLOG
 
-    // returns the name of the function with the specified level on the call stack;
-    // index 0 refers to the top level (=current function)
-    // index 1 refers to the calling function
-    std::string get_function_name(uint32_t stacklevel_index){
-        boost::stacktrace::stacktrace trace;
-        static u_int32_t stack_height;
-        stack_height = trace.size();
-        if (stacklevel_index > stack_height-1){
-            return "[none / reached bottom of callstack]";
-        }
-        else {
-            return "["+trace[stacklevel_index].name()+"]";
+#ifdef MEMLOG
+
+    // dependencies
+    #pragma once
+    #include <iostream>
+    #include <cstdlib>
+    #include <unordered_map>
+    #include <execinfo.h>
+    #include <cxxabi.h>
+
+    // global variables
+    
+    std::unordered_map<void*, std::size_t> allocated_memory;
+    int total_allocation=0;
+
+    // get function name from callstack
+    // level 0: current function
+    // level 1: calling function
+    void get_caller_function_name(char*& func_name, int stack_level=1){
+        void* callstack[stack_level+1];
+        int num_frames = backtrace(callstack, stack_level+1);
+        if (num_frames >= 2) {
+            char** symbollist = backtrace_symbols(callstack, stack_level+1);
+            if (symbollist != nullptr) {
+                int status = 0;
+                func_name = abi::__cxa_demangle(symbollist[stack_level], nullptr, nullptr, &status);
+                free(symbollist);
+            }
         }
     }
 
-    void* operator new(size_t size){ 
-        std::cout << "memory heap allocation " << size << " bytes in function "
-                  << get_function_name(2)
-                  << ", called by function "
-                  << get_function_name(3) << "\n";
-        std::cout.flush();
-        return malloc(size);
+    // operator 'new' override
+    void* operator new(std::size_t size){
+        void* ptr = std::malloc(size);
+        allocated_memory[ptr] = size;
+        total_allocation+=size;
+
+        char* func_name = nullptr;
+        get_caller_function_name(func_name, 1);
+        if (func_name != nullptr) {
+            std::cout << "In Function " << func_name;            
+        }
+        get_caller_function_name(func_name, 2);
+        if (func_name != nullptr) {
+            std::cout << " (called by function " << func_name << ")";
+        }
+        std::cout << " allocated " << size << " bytes at address " << ptr;
+        std::cout << " [total: " << total_allocation << " bytes]" << std::endl;
+        free(func_name);
+        return ptr;
+    }
+
+    // operator 'delete' override
+    void operator delete(void* ptr) noexcept {
+        std::size_t size = allocated_memory[ptr];
+        total_allocation-=size;
+
+        char* func_name = nullptr;
+        get_caller_function_name(func_name, 1);
+        if (func_name != nullptr) {
+            std::cout << "In Function " << func_name;            
+        }
+        get_caller_function_name(func_name, 2);
+        if (func_name != nullptr) {
+            std::cout << " (called by function " << func_name << ")";
+        }
+        std::cout << " freed " << size << " bytes at address " << ptr;
+        std::cout << " [total: " << total_allocation << " bytes]" << std::endl;
+        free(func_name);
+        allocated_memory.erase(ptr);
+        std::free(ptr);
     }
     #include "../sources/memlog.cpp"
+
 #endif

@@ -61,7 +61,15 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "executor": "cpp",
+        "future": "cpp",
+        "condition_variable": "cpp",
+        "forward_list": "cpp",
+        "io_context": "cpp",
+        "netfwd": "cpp",
+        "timer": "cpp",
+        "mutex": "cpp"
     },
     "cmake.configureOnOpen": false
 }
