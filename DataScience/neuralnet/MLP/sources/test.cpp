@@ -6,23 +6,21 @@
 int main(){
     // set up a test network
     MLP network = MLP("");
-    
+      
+    // topology
+    int input_neurons=5;  
+    network.add_layer(input_neurons,Vanilla,f_LReLU);
+    network.add_layer(35,Vanilla,f_LReLU);
+    network.add_layer(input_neurons,Vanilla,f_LReLU);
+
     // hyperparameters
-    network.set_learning_rate(0.005);
+    network.set_learning_rate(0.05);
+    network.set_learning_rate_decay(10000000);
     network.set_learning_rate_auto(true);
     network.set_recurrent(false);
     network.set_dropout(0);
     network.set_training_mode(true);
-    ACTIVATION_FUNC act_func=f_LReLU;
-    OPTIMIZATION_METHOD opt=Vanilla;
-      
-    // topology
-    int input_neurons=5;
-    int hidden_neurons=50;
-    network.add_layer(input_neurons,opt,act_func);
-    network.add_layer(hidden_neurons,opt,act_func);
-    network.add_layer(input_neurons,opt,act_func);
-    network.reset_weights(1,__INT_MAX__,1);
+    network.set_gradient_clipping(true,0.49);   
 
     // test iterations
     for (int i=0;i<=10000000; i++){

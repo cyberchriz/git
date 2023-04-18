@@ -180,6 +180,10 @@ void MLP::feedforward(uint start_layer, uint end_layer){
                 layer[l].neuron[j].x=0;
                 layer[l].neuron[j].h=0;
                 reset_weights(l,l);
+                // auto-adjust learning rate
+                if (lr_auto){
+                    lr_adjust_factor *=lr_adjust_fraction;
+                }
             }
         }        
         // rescale outputs
@@ -209,7 +213,9 @@ void MLP::feedforward(uint start_layer, uint end_layer){
 void MLP::backpropagate(){
     if (!training_mode){return;}
     backprop_iterations++;
-    lr*=std::pow(0.5,(double(backprop_iterations))/lr_decay);
+    // apply learning rate decay
+    lr=base_lr * std::pow(0.5,(double(backprop_iterations))/lr_decay);
+    lr *= lr_adjust_factor;
 
     // (I) cycle backwards through layers
     for (int l=layers-1;l>=1;l--){
@@ -221,14 +227,11 @@ void MLP::backpropagate(){
                 last_gradient = layer[l].neuron[j].gradient;
                 layer[l].neuron[j].gradient = layer[l].neuron[j].scaled_label - layer[l].neuron[j].h;
 
-                // gradient clipping
-                if (gradient_clipping){
-                    layer[l].neuron[j].gradient = fmin(layer[l].neuron[j].gradient, gradient_clipping_threshold);
-                    layer[l].neuron[j].gradient = fmax(layer[l].neuron[j].gradient, -gradient_clipping_threshold);
-                }
+                // gradient NaN/Inf check
                 if (std::isnan(layer[l].neuron[j].gradient) || std::isinf(layer[l].neuron[j].gradient)){
                     layer[l].neuron[j].gradient=0;
                     reset_weights(l,l);
+                    if (lr_auto){lr_adjust_factor*=lr_adjust_fraction;}
                     break;
                 }
                 // 0.5err^2 loss
@@ -241,13 +244,16 @@ void MLP::backpropagate(){
 
                 // auto-adjust learning rate
                 if (lr_auto){
-                    static double factor = 0.999;
-                    static double inv_factor = 1/factor;
-                    lr = layer[l].neuron[j].gradient-last_gradient>0 ? lr*factor : lr*inv_factor;
-                    lr = fmin(lr,0.1);
-                    lr = fmax(lr,0.00000001);
-                    //std::cout << "learning rate adjusted to " << lr << "\n";
+                    lr_adjust_factor = std::fabs(layer[l].neuron[j].gradient) > std::fabs(last_gradient) ?
+                            std::fmax(0.0001, lr_adjust_factor*lr_adjust_fraction) :
+                            std::fmin(1.0,lr_adjust_factor*inv_fraction);
+                    lr=std::fmin(lr,base_lr);
                 }
+                // gradient clipping
+                if (gradient_clipping){
+                    layer[l].neuron[j].gradient = fmin(layer[l].neuron[j].gradient, gradient_clipping_threshold);
+                    layer[l].neuron[j].gradient = fmax(layer[l].neuron[j].gradient, -gradient_clipping_threshold);
+                }                
             }
         }
         // get hidden errors, i.e. SUM_k[err_k*w_jk]

@@ -31,7 +31,7 @@ class MLP{
         bool network_exists(){return layers!=0;}
         double get_loss_avg();
         void set_training_mode(bool active=true){training_mode=active;}
-        void set_learning_rate(double value){lr=fmin(fmax(0,value),1.0);}
+        void set_learning_rate(double value){base_lr=fmin(fmax(0,value),1.0);}
         void set_learning_rate_decay(uint value){lr_decay=value;}
         void set_learning_momentum(double value){lr_momentum=fmin(fmax(0,value),1.0);}
         void set_learning_rate_auto(bool active=true){lr_auto=active;}
@@ -52,9 +52,13 @@ class MLP{
         void load(std::string filename);
         int backprop_iterations=0;
         SCALING scaling_method=none;
-        double lr=0.005;
+        double base_lr=0.005;
+        double lr=base_lr;
+        double lr_adjust_factor=1;
+        const double lr_adjust_fraction=0.999;
+        const double inv_fraction = 1/lr_adjust_fraction;
         double lr_momentum=0.0;
-        double lr_decay=1000000;
+        double lr_decay=100000000;
         bool lr_auto=false;
         double opt_beta1=0.9;
         double opt_beta2=0.99;
