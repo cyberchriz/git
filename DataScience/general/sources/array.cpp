@@ -1383,3 +1383,54 @@ Matrix<T> Matrix<T>::transpose(){
     }
     return result;
 }
+
+// +=================================+   
+// | Output                          |
+// +=================================+
+
+// prints the vector to the console
+template<typename T>
+void Vector<T>::print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+    std::cout << this->asString(delimiter, line_break, with_indices);
+}
+
+// returns the vector as a string
+template<typename T>
+std::string Vector<T>::asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+    std::string result="";
+    for (int i=0;i<this->_elements;i++){
+        if (with_indices){
+            result+="["+std::string(i)+"]=";
+        }
+        result+=std::string(this->_data[i]);
+        if (i!=this->_elements-1){
+            result+=delimiter;
+        }
+    }
+    result+=line_break;
+}
+
+// prints the matrix to the console
+template<typename T>
+void Matrix<T>::print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+    std::cout << this->asString(delimiter, line_break, with_indices);
+}
+
+// returns the vector as a string
+template<typename T>
+std::string Matrix<T>::asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+    std::string result="";
+    for (int row=0;i<this->_size[0];i++){
+        for (int col=0;col<this->_size[1];col++){
+            if (with_indices){
+                result+="["+std::string(row)+"]";
+                result+="["+std::string(col)+"]=";
+            }
+            result+=std::string(this->get(row,col));
+            if (col!=this->_size[1]-1){
+                result+=delimiter;
+            }
+        }
+        result+=line_break;
+    }
+}

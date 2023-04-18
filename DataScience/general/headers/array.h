@@ -2,6 +2,7 @@
 #include <cmath> 
 #include <memory>
 #include <cstdarg>
+#include <iostream>
 #include "sample.h"
 #include "../../distributions/headers/random_distributions.h"
 
@@ -147,6 +148,8 @@ class Matrix : public Array<T>{
         Matrix<T> dotproduct(const Matrix& other);
         Matrix<T> operator*(const Matrix& otehr);
         Matrix<T> transpose();
+        void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
+        std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
         // constructor declarations
         Matrix() = delete;
         Matrix<T> asMatrix() = delete;
@@ -198,6 +201,10 @@ class Vector : public Array<T>{
         double get_y_intercept();
         double get_r_squared_linear();
         double get_r_squared_polynomial(int power=5);
+
+        // output
+        void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
+        std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
 
         // constructor & destructor declarations
         Vector() = delete;

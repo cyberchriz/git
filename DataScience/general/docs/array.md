@@ -208,6 +208,13 @@ On top of all the methods given above, inherited from `class Array<T>`, the Matr
 |`Matrix<T>::operator*(const Matrix& other)`| alias method for the dotproduct|
 |`Matrix<T>::transpose()`|returns the transpose of the current matrix as the resulting new `Matrix<T>`|
 
+
+### Output
+
+|method|description|
+|------|-----------|
+|`void Matrix<T>::print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false)`|prints the matrix to the console|
+|`std::string Matrix<T>::asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false)`|returns the matrix as a string|
 ___
 
 # `class Vector`
@@ -270,5 +277,12 @@ Vector<double> myVec(100);
 | `double get_slope()`|returns the slope of linear regression of the vector data |
 | `double get_y_intercept()`| returns the y-axis intercept of linear regression of the vector data |
 | `double get_r_squared_linear()`| returns the coefficient of determination (r2) of linear regression of the Vector data|| `double get_r_squared_polynomial(int power=5)`| returns the coefficient of determination (r2) of polynomial regression (to the specified power) of the Vector data|
+
+
+### Output
+|method|description|
+|------|-----------|
+|`void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false)`|prints the vector to the console|
+|`std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false)`|returns the vector as a string|
 
 [[return to main page]](../../../README.md)
