@@ -27,6 +27,7 @@ class Array{
         void fill_identity();
         void fill_random_gaussian(const T mu=0, const T sigma=1);
         void fill_random_uniform(const T min=0, const T max=1.0);
+        void fill_range(const T start=0, const T step=1);
 
         // distribution properties
         double mean();
@@ -118,7 +119,7 @@ class Array{
         Array<T> asArray(std::initializer_list<int> dim_size);
 
         // constructor & destructor declarations
-        Array() = delete;
+        //Array() = delete;
         Array(std::initializer_list<int> dim_size);
         ~Array();
 
@@ -135,8 +136,8 @@ class Array{
         int* _size; // holds the size (number of _elements) per individual dimension 
         
         // protected methods
-        int get_element(std::initializer_list<int> index);
-        void Array<T>::resizeArray(T*& arr, int newSize);  
+        int get_element(const std::initializer_list<int>& index);
+        void resizeArray(T*& arr, const int newSize);  
 };
 
 // derived class from Array<T>, for 2d matrix
@@ -152,7 +153,6 @@ class Matrix : public Array<T>{
         std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
         // constructor declarations
         Matrix() = delete;
-        Matrix<T> asMatrix() = delete;
         Matrix(const int rows, const int cols);
         // destructor declarations
         ~Matrix(){};
@@ -212,7 +212,7 @@ class Vector : public Array<T>{
         Vector(const int _elements);
         ~Vector(){};
     private:
-        const static double _reserve = 0.5;
+        const double _reserve = 0.5;
         int _capacity;
 };
 

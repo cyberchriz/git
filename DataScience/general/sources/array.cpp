@@ -10,39 +10,41 @@ void Array<T>::set(std::initializer_list<int> index, const T value){
     this->_data[get_element(index)] = value;
 }
 
-// assigns a value to a Vector element via its index
+// assigns a value to an element of a one-dimensional vector via its index
 template<typename T>
 void Vector<T>::set(const int index, const T value){
     this->_data[index] = value;
-}
+};
 
-// assigns a value to a 2d matrix element via its index
+// assigns a value to an element of a two-dimensional matrix via its index
 template<typename T>
 void Matrix<T>::set(const int row, const int col, const T value){
-    this->_data[get_element({row,col})] = value;
+    std::initializer_list<int> index={row,col};
+    this->_data[this->get_element(index)] = value;
 }
 
 // returns the value of an array element via its index
 template<typename T>
 T Array<T>::get(std::initializer_list<int> index){
     int element=get_element(index);
-    if (std::isnan(element) || element>elements){return NAN;}
+    if (std::isnan(element) || element>this->_elements){return T(NAN);}
     return _data[element];
 }
 
 // returns the value of a vector element via its index
 template<typename T>
 T Vector<T>::get(const int index){
-    if (index>this->_elements){return NAN;}
+    if (index>this->_elements){return T(NAN);}
     return this->_data[index];
 }
 
 // returns the value of a 2d matrix element via its index
 template<typename T>
 T Matrix<T>::get(const int row, const int col){
-    int element=get_element({row,col});
-    if (std::isnan(element) || element>elements){return NAN;}
-    return _data[element];
+    std::initializer_list<int> index={row,col};
+    int element=this->get_element(index);
+    if (std::isnan(element) || element>this->_elements){return T(NAN);}
+    return this->_data[element];
 }
 
 // returns the number of dimensions of the array
@@ -64,38 +66,27 @@ int Array<T>::get_elements(){
     return _elements;
 }
 
-// assigns a value to an element of a one-dimensional vector via its index
-template<typename T>
-void Vector<T>::set(const int index, const T value){
-    this->_data[index] = value;
-};
-
-// assigns a value to an element of a two-dimensional matrix via its index
-template<typename T>
-void Matrix<T>::set(const int row, const int col, const T value){
-    this->_data[this->get_element({row,col})] = value;
-}
-
 // converts a multidimensional index to 1d
 template<typename T>
-int Array<T>::get_element(std::initializer_list<int> index){
+int Array<T>::get_element(const std::initializer_list<int>& index) {
     // confirm valid number of _dimensions
-    if (index._size() > _dimensions){
-        return NAN;
+    if (index.size() > _dimensions){
+        return -1;
     }
     // principle: result=index[0] + index[1]*size[0] + index[2]*size[0]*size[1] + index[3]*size[0]*size[1]*size[2] + ...
-    static int result;
-    static int add;
-    result = *index.begin();
-    for (int i=1, auto iterator=index.begin()+1; iterator!=index.end(); i++, iterator++){
+    int result = *index.begin();
+    int add;
+    auto iterator = index.begin() + 1;
+    for (int i = 1; iterator != index.end(); ++i, ++iterator){
         add = *iterator;
-        for(int s=0;s<i;s++){
-            add*=_size[s];
+        for(int s = 0; s < i; ++s){
+            add *= _size[s];
         }
-        result+=add;
+        result += add;
     }
     return result;
-};
+}
+
 
 // +=================================+   
 // | fill, initialize                |
@@ -145,10 +136,38 @@ void Array<T>::fill_random_uniform(const T min, const T max){
     }
 };
 
-// fill with the array with zeros
+// fill the array with zeros
 template<typename T>
 void Array<T>::fill_zeros(){
     this->fill_values(0);
+}
+
+// fill with a continuous range of numbers
+// in all dimensions
+template<typename T>
+void Array<T>::fill_range(const T start, const T step){
+    if (this->_dimensions==1){
+        for (int i=0;i<this->_elements;i++){
+            this->_data[i]=start+i*step;
+        }
+    }
+    else if (this->dimensions==2){
+        for (int row=0;row<this->_size[0];row++){
+            for (int col=0;col<this->_size[1];col++){
+                this->_set(row,col,start+step*std::fmax(row,col));
+            }
+        }
+    }
+    else {
+        int index[this->_dimensions];
+        for (int d=0;d<this->_dimensions;d++){
+            for (int i=0;i<this->_size[d];i++){
+                index[d]=i;
+                std::initializer_list<int> list={std::begin(index),std::end(index)};
+                this->set(list,start+i*step);
+            }
+        }
+    }
 }
 
 // +=================================+   
@@ -210,7 +229,7 @@ template<typename T>
 Array<T> Array<T>::operator+(const Array& other){
     Array<T> result(this->_init_list);
     if (!equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -223,7 +242,9 @@ Array<T> Array<T>::operator+(const Array& other){
 // increments the values of the array by +1
 template<typename T>
 void Array<T>::operator++(){
-    this->+=1;
+    for (int i=0; i<this->_elements; i++){
+        this->_data[i]+=1;
+    }
 }
 
 // elementwise addition of the specified
@@ -243,7 +264,7 @@ void Array<T>::operator+=(const T value){
 template<typename T>
 void Array<T>::operator+=(const Array& other){
     if (!equal_size(other)){
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }
     for (int i=0; i<this->_elements; i++){
@@ -272,7 +293,7 @@ template<typename T>
 Array<T> Array<T>::operator-(const Array& other){
     Array<T> result(this->_init_list);
     if (!equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -285,7 +306,9 @@ Array<T> Array<T>::operator-(const Array& other){
 // decrements the values of the array by -1
 template<typename T>
 void Array<T>::operator--(){
-    this->-=1;
+    for (int i=0; i<this->_elements; i++){
+        this->_data[i]-=1;
+    }
 }
 
 // elementwise substraction of the specified
@@ -306,7 +329,7 @@ void Array<T>::operator-=(const T value){
 template<typename T>
 void Array<T>::operator-=(const Array& other){
     if (!equal_size(other)){
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }
     for (int i=0; i<this->_elements; i++){
@@ -323,7 +346,7 @@ void Array<T>::operator-=(const Array& other){
 template<typename T>
 T Array<T>::product(){
     if (this->_elements==0){
-        return NAN;
+        return T(NAN);
     }
     T result = this->_data[0];
     for (int i=1; i<this->_elements; i++){
@@ -359,7 +382,7 @@ template<typename T>
 Array<T> Array<T>::Hadamard(const Array& other){
     Array<T> result(this->_init_list);
     if(!equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -377,7 +400,7 @@ T Vector<T>::dotproduct(const Vector& other){
     }
     T result = 0;
     for (int i = 0; i < this->_elements; i++){
-        result += _data[i] * other._data[i];
+        result += this->_data[i] * other._data[i];
     }
     
     return result;
@@ -393,10 +416,10 @@ T Vector<T>::operator*(const Vector& other){
 template<typename T>
 Matrix<T> Matrix<T>::dotproduct(const Matrix& other){
     // Create the resulting matrix
-    Matrix<T> result(_size[0], other._size[1]);
+    Matrix<T> result(this->_size[0], other._size[1]);
     // Check if the matrices can be multiplied
     if (this->_size[1] != other._size[0]){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
         return result;
     }
     // Compute the dot product
@@ -485,7 +508,7 @@ void Array<T>::pow(const T exponent){
 template<typename T>
 void Array<T>::pow(const Array& other){
     if (!equal_size(other)){
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }
     else {
@@ -500,7 +523,7 @@ void Array<T>::pow(const Array& other){
 template<typename T>
 void Array<T>::sqrt(){
     for (int i=0; i<this->_elements; i++){
-        this->_data[i]=std::sqrt(this->_data[i], exponent);
+        this->_data[i]=std::sqrt(this->_data[i]);
     }
 }
 
@@ -585,7 +608,7 @@ void Array<T>::function(const T (*pointer_to_function)(T)){
 template<typename T>
 void Array<T>::operator=(const Array<T>& other){
     if (!equal_size(other)){
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }
     for (int i=0; i<this->_elements; i++){
@@ -618,7 +641,7 @@ Array<bool> Array<T>::operator>(const T value){
     for (int i=0; i<this->_elements; i++){
         result._data[i]=this->_data[i]>value;
     }
-    return result
+    return result;
 }
 
 // returns a boolean array of equal dimensions,
@@ -631,7 +654,7 @@ Array<bool> Array<T>::operator>=(const T value){
     for (int i=0; i<this->_elements; i++){
         result._data[i]=this->_data[i]>=value;
     }
-    return result
+    return result;
 }
 
 // returns a boolean array of equal dimensions,
@@ -702,7 +725,7 @@ template<typename T>
 Array<bool> Array<T>::operator>(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -723,7 +746,7 @@ template<typename T>
 Array<bool> Array<T>::operator>=(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -744,7 +767,7 @@ template<typename T>
 Array<bool> Array<T>::operator==(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -765,7 +788,7 @@ template<typename T>
 Array<bool> Array<T>::operator!=(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -786,7 +809,7 @@ template<typename T>
 Array<bool> Array<T>::operator<(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -807,7 +830,7 @@ template<typename T>
 Array<bool> Array<T>::operator<=(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -865,7 +888,7 @@ template<typename T>
 Array<bool> Array<T>::operator&&(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -885,7 +908,7 @@ template<typename T>
 Array<bool> Array<T>::operator||(const Array& other){
     Array<bool> result(this->_init_list);
     if (!this->equal_size(other)){
-        result.fill_values(NAN);
+        result.fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -934,13 +957,13 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
     Matrix<T> result(rows,cols);
     result.fill_zeros();
     if (this->_dimensions==1){
-        for (int i=0;i<std::fmin(this->_elements,cols)){
+        for (int i=0;i<std::fmin(this->_elements,cols);i++){
             result.set(0,i,this->data[i]);
         }
     }
     else if (this->dimensions==2){
         for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
-            for (int c=0;c<std::fmin(cols,this->size[1])){
+            for (int c=0;c<std::fmin(cols,this->size[1]);c++){
                 result.set(r,c,this->get(r,c));
             }
         }
@@ -948,9 +971,9 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
     else {
         int index[this->_dimensions];
         // reset index to all zeros
-        for (int d=0;d<this->_dimensions;d++)[
+        for (int d=0;d<this->_dimensions;d++){
             index[d]=0;
-        ]
+        }
         // cycle through first and second dimension, i.e. keeping
         // the higher dimensions at index zero
         for (int row=0;row<this->_size[0];row++){
@@ -980,20 +1003,20 @@ template<typename T>
 Matrix<T> Array<T>::asMatrix(){
     Matrix<T> result;
     if (this->_dimensions==1){
-        result=Matrix(1,this->_elements);
+        result=Matrix<T>(1,this->_elements);
         result._data=this->_data;
     }
     else if (this->dimensions==2){
-        result=Matrix(this->_size[0],this->_size[1]);
+        result=Matrix<T>(this->_size[0],this->_size[1]);
         result._data=this->_data;
     }
     else {
-        result=Matrix(this->_size[0],this->_size[1]);
+        result=Matrix<T>(this->_size[0],this->_size[1]);
         int index[this->_dimensions];
         // reset index to all zeros
-        for (int d=0;d<this->_dimensions;d++)[
+        for (int d=0;d<this->_dimensions;d++){
             index[d]=0;
-        ]
+        }
         // cycle through first and second dimension, i.e. keeping
         // the higher dimensions at index zero
         for (int row=0;row<this->_size[0];row++){
@@ -1022,12 +1045,12 @@ Array<T> Array<T>::asArray(std::initializer_list<int> dim_size){
     Array<T> result(dim_size);
     result.fill_zeros();
     // reset result index to all zeros
-    result_index int[result.get_dimensions()];
+    int result_index[result.get_dimensions()];
     for (int d=0;d<result.get_dimensions();d++){
         result_index[d]=0;
     }
     // reset source index to all zeros
-    source_index int[this->_dimensions];
+    int source_index[this->_dimensions];
     for (int d=0;d<this->_dimensions;d++){
         source_index[d]=0;
     }
@@ -1052,10 +1075,11 @@ Array<T> Array<T>::asArray(std::initializer_list<int> dim_size){
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
 Array<T>::Array(std::initializer_list<int> dim_size){
-    init_list=dim_size;
+    this->_init_list=dim_size;
     this->_dimensions = (int)dim_size.size();
     this->_size = new int(_dimensions);
-    for (int n=0, auto iterator=dim_size.begin();iterator!=dim_size.end();n++, iterator++){
+    auto iterator=dim_size.begin();
+    for (int n=0; iterator!=dim_size.end();n++, iterator++){
         this->_size[n]=*iterator;
     }
     this->elements=1;
@@ -1075,7 +1099,7 @@ Array<T>::~Array(){
 // constructor for a one-dimensional vector
 template<typename T>
 Vector<T>::Vector(const int elements){
-    init_list={elements};
+    this->init_list={elements};
     this->_size = new int(1);
     this->_elements = elements;
     this->_size[0] = elements;
@@ -1087,7 +1111,7 @@ Vector<T>::Vector(const int elements){
 // constructor for 2d matrix
 template<typename T>
 Matrix<T>::Matrix(const int rows, const int cols){
-    init_list = {rows, colss};
+    this->_init_list = {rows, cols};
     this->_size = new int(2);
     this->_elements = rows * cols;
     this->_size[0] = rows;
@@ -1106,7 +1130,7 @@ Matrix<T>::Matrix(const int rows, const int cols){
 template<typename T>
 bool Array<T>::equal_size(const Array& other){
     if (this->_dimensions!=other->get_dimensions()){
-        return false
+        return false;
     }
     for (int n=0; n<this->_dimensions; n++){
         if (this->_size[n]!=other.get_size(n)){
@@ -1120,7 +1144,7 @@ bool Array<T>::equal_size(const Array& other){
 // by allocating new memory and copying the previous
 // data to the new location
 template<typename T>
-void Array<T>::resizeArray(T*& arr, int newSize) {
+void Array<T>::resizeArray(T*& arr, const int newSize) {
     // Create a new array with the desired size
     T* newArr = new T[newSize];
     // Copy the elements from the old array to the new array
@@ -1150,7 +1174,7 @@ int Vector<T>::push_back(const T value){
         this->_capacity=int(this->_elements*(1.0+this->_reserve));
         resizeArray(&this->_data, this->_capacity);
     }
-    this->_data[_elements-1]=value;
+    this->_data[this->_elements-1]=value;
     return this->_elements;
 }
 
@@ -1199,7 +1223,7 @@ int Vector<T>::shrink(const int remove_amount){
 template<typename T>
 T Vector<T>::pop(){
     this->_elements--;
-    return this->_data[elements];
+    return this->_data[this->_elements];
 }
 
 // returns the available total capacity of a vector
@@ -1239,17 +1263,17 @@ Matrix<T> Vector<T>::transpose(){
 // returns a vector of integers that represent
 // a ranking of the source vector
 template<typename T>
-Vector<int> Vector<T>::ranking(bool ascending=true){
+Vector<int> Vector<T>::ranking(bool ascending){
     Vector<int> result(this->_elements);
-    result._data=Sample(this->_data)::ranking(ascending);
+    result._data=Sample<T>(this->_data).ranking(ascending);
     return result;
 }
 
 // returns an exponentially smoothed copy of the source vector
 template<typename T>
-Vector<T> Vector<T>::exponential_smoothing(bool as_series=false){
+Vector<T> Vector<T>::exponential_smoothing(bool as_series){
     Vector<T> result(this->_elements);
-    result._data=Sample(this->_data)::exponential_smoothing(as_series);
+    result._data=Sample<T>(this->_data).exponential_smoothing(as_series);
     return result;
 } 
 
@@ -1259,7 +1283,7 @@ Vector<T> Vector<T>::exponential_smoothing(bool as_series=false){
 // data of the vector are stationary
 template<typename T>
 double Vector<T>::Dickey_Fuller(){
-    return Sample(this->_data)::Dickey_Fuller();
+    return Sample<T>(this->_data).Dickey_Fuller();
 }
 
 // returns a stationary transformation of the vector data;
@@ -1270,25 +1294,25 @@ double Vector<T>::Dickey_Fuller(){
 //    deltamean=4,
 //    original=5
 template<typename T>
-Vector<T> Vector<T>::stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2){
-    Vector<T> result(_elements);
-    result._data=Sample(this->_data)::stationary(method,degree,fract_exponent);
+Vector<T> Vector<T>::stationary(DIFFERENCING method,double degree,double fract_exponent){
+    Vector<T> result(this->_elements);
+    result._data=Sample<T>(this->_data).stationary(method,degree,fract_exponent);
     return result;
 }
 
 // returns a sorted copy of the vector
 template<typename T>
-Vector<T> Vector<T>::sort(bool ascending=true){
-    Vector<T> result(_elements);
-    result._data=Sample(this->_data)::sort(ascending);
+Vector<T> Vector<T>::sort(bool ascending){
+    Vector<T> result(this->_elements);
+    result._data=Sample<T>(this->_data).sort(ascending);
     return result;
 }
 
 // returns a shuffled copy of the vector
 template<typename T>
 Vector<T> Vector<T>::shuffle(){
-    Vector<T> result(_elements);
-    result._data=Sample(this->_data)::shuffle();
+    Vector<T> result(this->_elements);
+    result._data=Sample<T>(this->_data).shuffle();
     return result;
 }
 
@@ -1296,8 +1320,8 @@ Vector<T> Vector<T>::shuffle(){
 // of the source vector
 template<typename T>
 Vector<T> Vector<T>::log_transform(){
-    Vector<T> result(_elements);
-    result._data=Sample(this->_data)::log_transform();
+    Vector<T> result(this->_elements);
+    result._data=Sample<T>(this->_data).log_transform();
     return result;
 }
 
@@ -1305,8 +1329,12 @@ Vector<T> Vector<T>::log_transform(){
 // power) on the vector and predicts a new value
 // for a hypothetical new index value
 template<typename T>
-T Vector<T>::polynomial_predict(T x,int power=5){
-    Sample temp(this->_data);
+T Vector<T>::polynomial_predict(T x,int power){
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }
+    Sample2d<T> temp(x_indices, this->_data);
     temp.polynomial_regression();
     return temp.polynomial_predict(x);
 }
@@ -1314,8 +1342,12 @@ T Vector<T>::polynomial_predict(T x,int power=5){
 // returns the Mean Squared Error (MSE) of polynomial
 // regression to the specified power
 template<typename T>
-double Vector<T>::polynomial_MSE(int power=5){
-    Sample temp(this->_data);
+double Vector<T>::polynomial_MSE(int power){
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }    
+    Sample2d<T> temp(x_indices, this->_data);
     temp.polynomial_regression(power);
     return temp.polynomial_MSE();
 }
@@ -1323,8 +1355,12 @@ double Vector<T>::polynomial_MSE(int power=5){
 // returns whether linear regression is a good fit
 // with respect to the given confidence interval
 template<typename T>
-bool Vector<T>::isGoodFit_linear(double threshold=0.95){
-    Sample temp(this->_data);
+bool Vector<T>::isGoodFit_linear(double threshold){
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    Sample2d<T> temp(x_indices, this->_data);
     temp.linear_regression();
     return temp.isGoodFit(threshold);
 }
@@ -1333,8 +1369,12 @@ bool Vector<T>::isGoodFit_linear(double threshold=0.95){
 // power) is a good fit with respect to the given confidence
 // interval
 template<typename T>
-bool Vector<T>::isGoodFit_polynomial(int power=5,double threshold=0.95){
-    Sample temp(this->_data);
+bool Vector<T>::isGoodFit_polynomial(int power,double threshold){
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    Sample2d<T> temp(x_indices, this->_data);
     temp.polynomial_regression(power);
     return temp.isGoodFit(threshold);
 }
@@ -1343,31 +1383,59 @@ bool Vector<T>::isGoodFit_polynomial(int power=5,double threshold=0.95){
 // for a hypothetical new index x
 template<typename T>
 T Vector<T>::linear_predict(T x){
-    return Sample(this->_data)::linear_predict(x);
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    return Sample2d<T>(x_indices, this->_data).linear_predict(x);
 }
 
 // returns the slope of linear regression of the vector data
 template<typename T>
 double Vector<T>::get_slope(){
-    return Sample(this->_data)::get_slope();
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    return Sample2d<T>(x_indices, this->_data).get_slope();
 } 
 
 // returns the y-axis intercept of linear regression of the vector data
 template<typename T>
 double Vector<T>::get_y_intercept(){
-    return Sample(this->_data)::get_y_intercept();
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    return Sample2d<T>(x_indices, this->_data).get_y_intercept();
 }
 
 // returns the coefficient of determination (r2) of
 // linear regression of the vector data
 template<typename T>
-double Vector<T>::get_r_squared_linear(){Sample temp(this->_data);temp.linear_regression();return temp.get_r_squared()};
+double Vector<T>::get_r_squared_linear(){
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    Sample2d<T> temp(x_indices, this->_data);
+    temp.linear_regression();
+    return temp.get_r_squared();
+};
 
 // returns the coefficient of determination (r2) of
 // polynomial regression of the vector data
 // (to the specified power)
 template<typename T>
-double Vector<T>::get_r_squared_polynomial(int power=5){Sample temp(this->_data);temp.polynomial_regression(power);return temp.get_r_squared();}
+double Vector<T>::get_r_squared_polynomial(int power){
+    T x_indices[this->_elements];
+    for (int i=0;i<this->_elements;i++){
+        x_indices[i]=i;
+    }        
+    Sample2d<T> temp(x_indices, this->_data);
+    temp.polynomial_regression(power);
+    return temp.get_r_squared();
+}
 
 // Matrix transpose
 template<typename T>
@@ -1375,8 +1443,8 @@ Matrix<T> Matrix<T>::transpose(){
     // create a new matrix with swapped dimensions
     Matrix<T> result(this->_size[1], this->_size[0]);
 
-    for(int i = 0; i < _size[0]; i++){
-        for(int j = 0; j < _size[1]; j++){
+    for(int i = 0; i < this->_size[0]; i++){
+        for(int j = 0; j < this->_size[1]; j++){
             // swap indices and copy element to result
             result.set(j, i, get(i, j));
         }
@@ -1390,13 +1458,13 @@ Matrix<T> Matrix<T>::transpose(){
 
 // prints the vector to the console
 template<typename T>
-void Vector<T>::print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+void Vector<T>::print(std::string delimiter, std::string line_break, bool with_indices){
     std::cout << this->asString(delimiter, line_break, with_indices);
 }
 
 // returns the vector as a string
 template<typename T>
-std::string Vector<T>::asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+std::string Vector<T>::asString(std::string delimiter, std::string line_break, bool with_indices){
     std::string result="";
     for (int i=0;i<this->_elements;i++){
         if (with_indices){
@@ -1408,19 +1476,20 @@ std::string Vector<T>::asString(std::string delimiter=", ", std::string line_bre
         }
     }
     result+=line_break;
+    return result;
 }
 
 // prints the matrix to the console
 template<typename T>
-void Matrix<T>::print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+void Matrix<T>::print(std::string delimiter, std::string line_break, bool with_indices){
     std::cout << this->asString(delimiter, line_break, with_indices);
 }
 
 // returns the vector as a string
 template<typename T>
-std::string Matrix<T>::asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false){
+std::string Matrix<T>::asString(std::string delimiter, std::string line_break, bool with_indices){
     std::string result="";
-    for (int row=0;i<this->_size[0];i++){
+    for (int row=0;row<this->_size[0];row++){
         for (int col=0;col<this->_size[1];col++){
             if (with_indices){
                 result+="["+std::string(row)+"]";
@@ -1433,4 +1502,5 @@ std::string Matrix<T>::asString(std::string delimiter=", ", std::string line_bre
         }
         result+=line_break;
     }
+    return result;
 }

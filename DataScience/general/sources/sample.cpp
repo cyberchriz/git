@@ -130,7 +130,7 @@ double Sample<T>::stddev(){
 template<typename T>
 unsigned int Sample<T>::find(T value,int index_from,int index_to){
     int findings=0;
-    int index_end=fmin(index_to,data_vect.size()-1);
+    int index_end=fmin(index_to,this->elements-1);
     int index_start=fmax(0,index_from);
     for (int n=index_start;n<=index_end;n++){
         if (data[n]==value){findings++;}
@@ -214,8 +214,10 @@ void Sample2d<T>::correlation(){
     r_squared = SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
 
     // Spearman correlation, assuming non-linear monotonic dependence
-    std::vector<int> rank_x = Sample<T>x_data.ranking();
-    std::vector<int> rank_y = Sample<T>y_data.ranking();
+    Sample<T> x_sample(x_data);
+    Sample<T> y_sample(y_data);
+    std::vector<int> rank_x = x_sample.ranking();
+    std::vector<int> rank_y = y_sample.ranking();
     double numerator=0;
     for (int n=0;n<elements;n++){
         numerator+=6*std::pow(rank_x[n]-rank_y[n],2);
@@ -322,13 +324,17 @@ T* Sample<T>::sort(bool ascending){
 template<typename T>
 T* Sample<T>::shuffle(){
     // make a copy
-    std::vector<T> result = *data_vect;
+    T result[elements];
+    for (int i=0;i<this->elements;i++){
+        result[i]=this->data[i];
+    }
     for (int i=0;i<elements;i++){
         int new_position=std::floor(Random<double>::uniform()*elements);
         T temp=data[new_position];
         result[new_position]=result[i];
         result[i]=temp;
     }
+    return result;
 }
 
 // performs a logarithmic transformation of the sample
@@ -368,10 +374,10 @@ double Sample2d<T>::Engle_Granger(){
 // for this to work, Sample<T>::polynomial_regression(int power)
 // must be executed first! Otherwise the method will return "NaN"!
 template<typename T>
-T Sample<T>::polynomial_predict(T x) {
+T Sample2d<T>::polynomial_predict(T x) {
     if (!poly_reg_completed){return NAN;}
     double y_pred = 0;
-    for (int i = 0; i < coefficients.size(); i++) {
+    for (int i = 0; i < sizeof(coefficients)/sizeof(T); i++) {
         y_pred += coefficients[i] * std::pow(x, i);
     }
     return y_pred;
@@ -383,14 +389,14 @@ T Sample<T>::polynomial_predict(T x) {
 // for this to work, Sample<T>::polynomial_regression(int power)
 // must be executed first! Otherwise the method will return "NaN"!
 template<typename T>
-double Sample<T>::polynomial_MSE() {
+double Sample2d<T>::polynomial_MSE() {
     if (!poly_reg_completed){return NAN;}
     double RSS = 0;
-    for (int i = 0; i < x_vect.size(); i++) {
+    for (int i = 0; i < sizeof(x_data)/sizeof(T); i++) {
         double y_pred = polynomial_predict(x_data[i]);
         RSS += std::pow(y_data[i] - y_pred, 2);
     }        
-    return RSS / (x_data.size() - coefficients.size());
+    return RSS / (sizeof(x_data)/sizeof(T) - sizeof(coefficients)/sizeof(T));
 }
 
 // check goodness of fit, based on the r_squared value
@@ -401,7 +407,7 @@ double Sample<T>::polynomial_MSE() {
 // or Sample<T>::polynomial_regression() must be
 // executed first! Otherwise the function will return NaN!
 template<typename T>
-bool Sample<T>::isGoodFit(double threshold) {
+bool Sample2d<T>::isGoodFit(double threshold) {
     if (!poly_reg_completed && !lin_reg_completed){return NAN;}
     return r_squared > threshold;
 }
@@ -412,9 +418,9 @@ bool Sample<T>::isGoodFit(double threshold) {
 // this allows to predict new y values for new x values
 // via the method Sample<T>::polynomial_predict(T x);
 template<typename T>
-void Sample<T>::polynomial_regression(int power) {
+void Sample2d<T>::polynomial_regression(int power) {
     // Create matrix of x values raised to different powers
-    double[elements][power+1];
+    double X[elements][power+1];
     for (int i=0; i<elements; i++) {
         for (int p = 0; p <= power; p++) {
             X[i][p] = std::pow(x_data[i], p);
@@ -450,7 +456,7 @@ void Sample<T>::polynomial_regression(int power) {
 
     // store the results
     coefficients = beta;
-    standard_deviation = std::sqrt(SS_res / (elements - power - 1));
+    RSS = std::sqrt(SS_res / (elements - power - 1));
     poly_reg_completed = true;
 }
 
@@ -460,7 +466,7 @@ void Sample<T>::polynomial_regression(int power) {
 // this allows to predict new y values for new x values
 // via the method Sample<T>::linear_predict(T x);
 template<typename T>
-void Sample<T>::linear_regression(){
+void Sample2d<T>::linear_regression(){
     // get mean for x any y values
     double x_mean, y_mean=0;
     for (int i=0;i<elements;i++){
@@ -494,7 +500,7 @@ void Sample<T>::linear_regression(){
 // assuming a linear dependence of two samples
 // (as provided via the parametric constructor);
 template<typename T>
-T Sample<T>::linear_predict(T x){
+T Sample2d<T>::linear_predict(T x){
     if (!this->linear_reg_completed){this->linear_regression();}
     return slope * x + y_intercept;
 }
@@ -504,7 +510,7 @@ T Sample<T>::linear_predict(T x){
 // from the data supplied via the parametric constructor
 template<typename T>
 Histogram<T> Sample<T>::histogram(uint bars){
-    Histogram histogram(bars);
+    Histogram<T> histogram(bars);
     // get min and max value from sample
     histogram.min=data[0];
     histogram.max=data[0];
@@ -550,19 +556,9 @@ double Sample2d<T>::get_Pearson_R(){
 // returns the slope from linear regression
 // of the datapoints given via the parametric constructor 
 template<typename T>
-double Sample<T>::get_slope(){
+double Sample2d<T>::get_slope(){
     if(!lin_reg_completed){
         linear_regression();
-    }
-    return slope;
-}
-
-// returns the slope of an assumed linear correlation
-// of the x and y datapoints given via the parametric constructor 
-template<typename T>
-double Sample2d<T>::get_slope(){
-    if(!correlation_completed){
-        correlation();
     }
     return slope;
 }
@@ -571,20 +567,9 @@ double Sample2d<T>::get_slope(){
 // from linear regression of the data
 // given via the parametric constructor
 template<typename T>
-double Sample<T>::get_y_intercept(){
+double Sample2d<T>::get_y_intercept(){
     if(!lin_reg_completed){
         linear_regression();
-    }
-    return y_intercept;
-}
-
-// returns the intercept point on the y-axis given
-// an assumed linear correlation of the x and y datapoints
-// given via the parametric constructor
-template<typename T>
-double Sample2d<T>::get_y_intercept(){
-    if(!correlation_completed){
-        correlation();
     }
     return y_intercept;
 }
@@ -594,19 +579,9 @@ double Sample2d<T>::get_y_intercept(){
 // Sample<T>::polynomial_regression(int power) first
 // for this to work! will otherwise return NaN!
 template<typename T>
-double Sample<T>::get_r_squared(){
+double Sample2d<T>::get_r_squared(){
     if(!lin_reg_completed && !poly_reg_completed){
         return NAN;
-    }
-    return r_squared;
-}
-
-// returns the r_squared value of an assumed linear
-// correlation
-template<typename T>
-double Sample2d<T>::get_r_squared(){
-    if(!correlation_completed){
-        correlation();
     }
     return r_squared;
 }
