@@ -1,10 +1,10 @@
 // author: cyberchriz (Christian Suer)
 
 // this code logs any heap memory allocations to the console
-// by overriding the `new` operator;
-// in order to use this, simply define a MEMLOG flag as a preprocessor directive before including this file
+// by overriding the `new` and 'delete' operators;
+// in order to use this, simply define a MEMLOG flag as a preprocessor directive before(!) including this file
 
-#define MEMLOG
+// #define MEMLOG
 
 #ifdef MEMLOG
 

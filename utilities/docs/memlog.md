@@ -2,7 +2,7 @@
 
 ## Heap Allocation Logger
 
-dependencies: `<iostream>`, `<boost/stacktrace.hpp>`;
+dependencies: `<iostream>`, `<cstdlib>`, `<unordered_map>`, `<execinfo.h>`, `<cxxabi.h>`;
 ___
 #### usage:
 
