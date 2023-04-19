@@ -1,4 +1,6 @@
 #include "../headers/array.h"
+#ifndef ARRAY_CPP
+#define ARRAY_CPP
 
 // +=================================+   
 // | getters & setters               |
@@ -6,7 +8,7 @@
 
 // assigns a value to an array element via its index
 template<typename T>
-void Array<T>::set(std::initializer_list<int> index, const T value){
+void Array<T>::set(const std::initializer_list<int>& index, const T value){
     this->_data[get_element(index)] = value;
 }
 
@@ -25,7 +27,7 @@ void Matrix<T>::set(const int row, const int col, const T value){
 
 // returns the value of an array element via its index
 template<typename T>
-T Array<T>::get(std::initializer_list<int> index){
+T Array<T>::get(const std::initializer_list<int>& index){
     int element=get_element(index);
     if (std::isnan(element) || element>this->_elements){return T(NAN);}
     return _data[element];
@@ -958,13 +960,14 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
     result.fill_zeros();
     if (this->_dimensions==1){
         for (int i=0;i<std::fmin(this->_elements,cols);i++){
-            result.set(0,i,this->data[i]);
+            result.set(0,i, (*this)._data[i]);
         }
     }
-    else if (this->dimensions==2){
+    else if (this->_dimensions==2){
         for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
-            for (int c=0;c<std::fmin(cols,this->size[1]);c++){
-                result.set(r,c,this->get(r,c));
+            for (int c=0;c<std::fmin(cols,this->_size[1]);c++){
+                std::initializer_list<int> index={r,c};
+                result.set(r,c,(*this).get(index));
             }
         }
     }
@@ -982,7 +985,8 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
                 index[1]=col;
                 // get the source value by implicitly converting
                 // the index array into std::intializer_list<int>
-                result.set(row,col,this->get({std::begin(index), std::end(index)}));
+                std::initializer_list<int> list={ row, col };
+                result.set(row,col,this->get(list));
             }
         }
     }
@@ -1041,7 +1045,7 @@ Matrix<T> Array<T>::asMatrix(){
 // corresponding index at the source will be initialized
 // with zeros
 template<typename T>
-Array<T> Array<T>::asArray(std::initializer_list<int> dim_size){
+Array<T> Array<T>::asArray(const std::initializer_list<int>& dim_size){
     Array<T> result(dim_size);
     result.fill_zeros();
     // reset result index to all zeros
@@ -1074,7 +1078,7 @@ Array<T> Array<T>::asArray(std::initializer_list<int> dim_size){
 // pass dimension size (elements per dimension)
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
-Array<T>::Array(std::initializer_list<int> dim_size){
+Array<T>::Array(const std::initializer_list<int>& dim_size) : _init_list(dim_size) {
     this->_init_list=dim_size;
     this->_dimensions = (int)dim_size.size();
     this->_size = new int(_dimensions);
@@ -1092,17 +1096,17 @@ Array<T>::Array(std::initializer_list<int> dim_size){
 // destructor for parent class
 template<typename T>
 Array<T>::~Array(){
-    delete _data;
-    delete _size;
+    delete[] _data;
+    delete[] _size;
 }
 
 // constructor for a one-dimensional vector
 template<typename T>
-Vector<T>::Vector(const int elements){
-    this->init_list={elements};
+Vector<T>::Vector(const int elements) {
     this->_size = new int(1);
     this->_elements = elements;
     this->_size[0] = elements;
+    this->_init_list={this->_elements};
     this->_capacity = int(elements * (1.0+_reserve));
     this->_dimensions = 1;
     this->_data=new T(this->_capacity);
@@ -1110,12 +1114,12 @@ Vector<T>::Vector(const int elements){
 
 // constructor for 2d matrix
 template<typename T>
-Matrix<T>::Matrix(const int rows, const int cols){
-    this->_init_list = {rows, cols};
+Matrix<T>::Matrix(const int rows, const int cols) {
     this->_size = new int(2);
     this->_elements = rows * cols;
     this->_size[0] = rows;
     this->_size[1] = cols;
+    this->_init_list={this->_size[0],this->_size[1]};
     this->_dimensions = 2;
     this->_data = new T(this->_elements);
 }
@@ -1468,9 +1472,9 @@ std::string Vector<T>::asString(std::string delimiter, std::string line_break, b
     std::string result="";
     for (int i=0;i<this->_elements;i++){
         if (with_indices){
-            result+="["+std::string(i)+"]=";
+            result+="["+std::to_string(i)+"]=";
         }
-        result+=std::string(this->_data[i]);
+        result+=std::to_string(this->_data[i]);
         if (i!=this->_elements-1){
             result+=delimiter;
         }
@@ -1492,10 +1496,10 @@ std::string Matrix<T>::asString(std::string delimiter, std::string line_break, b
     for (int row=0;row<this->_size[0];row++){
         for (int col=0;col<this->_size[1];col++){
             if (with_indices){
-                result+="["+std::string(row)+"]";
-                result+="["+std::string(col)+"]=";
+                result+="["+std::to_string(row)+"]";
+                result+="["+std::to_string(col)+"]=";
             }
-            result+=std::string(this->get(row,col));
+            result+=std::to_string(this->get(row,col));
             if (col!=this->_size[1]-1){
                 result+=delimiter;
             }
@@ -1504,3 +1508,5 @@ std::string Matrix<T>::asString(std::string delimiter, std::string line_break, b
     }
     return result;
 }
+
+#endif

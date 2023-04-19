@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstdarg>
 #include <iostream>
+#include <vector>
 #include "sample.h"
 #include "../../distributions/headers/random_distributions.h"
 
@@ -15,8 +16,8 @@ template<typename T>
 class Array{
     public:     
         // getters & setters
-        void set(std::initializer_list<int> index, const T value);
-        T get(std::initializer_list<int> index);
+        void set(const std::initializer_list<int>& index, const T value);
+        T get(const std::initializer_list<int>& index);
         int get_dimensions();
         int get_size(int dimension);
         int get_elements();
@@ -116,11 +117,11 @@ class Array{
         Vector<T> flatten();
         Matrix<T> asMatrix(const int rows, const int cols);
         Matrix<T> asMatrix();
-        Array<T> asArray(std::initializer_list<int> dim_size);
+        Array<T> asArray(const std::initializer_list<int>& dim_size);
 
         // constructor & destructor declarations
-        //Array() = delete;
-        Array(std::initializer_list<int> dim_size);
+        Array();
+        Array(const std::initializer_list<int>& dim_size);
         ~Array();
 
         // public member variables
@@ -152,7 +153,7 @@ class Matrix : public Array<T>{
         void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
         std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
         // constructor declarations
-        Matrix() = delete;
+        Matrix();
         Matrix(const int rows, const int cols);
         // destructor declarations
         ~Matrix(){};
@@ -163,8 +164,8 @@ template<typename T>
 class Vector : public Array<T>{
     public:
         // getters & setters
-        void set(std::initializer_list<int> index, const T value) = delete;
-        T get(std::initializer_list<int> index) = delete;
+        void set(const std::initializer_list<int>& index, const T value) = delete;
+        T get(const std::initializer_list<int>& index) = delete;
         void set(const int index, const T value);
         T get(const int index);
 
@@ -207,7 +208,7 @@ class Vector : public Array<T>{
         std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
 
         // constructor & destructor declarations
-        Vector() = delete;
+        Vector();
         Vector<T> asVector() = delete;
         Vector(const int _elements);
         ~Vector(){};
