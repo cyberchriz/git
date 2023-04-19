@@ -124,8 +124,6 @@ template<typename T>
 int Array<T>::get_element(const std::vector<int>& index) {
     // initialize result to number of elements belonging to last dimension
     int result = index[this->_dimensions-1];
-    // initialize counter to second last dimension
-    int counter = index[this->_dimensions-2];
     // initialize dimension index to second last dimension
     int i = this->_dimensions-2;
     for (; i>=0;i--){
@@ -268,10 +266,10 @@ T Array<T>::sum(){
 
 // elementwise addition of the specified value to all values of the array
 template<typename T>
-Array<T> Array<T>::operator+(const T value){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::operator+(const T value){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     for (int i=0;i <this->_elements; i++){
-        result._data[i]=this->_data[i]+value;
+        result->_data[i]=this->_data[i]+value;
     }
     return result;
 }
@@ -280,14 +278,14 @@ Array<T> Array<T>::operator+(const T value){
 // two array of equal dimensions;
 // will return a NAN array if the dimensions don't match!
 template<typename T>
-Array<T> Array<T>::operator+(const Array& other){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::operator+(const Array& other){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     if (!equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]+other._data[i];
+            result->_data[i]=this->_data[i]+other->_data[i];
         }
     }
     return result;
@@ -322,7 +320,7 @@ void Array<T>::operator+=(const Array& other){
         return;
     }
     for (int i=0; i<this->_elements; i++){
-        this->_data[i]+=other._data[i];
+        this->_data[i]+=other->_data[i];
     }
 }
 
@@ -332,10 +330,10 @@ void Array<T>::operator+=(const Array& other){
 
 // elementwise substraction of the specified value from all values of the array
 template<typename T>
-Array<T> Array<T>::operator-(const T value){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::operator-(const T value){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     for (int i=0;i <this->_elements; i++){
-        result._data[i]=this->_data[i]-value;
+        result->_data[i]=this->_data[i]-value;
     }
     return result;
 }
@@ -344,14 +342,14 @@ Array<T> Array<T>::operator-(const T value){
 // two array of equal dimensions (this minus other);
 // will return a NAN array if the dimensions don't match!
 template<typename T>
-Array<T> Array<T>::operator-(const Array& other){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::operator-(const Array& other){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     if (!equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]-other._data[i];
+            result->_data[i]=this->_data[i]-other->_data[i];
         }
     }
     return result;
@@ -387,7 +385,7 @@ void Array<T>::operator-=(const Array& other){
         return;
     }
     for (int i=0; i<this->_elements; i++){
-        this->_data[i]-=other._data[i];
+        this->_data[i]-=other->_data[i];
     }
 }
 
@@ -411,10 +409,10 @@ T Array<T>::product(){
 
 // elementwise multiplication with a scalar
 template<typename T>
-Array<T> Array<T>::operator*(const T factor){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::operator*(const T factor){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]*factor;
+        result->_data[i]=this->_data[i]*factor;
     }
     return result;
 }
@@ -433,14 +431,14 @@ void Array<T>::operator*=(const T factor){
 // the dimensions of the two arrays must match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<T> Array<T>::Hadamard(const Array& other){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::Hadamard(const Array& other){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     if(!equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]*other._data[i];
+            result->_data[i]=this->_data[i]*other->_data[i];
         }
     }
     return result;
@@ -449,12 +447,12 @@ Array<T> Array<T>::Hadamard(const Array& other){
 // vector dotproduct ("scalar product")
 template<typename T>
 T Vector<T>::dotproduct(const Vector& other){
-    if (this->_elements != other._elements){
-        return NAN;
+    if (this->_elements != other->_elements){
+        return T(NAN);
     }
     T result = 0;
     for (int i = 0; i < this->_elements; i++){
-        result += this->_data[i] * other._data[i];
+        result += this->_data[i] * other->_data[i];
     }
     
     return result;
@@ -468,22 +466,22 @@ T Vector<T>::operator*(const Vector& other){
 
 // returns the dotproduct of two 2d matrices
 template<typename T>
-Matrix<T> Matrix<T>::dotproduct(const Matrix& other){
+std::unique_ptr<Matrix<T>> Matrix<T>::dotproduct(const Matrix& other){
     // Create the resulting matrix
-    Matrix<T> result(this->_size[0], other._size[1]);
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(this->_size[0], other->_size[1]);
     // Check if the matrices can be multiplied
-    if (this->_size[1] != other._size[0]){
-        result.fill_values(T(NAN));
+    if (this->_size[1] != other->_size[0]){
+        result->fill_values(T(NAN));
         return result;
     }
     // Compute the dot product
     for (int i = 0; i < this->_size[0]; i++) {
-        for (int j = 0; j < other._size[1]; j++) {
+        for (int j = 0; j < other->_size[1]; j++) {
             T sum = 0;
             for (int k = 0; k < this->_size[1]; k++) {
-                sum += this->get(i, k) * other.get(k, j);
+                sum += this->get(i, k) * other->get(k, j);
             }
-            result.set(i, j, sum);
+            result->set(i, j, sum);
         }
     }
     return result;
@@ -491,7 +489,7 @@ Matrix<T> Matrix<T>::dotproduct(const Matrix& other){
 
 // operator* as alias vor matrix dotproduct
 template<typename T>
-Matrix<T> Matrix<T>::operator*(const Matrix& other){
+std::unique_ptr<Matrix<T>> Matrix<T>::operator*(const Matrix& other){
     return this->dotproduct(other);
 }
 
@@ -501,10 +499,10 @@ Matrix<T> Matrix<T>::operator*(const Matrix& other){
 
 // elementwise division by a scalar
 template<typename T>
-Array<T> Array<T>::operator/(const T quotient){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::operator/(const T quotient){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]/quotient;
+        result->_data[i]=this->_data[i]/quotient;
     }
     return result;
 }
@@ -534,10 +532,10 @@ void Array<T>::operator%=(const double num){
 // contains the remainders of the division of the values of
 // the original array by the specified number
 template<typename T>
-Array<double> Array<T>::operator%(const double num){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<double>> Array<T>::operator%(const double num){
+    std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]%num;
+        result->_data[i]=this->_data[i]%num;
     }
     return result;
 }
@@ -567,7 +565,7 @@ void Array<T>::pow(const Array& other){
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            this->_data[i]=std::pow(this->_data[i], other._data[i]);
+            this->_data[i]=std::pow(this->_data[i], other->_data[i]);
         }
     }
 }
@@ -666,16 +664,16 @@ void Array<T>::operator=(const Array<T>& other){
         return;
     }
     for (int i=0; i<this->_elements; i++){
-        this->_data[i] = other._data[i];
+        this->_data[i] = other->_data[i];
     }
 }
 
 // returns an identical copy of the current array
 template<typename T>
-Array<T> Array<T>::copy(){
-    Array<T> result(this->_init_list);
+std::unique_ptr<Array<T>> Array<T>::copy(){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i];
+        result->_data[i]=this->_data[i];
     }
     return result;
 }
@@ -690,10 +688,10 @@ Array<T> Array<T>::copy(){
 // of the source array are greater than
 // the specified value
 template<typename T>
-Array<bool> Array<T>::operator>(const T value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator>(const T value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]>value;
+        result->_data[i]=this->_data[i]>value;
     }
     return result;
 }
@@ -703,10 +701,10 @@ Array<bool> Array<T>::operator>(const T value){
 // of the source array are greater than or equal
 // to the specified argument value
 template<typename T>
-Array<bool> Array<T>::operator>=(const T value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator>=(const T value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]>=value;
+        result->_data[i]=this->_data[i]>=value;
     }
     return result;
 }
@@ -716,10 +714,10 @@ Array<bool> Array<T>::operator>=(const T value){
 // of the source array are equal to the specified
 // argument value
 template<typename T>
-Array<bool> Array<T>::operator==(const T value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator==(const T value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]==value;
+        result->_data[i]=this->_data[i]==value;
     }
     return result;
 }
@@ -729,10 +727,10 @@ Array<bool> Array<T>::operator==(const T value){
 // of the source array are unequal to the specified
 // argument value
 template<typename T>
-Array<bool> Array<T>::operator!=(const T value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator!=(const T value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]!=value;
+        result->_data[i]=this->_data[i]!=value;
     }
     return result;
 }
@@ -742,10 +740,10 @@ Array<bool> Array<T>::operator!=(const T value){
 // of the source array are less than the
 // specified argument value
 template<typename T>
-Array<bool> Array<T>::operator<(const T value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator<(const T value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]<value;
+        result->_data[i]=this->_data[i]<value;
     }
     return result;
 }
@@ -755,10 +753,10 @@ Array<bool> Array<T>::operator<(const T value){
 // of the source array are less than or equal to
 // the specified argument value
 template<typename T>
-Array<bool> Array<T>::operator<=(const T value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator<=(const T value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]<=value;
+        result->_data[i]=this->_data[i]<=value;
     }
     return result;
 }
@@ -776,14 +774,14 @@ Array<bool> Array<T>::operator<=(const T value){
 // make sure the the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator>(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator>(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]>other._data[i];
+            result->_data[i]=this->_data[i]>other->_data[i];
         }
     }
     return result;
@@ -797,14 +795,14 @@ Array<bool> Array<T>::operator>(const Array& other){
 // make sure the the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator>=(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator>=(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]>=other._data[i];
+            result->_data[i]=this->_data[i]>=other->_data[i];
         }
     }
     return result;
@@ -818,14 +816,14 @@ Array<bool> Array<T>::operator>=(const Array& other){
 // make sure the the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator==(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator==(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]==other._data[i];
+            result->_data[i]=this->_data[i]==other->_data[i];
         }
     }
     return result;
@@ -839,14 +837,14 @@ Array<bool> Array<T>::operator==(const Array& other){
 // make sure the the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator!=(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator!=(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]!=other._data[i];
+            result->_data[i]=this->_data[i]!=other->_data[i];
         }
     }
     return result;
@@ -860,14 +858,14 @@ Array<bool> Array<T>::operator!=(const Array& other){
 // make sure the the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator<(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator<(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]<other._data[i];
+            result->_data[i]=this->_data[i]<other->_data[i];
         }
     }
     return result;
@@ -881,14 +879,14 @@ Array<bool> Array<T>::operator<(const Array& other){
 // make sure the the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator<=(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator<=(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]<=other._data[i];
+            result->_data[i]=this->_data[i]<=other->_data[i];
         }
     }
     return result;
@@ -901,10 +899,10 @@ Array<bool> Array<T>::operator<=(const Array& other){
 // logical AND of the source array and the specified
 // boolean argument value
 template<typename T>
-Array<bool> Array<T>::operator&&(const bool value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator&&(const bool value){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]&&value;
+        result->_data[i]=this->_data[i]&&value;
     }
     return result;
 }
@@ -913,10 +911,10 @@ Array<bool> Array<T>::operator&&(const bool value){
 // logical OR of the source array and the specified
 // boolean argument value
 template<typename T>
-Array<bool> Array<T>::operator||(const bool value){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator||(const bool value){
+    std::unique_ptr<Array<bool>> result(new Array(this->_size));
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=this->_data[i]||value;
+        result->_data[i]=this->_data[i]||value;
     }
     return result;
 }
@@ -924,10 +922,10 @@ Array<bool> Array<T>::operator||(const bool value){
 // returns a boolean array as the result of the
 // logical NOT of the source array
 template<typename T>
-Array<bool> Array<T>::operator!(){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator!(){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=!this->_data[i];
+        result->_data[i]=!this->_data[i];
     }
     return result;
 }
@@ -939,14 +937,14 @@ Array<bool> Array<T>::operator!(){
 // make sure that the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator&&(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator&&(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]&&other->_data[i];
+            result->_data[i]=this->_data[i]&&other->_data[i];
         }
     }
     return result;
@@ -959,14 +957,14 @@ Array<bool> Array<T>::operator&&(const Array& other){
 // make sure that the dimensions of both arrays match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<bool> Array<T>::operator||(const Array& other){
-    Array<bool> result(this->_init_list);
+std::unique_ptr<Array<bool>> Array<T>::operator||(const Array& other){
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result.fill_values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
-            result._data[i]=this->_data[i]||other->_data[i];
+            result->_data[i]=this->_data[i]||other->_data[i];
         }
     }
     return result;
@@ -980,9 +978,9 @@ Array<bool> Array<T>::operator||(const Array& other){
 template<typename T>
 template<typename C>
 Array<T>::operator Array<C>(){
-    Array<C> result(this->_init_list);
+    Array<C> result = std::make_unique<Array<C>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        result._data[i]=C(this->_data[i]);
+        result->_data[i]=C(this->_data[i]);
     }
     return result;
 }
@@ -993,9 +991,9 @@ Array<T>::operator Array<C>(){
 
 // flattens an array or matrix into a one-dimensional vector
 template<typename T>
-Vector<T> Array<T>::flatten(){
-    Vector<T> result(this->_elements);
-    result._data=this->_data;
+std::unique_ptr<Vector<T>> Array<T>::flatten(){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
+    result->_data=this->_data;
     return result;
 }
 
@@ -1007,19 +1005,19 @@ Vector<T> Array<T>::flatten(){
 // this method can also be used to get a resized copy from
 // a 2d source matrix
 template<typename T>
-Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
-    Matrix<T> result(rows,cols);
-    result.fill_zeros();
+std::unique_ptr<Matrix<T>> Array<T>::asMatrix(const int rows, const int cols){
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
+    result->fill_zeros();
     if (this->_dimensions==1){
         for (int i=0;i<std::fmin(this->_elements,cols);i++){
-            result.set(0,i, this->_data[i]);
+            result->set(0,i, this->_data[i]);
         }
     }
     else if (this->_dimensions==2){
         for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
             for (int c=0;c<std::fmin(cols,this->_size[1]);c++){
                 std::vector<int> index={r,c};
-                result.set(r,c,this->get(index));
+                result->set(r,c,this->get(index));
             }
         }
     }
@@ -1035,7 +1033,7 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
             index[0]=row;
             for (int col=0;col<this->_size[1];col++){
                 index[1]=col;
-                result.set(row,col,this->get(index));
+                result->set(row,col,this->get(index));
             }
         }
     }
@@ -1053,32 +1051,29 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
 // index 0 of the higher dimensions will be copied into the
 // returned result
 template<typename T>
-Matrix<T> Array<T>::asMatrix(){
-    Matrix<T> result;
+std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
+    std::unique_ptr<Matrix<T>> result;;
     if (this->_dimensions==1){
-        result=Matrix<T>(1,this->_elements);
-        result._data=this->_data;
+        result=std::make_unique<Matrix<T>>(1,this->_elements);
+        result->_data=this->_data;
     }
     else if (this->dimensions==2){
-        result=Matrix<T>(this->_size[0],this->_size[1]);
-        result._data=this->_data;
+        result=std::make_unique<Matrix<T>>(this->_size[0],this->_size[1]);
+        result->_data=this->_data;
     }
     else {
-        result=Matrix<T>(this->_size[0],this->_size[1]);
+        result=std::make_unique<Matrix<T>>(this->_size[0],this->_size[1]);
         std::vector<int> index(this->_dimensions);
         // reset dimension indices to all zeros
-        for (int d=0;d<this->_dimensions;d++){
-            index[d]=0;
-        }
+        std::fill(index.begin(),index.end(),0);
         // cycle through first and second dimension, i.e. keeping
         // the higher dimensions at index zero
         for (int row=0;row<this->_size[0];row++){
             index[0]=row;
             for (int col=0;col<this->_size[1];col++){
                 index[1]=col;
-                // get the source value by implicitly converting
-                // the index vector into std::intializer_list<int>
-                result.set(row,col,this->get(index));
+                // assign matching elements with values from source
+                result->set(row,col,this->get(index));
             }
         }
     }
@@ -1094,26 +1089,22 @@ Matrix<T> Array<T>::asMatrix(){
 // corresponding index at the source will be initialized
 // with zeros
 template<typename T>
-Array<T> Array<T>::asArray(const std::initializer_list<int>& dim_size){
-    Array<T> result(dim_size);
-    result.fill_zeros();
+std::unique_ptr<Array<T>> Array<T>::asArray(const std::initializer_list<int>& init_list){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(init_list);
+    result->fill_zeros();
     // reset result index to all zeros
-    std::vector<int> result_index(result.get_dimensions());
-    for (int d=0;d<result.get_dimensions();d++){
-        result_index[d]=0;
-    }
+    std::vector<int> result_index(result->get_dimensions());
+    std::fill(result_index.begin(),result_index.end(),0);
     // reset source index to all zeros
     std::vector<int> source_index(this->_dimensions);
-    for (int d=0;d<this->_dimensions;d++){
-        source_index[d]=0;
-    }
+    std::fill(source_index.begin(),source_index.end(),0);
     // cycle through source dimensions
-    for (int d=0;d<std::fmin(this->_dimensions,result.get_dimensions());d++){
+    for (int d=0;d<std::fmin(this->_dimensions,result->get_dimensions());d++){
         // cycle through elements of given dimension
-        for (int i=0;i<std::fmin(this->_size[d],result.get_size(d));i++){
+        for (int i=0;i<std::fmin(this->_size[d],result->get_size(d));i++){
             result_index[d]=i;
             source_index[d]=i;
-            result.set(result_index,this->_data[get_element(source_index)]);
+            result->set(result_index,this->_data[get_element(source_index)]);
         }
     }
     return result;
@@ -1123,7 +1114,7 @@ Array<T> Array<T>::asArray(const std::initializer_list<int>& dim_size){
 // | Constructors & Destructors      |
 // +=================================+
 
-// constructor for multi-dimensional array;
+// constructor for multi-dimensional array:
 // pass dimension size (elements per dimension)
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
@@ -1134,7 +1125,7 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
         return;
     }
     // store size of individual dimensions in _size[] member variable
-    this->_size = new int(_dimensions);
+    this->_size = new int[_dimensions];
     auto iterator=init_list.begin();
     int n=0;
     for (; iterator!=init_list.end();n++, iterator++){
@@ -1146,8 +1137,30 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
         this->elements*=this->_size[d];
     }
     // create data buffer
-    this->_data=new T(this->_elements);
+    this->_data=new T[this->_elements];
 };
+
+// constructor for multidimensional array:
+// pass dimension size (elements per dimension)
+// as type std::vector<int>
+template<typename T>
+Array<T>::Array(const std::vector<int>& dimensions){
+    // set dimensions + check if init_list empty
+    this->_dimensions = dimensions.size();
+    if (this->_dimensions==0){
+        return;
+    }
+    // store size of individual dimensions in _size[] member variable
+    // and count total number of elements
+    this->_size = new int[this->_dimensions];
+    this->_elements=1;
+    for (int i=0;i<this->_dimensions;i++){
+        this->_size[i]=dimensions[i];
+        this->_elements*=dimensions[i];
+    }
+    // create data buffer
+    this->_data=new T[this->_elements];    
+}
 
 // destructor for parent class
 template<typename T>
@@ -1164,23 +1177,23 @@ Array<T>::~Array(){
 // constructor for a one-dimensional vector
 template<typename T>
 Vector<T>::Vector(const int elements) {
-    this->_size = new int(1);
+    this->_size = new int[1];
     this->_elements = elements;
     this->_size[0] = elements;
     this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
-    this->_data=new T(this->_capacity);
+    this->_data=new T[this->_capacity];
 }
 
 // constructor for 2d matrix
 template<typename T>
 Matrix<T>::Matrix(const int rows, const int cols) {
-    this->_size = new int(2);
+    this->_size = new int[2];
     this->_elements = rows * cols;
     this->_size[0] = rows;
     this->_size[1] = cols;
     this->_dimensions = 2;
-    this->_data = new T(this->_elements);
+    this->_data = new T[this->_elements];
 }
 
 // +=================================+   
@@ -1196,7 +1209,7 @@ bool Array<T>::equal_size(const Array& other){
         return false;
     }
     for (int n=0; n<this->_dimensions; n++){
-        if (this->_size[n]!=other.get_size(n)){
+        if (this->_size[n]!=other->get_size(n)){
             return false;
         }
     }
@@ -1311,10 +1324,10 @@ int Vector<T>::size(){
 // returns the vector as a single column matrix, 
 // i.e. as transposition with data in rows (single column)
 template<typename T>
-Matrix<T> Vector<T>::transpose(){
-    Matrix<T> result(this->_elements,1);
+std::unique_ptr<Matrix<T>> Vector<T>::transpose(){
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(this->_elements,1);
     for (int i=0; i<this->_elements; i++){
-        result.set(i,0,this->_data[i]);
+        result->set(i,0,this->_data[i]);
     }
     return result;
 }
@@ -1326,17 +1339,17 @@ Matrix<T> Vector<T>::transpose(){
 // returns a vector of integers that represent
 // a ranking of the source vector
 template<typename T>
-Vector<int> Vector<T>::ranking(bool ascending){
-    Vector<int> result(this->_elements);
-    result._data=Sample<T>(this->_data).ranking(ascending);
+std::unique_ptr<Vector<int>> Vector<T>::ranking(bool ascending){
+    std::unique_ptr<Vector<int>> result = std::make_unique<Vector<int>>(this->_elements);
+    result->_data=Sample<T>(this->_data).ranking(ascending);
     return result;
 }
 
 // returns an exponentially smoothed copy of the source vector
 template<typename T>
-Vector<T> Vector<T>::exponential_smoothing(bool as_series){
-    Vector<T> result(this->_elements);
-    result._data=Sample<T>(this->_data).exponential_smoothing(as_series);
+std::unique_ptr<Vector<T>> Vector<T>::exponential_smoothing(bool as_series){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
+    result->_data=Sample<T>(this->_data).exponential_smoothing(as_series);
     return result;
 } 
 
@@ -1357,34 +1370,34 @@ double Vector<T>::Dickey_Fuller(){
 //    deltamean=4,
 //    original=5
 template<typename T>
-Vector<T> Vector<T>::stationary(DIFFERENCING method,double degree,double fract_exponent){
-    Vector<T> result(this->_elements);
-    result._data=Sample<T>(this->_data).stationary(method,degree,fract_exponent);
+std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method,double degree,double fract_exponent){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
+    result->_data=Sample<T>(this->_data).stationary(method,degree,fract_exponent);
     return result;
 }
 
 // returns a sorted copy of the vector
 template<typename T>
-Vector<T> Vector<T>::sort(bool ascending){
-    Vector<T> result(this->_elements);
-    result._data=Sample<T>(this->_data).sort(ascending);
+std::unique_ptr<Vector<T>> Vector<T>::sort(bool ascending){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
+    result->_data=Sample<T>(this->_data).sort(ascending);
     return result;
 }
 
 // returns a shuffled copy of the vector
 template<typename T>
-Vector<T> Vector<T>::shuffle(){
-    Vector<T> result(this->_elements);
-    result._data=Sample<T>(this->_data).shuffle();
+std::unique_ptr<Vector<T>> Vector<T>::shuffle(){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
+    result->_data=Sample<T>(this->_data).shuffle();
     return result;
 }
 
 // returns a logarithmically transformed copy
 // of the source vector
 template<typename T>
-Vector<T> Vector<T>::log_transform(){
-    Vector<T> result(this->_elements);
-    result._data=Sample<T>(this->_data).log_transform();
+std::unique_ptr<Vector<T>> Vector<T>::log_transform(){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
+    result->_data=Sample<T>(this->_data).log_transform();
     return result;
 }
 
@@ -1527,14 +1540,14 @@ double Vector<T>::get_r_squared_polynomial(int power){
 
 // Matrix transpose
 template<typename T>
-Matrix<T> Matrix<T>::transpose(){
+std::unique_ptr<Matrix<T>> Matrix<T>::transpose(){
     // create a new matrix with swapped dimensions
-    Matrix<T> result(this->_size[1], this->_size[0]);
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(this->_size[1], this->_size[0]);
 
     for(int i = 0; i < this->_size[0]; i++){
         for(int j = 0; j < this->_size[1]; j++){
             // swap indices and copy element to result
-            result.set(j, i, get(i, j));
+            result->set(j, i, get(i, j));
         }
     }
     return result;
@@ -1547,50 +1560,33 @@ Matrix<T> Matrix<T>::transpose(){
 // prints the vector to the console
 template<typename T>
 void Vector<T>::print(std::string delimiter, std::string line_break, bool with_indices){
-    std::cout << this->asString(delimiter, line_break, with_indices);
-}
-
-// returns the vector as a string
-template<typename T>
-std::string Vector<T>::asString(std::string delimiter, std::string line_break, bool with_indices){
-    std::string result="";
     for (int i=0;i<this->_elements;i++){
         if (with_indices){
-            result+="["+std::to_string(i)+"]=";
+            std::cout << "[" << i << "]=";
         }
-        result+=std::to_string(this->_data[i]);
+        std::cout << this->_data[i];
         if (i!=this->_elements-1){
-            result+=delimiter;
+            std::cout << delimiter;
         }
     }
-    result+=line_break;
-    return result;
+    std::cout << line_break;
 }
 
 // prints the matrix to the console
 template<typename T>
 void Matrix<T>::print(std::string delimiter, std::string line_break, bool with_indices){
-    std::cout << this->asString(delimiter, line_break, with_indices);
-}
-
-// returns the vector as a string
-template<typename T>
-std::string Matrix<T>::asString(std::string delimiter, std::string line_break, bool with_indices){
-    std::string result="";
-    for (int row=0;row<this->_size[0];row++){
-        for (int col=0;col<this->_size[1];col++){
-            if (with_indices){
-                result+="["+std::to_string(row)+"]";
-                result+="["+std::to_string(col)+"]=";
+    for (int row=0; row < this->_size[0]; row++) {
+        for (int col=0; col < this->_size[1]; col++) {
+            if (with_indices) {
+                std::cout << "[" << row << "]" << "[" << col << "]=";
             }
-            result+=std::to_string(this->get(row,col));
-            if (col!=this->_size[1]-1){
-                result+=delimiter;
+            std::cout << this->get(row,col);
+            if (col != this->_size[1]-1) {
+                std::cout << delimiter;
             }
         }
-        result+=line_break;
+        std::cout << line_break;
     }
-    return result;
 }
 
 // helper function to convert an array to

@@ -40,33 +40,33 @@ class Array{
 
         // addition
         T sum();
-        Array<T> operator+(const T value);
-        Array<T> operator+(const Array& other);
+        std::unique_ptr<Array<T>> operator+(const T value);
+        std::unique_ptr<Array<T>> operator+(const Array& other);
         void operator++();
         void operator+=(const T value);
         void operator+=(const Array& other);
 
         // substraction
         void substract(const T value);
-        Array<T> operator-(const T value);
-        Array<T> operator-(const Array& other);
+        std::unique_ptr<Array<T>> operator-(const T value);
+        std::unique_ptr<Array<T>> operator-(const Array& other);
         void operator--();
         void operator-=(const T value);
         void operator-=(const Array& other);
 
         // multiplication
         T product();
-        Array<T> operator*(const T factor);
+        std::unique_ptr<Array<T>> operator*(const T factor);
         void operator*=(const T factor);
-        Array<T> Hadamard(const Array& other);
+        std::unique_ptr<Array<T>> Hadamard(const Array& other);
         
         // division
-        Array<T> operator/(const T quotient);
+        std::unique_ptr<Array<T>> operator/(const T quotient);
         void operator/=(const T quotient);
 
         // modulo
         void operator%=(const double num);
-        Array<double> operator%(const double num);
+        std::unique_ptr<Array<double>> operator%(const double num);
 
         // exponentiation
         void pow(const T exponent);
@@ -87,43 +87,44 @@ class Array{
 
         // assignment
         void operator=(const Array& other);
-        Array<T> copy();
+        std::unique_ptr<Array<T>> copy();
 
         // elementwise comparison by single value
-        Array<bool> operator>(const T value);
-        Array<bool> operator>=(const T value);
-        Array<bool> operator==(const T value);
-        Array<bool> operator!=(const T value);
-        Array<bool> operator<(const T value);
-        Array<bool> operator<=(const T value);
+        std::unique_ptr<Array<bool>> operator>(const T value);
+        std::unique_ptr<Array<bool>> operator>=(const T value);
+        std::unique_ptr<Array<bool>> operator==(const T value);
+        std::unique_ptr<Array<bool>> operator!=(const T value);
+        std::unique_ptr<Array<bool>> operator<(const T value);
+        std::unique_ptr<Array<bool>> operator<=(const T value);
 
         // elementwise comparison with second array
-        Array<bool> operator>(const Array& other);
-        Array<bool> operator>=(const Array& other);
-        Array<bool> operator==(const Array& other);
-        Array<bool> operator!=(const Array& other);
-        Array<bool> operator<(const Array& other);
-        Array<bool> operator<=(const Array& other);
+        std::unique_ptr<Array<bool>> operator>(const Array& other);
+        std::unique_ptr<Array<bool>> operator>=(const Array& other);
+        std::unique_ptr<Array<bool>> operator==(const Array& other);
+        std::unique_ptr<Array<bool>> operator!=(const Array& other);
+        std::unique_ptr<Array<bool>> operator<(const Array& other);
+        std::unique_ptr<Array<bool>> operator<=(const Array& other);
 
         // elementwise logical operations
-        Array<bool> operator&&(const bool value);
-        Array<bool> operator||(const bool value);
-        Array<bool> operator!();
-        Array<bool> operator&&(const Array& other);
-        Array<bool> operator||(const Array& other);
+        std::unique_ptr<Array<bool>> operator&&(const bool value);
+        std::unique_ptr<Array<bool>> operator||(const bool value);
+        std::unique_ptr<Array<bool>> operator!();
+        std::unique_ptr<Array<bool>> operator&&(const Array& other);
+        std::unique_ptr<Array<bool>> operator||(const Array& other);
 
         // type casting
         template<typename C> operator Array<C>();
 
         // conversion
-        Vector<T> flatten();
-        Matrix<T> asMatrix(const int rows, const int cols);
-        Matrix<T> asMatrix();
-        Array<T> asArray(const std::initializer_list<int>& dim_size);
+        std::unique_ptr<Vector<T>> flatten();
+        std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols);
+        std::unique_ptr<Matrix<T>> asMatrix();
+        std::unique_ptr<Array<T>> asArray(const std::initializer_list<int>& initlist);
 
         // constructor & destructor declarations
         Array(){};
-        Array(const std::initializer_list<int>& dim_size);
+        Array(const std::initializer_list<int>& init_list);
+        Array(const std::vector<int>& dimensions);
         ~Array();
 
         // public member variables
@@ -151,11 +152,11 @@ class Matrix : public Array<T>{
     public:
         void set(const int row, const int col, T value);
         T get(const int row, const int col);
-        Matrix<T> dotproduct(const Matrix& other);
-        Matrix<T> operator*(const Matrix& otehr);
-        Matrix<T> transpose();
+        std::unique_ptr<Matrix<T>> dotproduct(const Matrix& other);
+        std::unique_ptr<Matrix<T>> operator*(const Matrix& otehr);
+        std::unique_ptr<Matrix<T>> transpose();
         void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
-        std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
+
         // constructor declarations
         Matrix(){};
         Matrix(const int rows, const int cols);
@@ -179,23 +180,23 @@ class Vector : public Array<T>{
         void resize(const int new_size);
         int grow(const int additional_elements,T value=0);
         int shrink(const int remove_amount);
-        Vector<T> flatten()=delete;
+        std::unique_ptr<Vector<T>> flatten()=delete;
 
         // transpose
-        Matrix<T> transpose();
+        std::unique_ptr<Matrix<T>> transpose();
 
         // Multiplication
         T dotproduct(const Vector& other);
         T operator*(const Vector& other);
 
         // sample analysis
-        Vector<int> ranking(bool ascending=true);
-        Vector<T> exponential_smoothing(bool as_series=false);
+        std::unique_ptr<Vector<int>> ranking(bool ascending=true);
+        std::unique_ptr<Vector<T>> exponential_smoothing(bool as_series=false);
         double Dickey_Fuller();
-        Vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
-        Vector<T> sort(bool ascending=true);
-        Vector<T> shuffle();
-        Vector<T> log_transform();
+        std::unique_ptr<Vector<T>> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
+        std::unique_ptr<Vector<T>> sort(bool ascending=true);
+        std::unique_ptr<Vector<T>> shuffle();
+        std::unique_ptr<Vector<T>> log_transform();
         T polynomial_predict(T x,int power=5);
         double polynomial_MSE(int power=5);
         bool isGoodFit_linear(double threshold=0.95);
@@ -208,7 +209,6 @@ class Vector : public Array<T>{
 
         // output
         void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
-        std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
 
         // constructor & destructor declarations
         Vector(){};

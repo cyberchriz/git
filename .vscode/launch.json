@@ -12,7 +12,7 @@
                 "name": "g++ - Build and debug active file",
                 "type": "cppdbg",
                 "request": "launch",
-                "program": "${workspaceFolder}/${fileBasenameNoExtension}/executable",
+                "program": "${workspaceFolder}/${fileBasenameNoExtension}",
                 "args": [],
                 "stopAtEntry": false,
                 "cwd": "${workspaceFolder}",
