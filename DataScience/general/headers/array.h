@@ -17,7 +17,9 @@ class Array{
     public:     
         // getters & setters
         void set(const std::initializer_list<int>& index, const T value);
+        void set(const std::vector<int>& index, const T value);
         T get(const std::initializer_list<int>& index);
+        T get(const std::vector<int>& index);
         int get_dimensions();
         int get_size(int dimension);
         int get_elements();
@@ -120,7 +122,7 @@ class Array{
         Array<T> asArray(const std::initializer_list<int>& dim_size);
 
         // constructor & destructor declarations
-        Array();
+        Array(){};
         Array(const std::initializer_list<int>& dim_size);
         ~Array();
 
@@ -131,14 +133,16 @@ class Array{
 
         // protected member variables
         bool equal_size(const Array& other);
-        std::initializer_list<int> _init_list;
         int _elements=0; // total number of _elements in all _dimensions
         int _dimensions=0;
         int* _size; // holds the size (number of _elements) per individual dimension 
         
         // protected methods
         int get_element(const std::initializer_list<int>& index);
-        void resizeArray(T*& arr, const int newSize);  
+        int get_element(const std::vector<int>& index);
+        void resizeArray(T*& arr, const int newSize);
+        std::initializer_list<int> array_to_initlist(int* arr, int size);
+        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst);
 };
 
 // derived class from Array<T>, for 2d matrix
@@ -153,10 +157,8 @@ class Matrix : public Array<T>{
         void print(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
         std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
         // constructor declarations
-        Matrix();
+        Matrix(){};
         Matrix(const int rows, const int cols);
-        // destructor declarations
-        ~Matrix(){};
 };
 
 // derived class from Array<T>, for 1d vectors
@@ -177,6 +179,7 @@ class Vector : public Array<T>{
         void resize(const int new_size);
         int grow(const int additional_elements,T value=0);
         int shrink(const int remove_amount);
+        Vector<T> flatten()=delete;
 
         // transpose
         Matrix<T> transpose();
@@ -208,12 +211,10 @@ class Vector : public Array<T>{
         std::string asString(std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
 
         // constructor & destructor declarations
-        Vector();
-        Vector<T> asVector() = delete;
-        Vector(const int _elements);
-        ~Vector(){};
+        Vector(){};
+        Vector(const int elements);
     private:
-        const double _reserve = 0.5;
+        const float _reserve = 0.5;
         int _capacity;
 };
 

@@ -6,9 +6,17 @@
 // | getters & setters               |
 // +=================================+
 
-// assigns a value to an array element via its index
+// assigns a value to an array element via
+// a std::initializer_list<int> index
 template<typename T>
 void Array<T>::set(const std::initializer_list<int>& index, const T value){
+    this->_data[get_element(index)] = value;
+}
+
+// assigns a value to an array element via reference to an
+// integer array as index
+template<typename T>
+void Array<T>::set(const std::vector<int>& index, const T value){
     this->_data[get_element(index)] = value;
 }
 
@@ -33,6 +41,14 @@ T Array<T>::get(const std::initializer_list<int>& index){
     return _data[element];
 }
 
+// returns the value of an array element via its index
+template<typename T>
+T Array<T>::get(const std::vector<int>& index){
+    int element=get_element(index);
+    if (std::isnan(element) || element>this->_elements){return T(NAN);}
+    return _data[element];
+}
+
 // returns the value of a vector element via its index
 template<typename T>
 T Vector<T>::get(const int index){
@@ -45,50 +61,86 @@ template<typename T>
 T Matrix<T>::get(const int row, const int col){
     std::initializer_list<int> index={row,col};
     int element=this->get_element(index);
-    if (std::isnan(element) || element>this->_elements){return T(NAN);}
+    if (element<0 || element>this->_elements){return T(NAN);}
     return this->_data[element];
 }
 
 // returns the number of dimensions of the array
 template<typename T>
 int Array<T>::get_dimensions(){
-    return _dimensions;
+    return this->_dimensions;
 }
 
 // returns the number of elements of the specified array dimension
 template<typename T>
 int Array<T>::get_size(int dimension){
-    return _size[dimension];
+    return this->_size[dimension];
 }
 
 // returns the total number of elements across the array
 // for all dimensions
 template<typename T>
 int Array<T>::get_elements(){
-    return _elements;
+    return this->_elements;
 }
 
-// converts a multidimensional index to 1d
+// converts a multidimensional index (represented by the values of
+// a std::initializer_list<int>) to a one-dimensional index (=as a scalar)
 template<typename T>
 int Array<T>::get_element(const std::initializer_list<int>& index) {
     // confirm valid number of _dimensions
     if (index.size() > _dimensions){
         return -1;
     }
-    // principle: result=index[0] + index[1]*size[0] + index[2]*size[0]*size[1] + index[3]*size[0]*size[1]*size[2] + ...
-    int result = *index.begin();
-    int add;
-    auto iterator = index.begin() + 1;
-    for (int i = 1; iterator != index.end(); ++i, ++iterator){
-        add = *iterator;
-        for(int s = 0; s < i; ++s){
-            add *= _size[s];
+    // check if one-dimensional
+    // (note: the end pointer points to directly after(!) the last element)
+    if (index.begin()+1==index.end()){
+        return *index.begin();
+    }
+    // initialize result to number of elements belonging to last dimension
+    int result = *(index.end()-1);
+    // initialize iterator to counter of second last dimension
+    auto iterator = index.end()-2;
+    // initialize dimension index to second last dimension
+    int i = this->_dimensions-2;
+    // decrement iterator down to first dimension
+    for (; iterator >= index.begin(); i--, iterator--){
+        // initialize amount to add to count in dimension i
+        int add = *iterator;
+        // multiply by product of sizes of dimensions higher than i
+        int s=this->_dimensions-1;
+        for(; s >i; s--){
+            add *= this->_size[s];
         }
+        // add product to result 
         result += add;
     }
     return result;
 }
 
+// converts a multidimensional index (represented by C-style
+// integer array) to a one-dimensional index (=as a scalar)
+template<typename T>
+int Array<T>::get_element(const std::vector<int>& index) {
+    // initialize result to number of elements belonging to last dimension
+    int result = index[this->_dimensions-1];
+    // initialize counter to second last dimension
+    int counter = index[this->_dimensions-2];
+    // initialize dimension index to second last dimension
+    int i = this->_dimensions-2;
+    for (; i>=0;i--){
+        // initialize amount to add to count in dimension i
+        int add = index[i];
+        // multiply by product of sizes of dimensions higher than i
+        int s=this->_dimensions-1;
+        for(; s > i; s--){
+            add *= this->_size[s];
+        }
+        // add product to result;
+        result += add;
+    }
+    return result;
+}
 
 // +=================================+   
 // | fill, initialize                |
@@ -960,20 +1012,20 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
     result.fill_zeros();
     if (this->_dimensions==1){
         for (int i=0;i<std::fmin(this->_elements,cols);i++){
-            result.set(0,i, (*this)._data[i]);
+            result.set(0,i, this->_data[i]);
         }
     }
     else if (this->_dimensions==2){
         for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
             for (int c=0;c<std::fmin(cols,this->_size[1]);c++){
-                std::initializer_list<int> index={r,c};
-                result.set(r,c,(*this).get(index));
+                std::vector<int> index={r,c};
+                result.set(r,c,this->get(index));
             }
         }
     }
     else {
-        int index[this->_dimensions];
-        // reset index to all zeros
+        std::vector<int> index(this->_dimensions);
+        // reset the indices of higher dimensions to all zeros
         for (int d=0;d<this->_dimensions;d++){
             index[d]=0;
         }
@@ -983,10 +1035,7 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols){
             index[0]=row;
             for (int col=0;col<this->_size[1];col++){
                 index[1]=col;
-                // get the source value by implicitly converting
-                // the index array into std::intializer_list<int>
-                std::initializer_list<int> list={ row, col };
-                result.set(row,col,this->get(list));
+                result.set(row,col,this->get(index));
             }
         }
     }
@@ -1016,8 +1065,8 @@ Matrix<T> Array<T>::asMatrix(){
     }
     else {
         result=Matrix<T>(this->_size[0],this->_size[1]);
-        int index[this->_dimensions];
-        // reset index to all zeros
+        std::vector<int> index(this->_dimensions);
+        // reset dimension indices to all zeros
         for (int d=0;d<this->_dimensions;d++){
             index[d]=0;
         }
@@ -1028,8 +1077,8 @@ Matrix<T> Array<T>::asMatrix(){
             for (int col=0;col<this->_size[1];col++){
                 index[1]=col;
                 // get the source value by implicitly converting
-                // the index array into std::intializer_list<int>
-                result.set(row,col,this->get({std::begin(index), std::end(index)}));
+                // the index vector into std::intializer_list<int>
+                result.set(row,col,this->get(index));
             }
         }
     }
@@ -1049,12 +1098,12 @@ Array<T> Array<T>::asArray(const std::initializer_list<int>& dim_size){
     Array<T> result(dim_size);
     result.fill_zeros();
     // reset result index to all zeros
-    int result_index[result.get_dimensions()];
+    std::vector<int> result_index(result.get_dimensions());
     for (int d=0;d<result.get_dimensions();d++){
         result_index[d]=0;
     }
     // reset source index to all zeros
-    int source_index[this->_dimensions];
+    std::vector<int> source_index(this->_dimensions);
     for (int d=0;d<this->_dimensions;d++){
         source_index[d]=0;
     }
@@ -1064,7 +1113,7 @@ Array<T> Array<T>::asArray(const std::initializer_list<int>& dim_size){
         for (int i=0;i<std::fmin(this->_size[d],result.get_size(d));i++){
             result_index[d]=i;
             source_index[d]=i;
-            result.set({std::begin(result_index),std::end(result_index)},this->_data[get_element({std::begin(source_index),std::end(source_index)})]);
+            result.set(result_index,this->_data[get_element(source_index)]);
         }
     }
     return result;
@@ -1078,26 +1127,38 @@ Array<T> Array<T>::asArray(const std::initializer_list<int>& dim_size){
 // pass dimension size (elements per dimension)
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
-Array<T>::Array(const std::initializer_list<int>& dim_size) : _init_list(dim_size) {
-    this->_init_list=dim_size;
-    this->_dimensions = (int)dim_size.size();
+Array<T>::Array(const std::initializer_list<int>& init_list) {
+    // set dimensions + check if init_list empty
+    this->_dimensions = (int)init_list.size();
+    if (this->_dimensions==0){
+        return;
+    }
+    // store size of individual dimensions in _size[] member variable
     this->_size = new int(_dimensions);
-    auto iterator=dim_size.begin();
-    for (int n=0; iterator!=dim_size.end();n++, iterator++){
+    auto iterator=init_list.begin();
+    int n=0;
+    for (; iterator!=init_list.end();n++, iterator++){
         this->_size[n]=*iterator;
     }
+    // count total number of elements
     this->elements=1;
     for (int d=0;d<_dimensions;d++){
-        this->elements*=std::fmax(1,_size[d]);
+        this->elements*=this->_size[d];
     }
+    // create data buffer
     this->_data=new T(this->_elements);
 };
 
 // destructor for parent class
 template<typename T>
 Array<T>::~Array(){
-    delete[] _data;
-    delete[] _size;
+    // note: the following condition tries to avoid deleting
+    // memory that has never been allocated (could happen if the
+    // constructor came with an empty of or invalid initializer list)
+    if (this->_dimensions>0){
+        delete[] _data;
+        delete[] _size;
+    }
 }
 
 // constructor for a one-dimensional vector
@@ -1106,8 +1167,7 @@ Vector<T>::Vector(const int elements) {
     this->_size = new int(1);
     this->_elements = elements;
     this->_size[0] = elements;
-    this->_init_list={this->_elements};
-    this->_capacity = int(elements * (1.0+_reserve));
+    this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
     this->_data=new T(this->_capacity);
 }
@@ -1119,7 +1179,6 @@ Matrix<T>::Matrix(const int rows, const int cols) {
     this->_elements = rows * cols;
     this->_size[0] = rows;
     this->_size[1] = cols;
-    this->_init_list={this->_size[0],this->_size[1]};
     this->_dimensions = 2;
     this->_data = new T(this->_elements);
 }
@@ -1329,9 +1388,11 @@ Vector<T> Vector<T>::log_transform(){
     return result;
 }
 
-// performs polynomial regression (to the specified
-// power) on the vector and predicts a new value
-// for a hypothetical new index value
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then performs polynomial regression (to the specified
+// power) predicts a new value for a hypothetical new index value
 template<typename T>
 T Vector<T>::polynomial_predict(T x,int power){
     T x_indices[this->_elements];
@@ -1343,7 +1404,10 @@ T Vector<T>::polynomial_predict(T x,int power){
     return temp.polynomial_predict(x);
 }
 
-// returns the Mean Squared Error (MSE) of polynomial
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then returns the Mean Squared Error (MSE) of polynomial
 // regression to the specified power
 template<typename T>
 double Vector<T>::polynomial_MSE(int power){
@@ -1356,7 +1420,10 @@ double Vector<T>::polynomial_MSE(int power){
     return temp.polynomial_MSE();
 }
 
-// returns whether linear regression is a good fit
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then returns whether linear regression is a good fit
 // with respect to the given confidence interval
 template<typename T>
 bool Vector<T>::isGoodFit_linear(double threshold){
@@ -1369,6 +1436,9 @@ bool Vector<T>::isGoodFit_linear(double threshold){
     return temp.isGoodFit(threshold);
 }
 
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values, then
 // returns whether polynomial regression (to the specified
 // power) is a good fit with respect to the given confidence
 // interval
@@ -1383,7 +1453,10 @@ bool Vector<T>::isGoodFit_polynomial(int power,double threshold){
     return temp.isGoodFit(threshold);
 }
 
-// performs linear regression and predict a new value
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values, then
+// performs linear regression and predicts a new value
 // for a hypothetical new index x
 template<typename T>
 T Vector<T>::linear_predict(T x){
@@ -1394,7 +1467,10 @@ T Vector<T>::linear_predict(T x){
     return Sample2d<T>(x_indices, this->_data).linear_predict(x);
 }
 
-// returns the slope of linear regression of the vector data
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then returns the slope of linear regression
 template<typename T>
 double Vector<T>::get_slope(){
     T x_indices[this->_elements];
@@ -1404,7 +1480,10 @@ double Vector<T>::get_slope(){
     return Sample2d<T>(x_indices, this->_data).get_slope();
 } 
 
-// returns the y-axis intercept of linear regression of the vector data
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then returns the y-axis intercept of linear regression
 template<typename T>
 double Vector<T>::get_y_intercept(){
     T x_indices[this->_elements];
@@ -1414,8 +1493,11 @@ double Vector<T>::get_y_intercept(){
     return Sample2d<T>(x_indices, this->_data).get_y_intercept();
 }
 
-// returns the coefficient of determination (r2) of
-// linear regression of the vector data
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then returns the coefficient of determination (r2) of
+// linear regression
 template<typename T>
 double Vector<T>::get_r_squared_linear(){
     T x_indices[this->_elements];
@@ -1427,9 +1509,11 @@ double Vector<T>::get_r_squared_linear(){
     return temp.get_r_squared();
 };
 
-// returns the coefficient of determination (r2) of
-// polynomial regression of the vector data
-// (to the specified power)
+// interprets the vector data as series data
+// with evenly spaced integer scaling of the x-axis
+// and the vector data as the corresponding y-values,
+// then returns the coefficient of determination (r2)
+// of polynomial regression to the specified power
 template<typename T>
 double Vector<T>::get_r_squared_polynomial(int power){
     T x_indices[this->_elements];
@@ -1508,5 +1592,25 @@ std::string Matrix<T>::asString(std::string delimiter, std::string line_break, b
     }
     return result;
 }
+
+// helper function to convert an array to
+// a std::initializer_list<int>
+template<typename T>
+std::initializer_list<int> Array<T>::array_to_initlist(int* arr, int size) {
+    return {arr, arr + size};
+}  
+
+// helper function to convert a std::initializer_list<int>
+// to a one-dimensional integer array
+template<typename T>
+std::unique_ptr<int[]> Array<T>::initlist_to_array(const std::initializer_list<int>& lst) {
+    std::unique_ptr<int[]> arr(new int[lst.size()]);
+    int i = 0;
+    for (auto it = lst.begin(); it != lst.end(); ++it) {
+        arr[i++] = *it;
+    }
+    return arr;
+}
+
 
 #endif
