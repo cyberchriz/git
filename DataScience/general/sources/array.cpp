@@ -13,20 +13,22 @@ void Array<T>::set(const std::initializer_list<int>& index, const T value){
     this->_data[get_element(index)] = value;
 }
 
-// assigns a value to an array element via reference to an
-// integer array as index
+// assigns a value to an array element, with index parameter
+// as const std::vector<int>&
 template<typename T>
 void Array<T>::set(const std::vector<int>& index, const T value){
     this->_data[get_element(index)] = value;
 }
 
-// assigns a value to an element of a one-dimensional vector via its index
+// assigns a value to an element of a one-dimensional vector
+// via its index (with index parameter as type const int)
 template<typename T>
 void Vector<T>::set(const int index, const T value){
     this->_data[index] = value;
 };
 
-// assigns a value to an element of a two-dimensional matrix via its index
+// assigns a value to an element of a two-dimensional
+// matrix via its index (index parameters as const int)
 template<typename T>
 void Matrix<T>::set(const int row, const int col, const T value){
     std::initializer_list<int> index={row,col};
@@ -41,7 +43,8 @@ T Array<T>::get(const std::initializer_list<int>& index){
     return _data[element];
 }
 
-// returns the value of an array element via its index
+// returns the value of an array element via
+// its index (as type const std::vector<int>&)
 template<typename T>
 T Array<T>::get(const std::vector<int>& index){
     int element=get_element(index);
@@ -50,6 +53,7 @@ T Array<T>::get(const std::vector<int>& index){
 }
 
 // returns the value of a vector element via its index
+// (as a const int value)
 template<typename T>
 T Vector<T>::get(const int index){
     if (index>this->_elements){return T(NAN);}
@@ -194,31 +198,40 @@ void Array<T>::fill_zeros(){
     this->fill_values(0);
 }
 
-// fill with a continuous range of numbers
+// fills a multidimensional array with a continuous
+// range of numbers (with specified start parameter
+// referring to the zero position and a step parameter)
 // in all dimensions
 template<typename T>
 void Array<T>::fill_range(const T start, const T step){
-    if (this->_dimensions==1){
-        for (int i=0;i<this->_elements;i++){
-            this->_data[i]=start+i*step;
+    std::vector<int> index(this->_dimensions);
+    std::fill(index.begin(),index.end(),0);
+    for (int d=0;d<this->_dimensions;d++){
+        for (int i=0;i<this->_size[d];i++){
+            index[d]=i;
+            this->set(index,start+i*step);
         }
     }
-    else if (this->dimensions==2){
-        for (int row=0;row<this->_size[0];row++){
-            for (int col=0;col<this->_size[1];col++){
-                this->_set(row,col,start+step*std::fmax(row,col));
-            }
+}
+
+// fills a 2d Matrix with a continuous range of numbers
+// in both dimensions, from a starting point at the zero
+// index, a start value and a step parameter
+template<typename T>
+void Matrix<T>::fill_range(const T start, const T step) {
+    for (int row=0;row<this->_size[0];row++){
+        for (int col=0;col<this->_size[1];col++){
+            this->set(row,col,start+step*std::fmax(row,col));
         }
     }
-    else {
-        int index[this->_dimensions];
-        for (int d=0;d<this->_dimensions;d++){
-            for (int i=0;i<this->_size[d];i++){
-                index[d]=i;
-                std::initializer_list<int> list={std::begin(index),std::end(index)};
-                this->set(list,start+i*step);
-            }
-        }
+}
+
+// fills a vector with a continuous range of numbers
+// with a start value at index 0 and a step parameter
+template<typename T>
+void Vector<T>::fill_range(const T start, const T step){
+    for (int i=0;i<this->_elements;i++){
+        this->_data[i]=start+i*step;
     }
 }
 
@@ -291,12 +304,29 @@ std::unique_ptr<Array<T>> Array<T>::operator+(const Array& other){
     return result;
 }
 
+// prefix increment operator;
 // increments the values of the array by +1
 template<typename T>
-void Array<T>::operator++(){
+Array<T>& Array<T>::operator++(){
     for (int i=0; i<this->_elements; i++){
         this->_data[i]+=1;
     }
+    return *this;
+}
+
+// postfix increment operator;
+// makes an internal copy of the array,
+// then increments all values of the array by +1,
+// then returns the temporary copy;
+// note: more overhead then with the prefix increment
+// because of extra copy!
+template<typename T>
+std::unique_ptr<Array<T>> Array<T>::operator++(int){
+    auto temp = this->copy();
+    for (int i=0; i<this->_elements; i++){
+        this->_data[i]+=1;
+    }
+    return temp;
 }
 
 // elementwise addition of the specified
@@ -355,12 +385,30 @@ std::unique_ptr<Array<T>> Array<T>::operator-(const Array& other){
     return result;
 }
 
-// decrements the values of the array by -1
+// prefix decrement operator;
+// first decrements the values of the array by -1,
+// then returns the modified array
 template<typename T>
-void Array<T>::operator--(){
+Array<T>& Array<T>::operator--(){
     for (int i=0; i<this->_elements; i++){
         this->_data[i]-=1;
     }
+    return *this;
+}
+
+// postfix decrement operator;
+// makes an internal copy of the array,
+// then decrements all values of the array by -1,
+// then returns the temporary copy;
+// note: more overhead then with the prefix decrement
+// because of extra copy!
+template<typename T>
+std::unique_ptr<Array<T>> Array<T>::operator--(int){
+    auto temp = this->copy();
+    for (int i=0; i<this->_elements; i++){
+        this->_data[i]-=1;
+    }
+    return temp;
 }
 
 // elementwise substraction of the specified
@@ -652,7 +700,7 @@ void Array<T>::function(const T (*pointer_to_function)(T)){
 // | Assignment                      |
 // +=================================+
 
-// assignment operator:
+// assignment operator with second Array as argument:
 // copies the values from a second vector, matrix or array
 // into the values of the current vector, matrix or array;
 // the _dimensions of target and source should match!
@@ -666,6 +714,13 @@ void Array<T>::operator=(const Array<T>& other){
     for (int i=0; i<this->_elements; i++){
         this->_data[i] = other->_data[i];
     }
+}
+
+// assignment operator with single numeric argument:
+// invokes the fill_values(const T value) method
+template<typename T>
+void Array<T>::operator=(T){
+    this->fill_values(value);
 }
 
 // returns an identical copy of the current array
@@ -997,67 +1052,78 @@ std::unique_ptr<Vector<T>> Array<T>::flatten(){
     return result;
 }
 
-// converts an array, matrix or vector into a 2d matrix
-// of the specified size; if the new matrix has less
-// elements in any of the dimensions, the surplus elements
-// of the source will be ignored; if the new matrix has more elements, these
-// additional elements will be initialized with zeros;
-// this method can also be used to get a resized copy from
-// a 2d source matrix
+// converts an array into a 2d matrix of the specified size;
+// if the new matrix has less elements in any of the dimensions,
+// the surplus elements of the source array will be ignored;
+// if the new matrix has more elements than the source array, these
+// additional elements will be initialized with the specified value
 template<typename T>
-std::unique_ptr<Matrix<T>> Array<T>::asMatrix(const int rows, const int cols){
+std::unique_ptr<Matrix<T>> Array<T>::asMatrix(const int rows, const int cols, T init_value){
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill_zeros();
-    if (this->_dimensions==1){
-        for (int i=0;i<std::fmin(this->_elements,cols);i++){
-            result->set(0,i, this->_data[i]);
+    result->fill_values(init_value);
+    std::vector<int> index(this->_dimensions);
+    // reset the indices of higher dimensions to all zeros
+    for (int d=0;d<this->_dimensions;d++){
+        index[d]=0;
+    }
+    // iterate over first and second dimension, i.e. keeping
+    // the higher dimensions at index zero
+    for (int row=0;row<this->_size[0];row++){
+        index[0]=row;
+        for (int col=0;col<this->_size[1];col++){
+            index[1]=col;
+            result->set(row,col,this->get(index));
         }
     }
-    else if (this->_dimensions==2){
-        for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
-            for (int c=0;c<std::fmin(cols,this->_size[1]);c++){
-                std::vector<int> index={r,c};
-                result->set(r,c,this->get(index));
-            }
+    return result;
+}
+
+// converts a matrix into another 2d matrix of different size;
+// if the new matrix has less elements in any of the two dimensions,
+// the surplus elements of the source will be ignored; if the new matrix
+// has more elements, these additional elements will be initialized with
+// the specified value
+template<typename T>
+std::unique_ptr<Matrix<T>> Matrix<T>::asMatrix(const int rows, const int cols, T init_value){
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
+    result->fill_values(init_value);
+    for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
+        for (int c=0;c<std::fmin(cols,this->_size[1]);c++){
+            result->set(r,c,this->get(r,c));
         }
     }
-    else {
-        std::vector<int> index(this->_dimensions);
-        // reset the indices of higher dimensions to all zeros
-        for (int d=0;d<this->_dimensions;d++){
-            index[d]=0;
-        }
-        // cycle through first and second dimension, i.e. keeping
-        // the higher dimensions at index zero
-        for (int row=0;row<this->_size[0];row++){
-            index[0]=row;
-            for (int col=0;col<this->_size[1];col++){
-                index[1]=col;
-                result->set(row,col,this->get(index));
-            }
-        }
+    return result;
+}
+
+// converts a vector into a 2d matrix of the specified size;
+// the extra rows will be initialized with zeros
+// if the new matrix has less columns than the source vector
+// has elements, the surplus elements (for row 0) of the source
+// will be ignored; if the new matrix has more columns than the
+// source vector has elements, these additional elements will
+// be initialized with the specified init value;
+template<typename T>
+std::unique_ptr<Matrix<T>> Vector<T>::asMatrix(const int rows, const int cols, T init_value){
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
+    result->fill_values(init_value);
+    for (int i=0;i<std::fmin(this->_elements,cols);i++){
+        result->set(0,i, this->_data[i]);
     }
     return result;
 }
 
 // converts an array, matrix or vector into a 2d matrix;
 // the exact behavior will depend on the source dimensions:
-// 1. if the source is one-dimensional (=Vector), the result
-// will be a matrix with a single row;
-// 2. if the source already is 2-dimensional, the total size
+// 1. if the source array already is 2-dimensional, the total size
 // and the size per dimension will remain unchanged, only the
 // datatype of the returned object is now 'Matrix<T>'
-// 3. if the source has more than 2 dimensions, only values from
+// 2. if the source has more than 2 dimensions, only values from
 // index 0 of the higher dimensions will be copied into the
 // returned result
 template<typename T>
 std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
     std::unique_ptr<Matrix<T>> result;;
-    if (this->_dimensions==1){
-        result=std::make_unique<Matrix<T>>(1,this->_elements);
-        result->_data=this->_data;
-    }
-    else if (this->dimensions==2){
+    if (this->_dimensions==2){
         result=std::make_unique<Matrix<T>>(this->_size[0],this->_size[1]);
         result->_data=this->_data;
     }
@@ -1066,7 +1132,7 @@ std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
         std::vector<int> index(this->_dimensions);
         // reset dimension indices to all zeros
         std::fill(index.begin(),index.end(),0);
-        // cycle through first and second dimension, i.e. keeping
+        // iterate over first and second dimension, i.e. keeping
         // the higher dimensions at index zero
         for (int row=0;row<this->_size[0];row++){
             index[0]=row;
@@ -1080,6 +1146,16 @@ std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
     return result;
 }
 
+// converts a vector into a single row matrix with
+// unchanged number of elements
+template<typename T>
+std::unique_ptr<Matrix<T>> Vector<T>::asMatrix(){
+    std::unique_ptr<Matrix<T>> result;;
+    result=std::make_unique<Matrix<T>>(1,this->_elements);
+    result->_data=this->_data;
+    return result;
+}
+
 // converts a vector or matrix into an array
 // or converts a preexisting array into an array of
 // the specified new size;
@@ -1087,20 +1163,20 @@ std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
 // limits of the target will be cut off; if the target
 // is bigger, the surplus target elements that have no
 // corresponding index at the source will be initialized
-// with zeros
+// with the specified init_value
 template<typename T>
-std::unique_ptr<Array<T>> Array<T>::asArray(const std::initializer_list<int>& init_list){
+std::unique_ptr<Array<T>> Array<T>::asArray(const std::initializer_list<int>& init_list, T init_value){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(init_list);
-    result->fill_zeros();
+    result->fill_values(init_value);
     // reset result index to all zeros
     std::vector<int> result_index(result->get_dimensions());
     std::fill(result_index.begin(),result_index.end(),0);
     // reset source index to all zeros
     std::vector<int> source_index(this->_dimensions);
     std::fill(source_index.begin(),source_index.end(),0);
-    // cycle through source dimensions
+    // iterate over source dimensions
     for (int d=0;d<std::fmin(this->_dimensions,result->get_dimensions());d++){
-        // cycle through elements of given dimension
+        // iterate over elements of given dimension
         for (int i=0;i<std::fmin(this->_size[d],result->get_size(d));i++){
             result_index[d]=i;
             source_index[d]=i;
@@ -1124,17 +1200,17 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
     if (this->_dimensions==0){
         return;
     }
-    // store size of individual dimensions in _size[] member variable
-    this->_size = new int[_dimensions];
+    // store size of individual dimensions in std::vector<int> _size member variable
+    this->_size.reserve(_dimensions);
     auto iterator=init_list.begin();
     int n=0;
     for (; iterator!=init_list.end();n++, iterator++){
-        this->_size[n]=*iterator;
+        this->_size.push_back(*iterator);
     }
     // count total number of elements
-    this->elements=1;
+    this->_elements=1;
     for (int d=0;d<_dimensions;d++){
-        this->elements*=this->_size[d];
+        this->_elements*=this->_size[d];
     }
     // create data buffer
     this->_data=new T[this->_elements];
@@ -1150,12 +1226,12 @@ Array<T>::Array(const std::vector<int>& dimensions){
     if (this->_dimensions==0){
         return;
     }
-    // store size of individual dimensions in _size[] member variable
+    // store size of individual dimensions in std::vector<int> _size member variable
     // and count total number of elements
-    this->_size = new int[this->_dimensions];
+    this->_size.reserve(this->_dimensions);
     this->_elements=1;
     for (int i=0;i<this->_dimensions;i++){
-        this->_size[i]=dimensions[i];
+        this->_size.push_back(dimensions[i]);
         this->_elements*=dimensions[i];
     }
     // create data buffer
@@ -1170,16 +1246,14 @@ Array<T>::~Array(){
     // constructor came with an empty of or invalid initializer list)
     if (this->_dimensions>0){
         delete[] _data;
-        delete[] _size;
     }
 }
 
 // constructor for a one-dimensional vector
 template<typename T>
 Vector<T>::Vector(const int elements) {
-    this->_size = new int[1];
+    this->_size.push_back(elements);
     this->_elements = elements;
-    this->_size[0] = elements;
     this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
     this->_data=new T[this->_capacity];
@@ -1188,10 +1262,10 @@ Vector<T>::Vector(const int elements) {
 // constructor for 2d matrix
 template<typename T>
 Matrix<T>::Matrix(const int rows, const int cols) {
-    this->_size = new int[2];
+    this->_size.reserve(2);
     this->_elements = rows * cols;
-    this->_size[0] = rows;
-    this->_size[1] = cols;
+    this->_size.push_back(rows);
+    this->_size.push_back(cols);
     this->_dimensions = 2;
     this->_data = new T[this->_elements];
 }
@@ -1557,35 +1631,106 @@ std::unique_ptr<Matrix<T>> Matrix<T>::transpose(){
 // | Output                          |
 // +=================================+
 
-// prints the vector to the console
+// prints the Vector/Matrix/Array to the console
 template<typename T>
-void Vector<T>::print(std::string delimiter, std::string line_break, bool with_indices){
-    for (int i=0;i<this->_elements;i++){
-        if (with_indices){
-            std::cout << "[" << i << "]=";
+void Array<T>::print(std::string comment, std::string delimiter, std::string line_break, bool with_indices){
+    if (comment!=""){
+        std::cout << comment << std::endl;
+    }
+
+    if (this->_dimensions==1){
+        // iterate over elements
+        for (int i=0;i<this->_elements;i++){
+            // add indices
+            if (with_indices){
+                std::cout << "[" << i << "]=";
+            }
+            // add value
+            std::cout << this->_data[i];
+            // add delimiter between elements (except after last value in row)
+            if (i != this->_elements-1) {
+                std::cout << delimiter;
+            }         
         }
-        std::cout << this->_data[i];
-        if (i!=this->_elements-1){
-            std::cout << delimiter;
+        // add line break character(s) to end of the row
+        std::cout << line_break;        
+        return;       
+    }
+
+    // create a vector for temporary storage of the current index (needed for indexing dimensions >=2);
+    std::vector<int> index(this->_dimensions,0);
+    std::fill(index.begin(),index.end(),0);   
+
+    if (this->_dimensions==2){
+        // iterate over rows
+        for (int row=0; row < (this->_dimensions==1 ? 1 : this->_size[0]); row++) {
+            // iterate over columns
+            for (int col=0; col < (this->_dimensions==1 ? this->_size[0] : this->_size[1]); col++) {                
+                // add indices
+                if (with_indices) {
+                    std::cout << "[" << row << "]" << "[" << col << "]=";
+                }
+                // add value
+                index[0]=row; index[1]=col;
+                std::cout << this->get(index);
+                // add delimiter between columns (except after last value in row)
+                if (col != this->_size[1]-1) {
+                    std::cout << delimiter;
+                }
+            }
+            // add line break character(s) to end of current row
+            std::cout << line_break;            
         }
     }
-    std::cout << line_break;
-}
 
-// prints the matrix to the console
-template<typename T>
-void Matrix<T>::print(std::string delimiter, std::string line_break, bool with_indices){
-    for (int row=0; row < this->_size[0]; row++) {
-        for (int col=0; col < this->_size[1]; col++) {
-            if (with_indices) {
-                std::cout << "[" << row << "]" << "[" << col << "]=";
+    else { //=dimensions >=2
+        // iterate over rows
+        for (int row = 0; row < this->_size[0]; row++) {
+            index[0] = row;
+            // iterate over columns
+            for (int col = 0; col < this->_size[1]; col++) {
+                index[1] = col;
+                // add opening brace for column
+                std::cout << "{";
+                // iterate over higher dimensions
+                for (int d = 2; d < this->_dimensions; d++) {
+                    // add opening brace for dimension
+                    std::cout << "{";
+                    // iterate over entries in the current dimension
+                    for (int i = 0; i < this->_size[d]; i++) {
+                        // update index
+                        index[d] = i;
+                        // add indices
+                        if (with_indices) {
+                            for (int dd = 0; dd < this->_dimensions; dd++) {
+                                std::cout << "[" << index[dd] << "]";
+                            }
+                            std::cout << "=";
+                        }
+                        // add value
+                        std::cout << this->get(index);
+                        // add delimiter between values
+                        if (i != this->_size[d] - 1) {
+                            std::cout << delimiter;
+                        }
+                    }
+                    // add closing brace for the current dimension
+                    std::cout << "}";
+                    // add delimiter between dimensions
+                    if (d != this->_dimensions - 1) {
+                        std::cout << delimiter;
+                    }
+                }
+                // add closing brace for column
+                std::cout << "}";
+                // add delimiter between columns
+                if (col != this->_size[1] - 1) {
+                    std::cout << delimiter;
+                }
             }
-            std::cout << this->get(row,col);
-            if (col != this->_size[1]-1) {
-                std::cout << delimiter;
-            }
+            // add line break character(s) to end of current row
+            std::cout << line_break;
         }
-        std::cout << line_break;
     }
 }
 

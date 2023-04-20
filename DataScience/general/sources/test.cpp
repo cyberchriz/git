@@ -2,22 +2,38 @@
 #include <iostream>
 
 int main(){
-    std::cout << "\nLet's create a 3-by-4 matrix:" << std::endl;
     Matrix<int> myMatrix{3,4};
-    myMatrix.print();
+    myMatrix=0;
+    myMatrix.print("\nHere's a 3x4 Matrix<int> as an example.");
     
-    std::cout << "\nNow let's fill this Matrix with random numbers from 0 to 9:" << std::endl;
-    myMatrix.fill_random_uniform(0,9);
-    myMatrix.print();
+    myMatrix.fill_random_uniform(0,99);
+    myMatrix.print("\nFilling the Matrix with random numbers from a uniform distribution 0-99):");
 
-    std::cout << "\nLet's check the indices, too:" << std::endl;
-    myMatrix.print(", ", "\n", true);
+    myMatrix.print("\nLet's check the indices, too:", ", ", "\n", true);
 
-    std::cout << "\nNow let's transpose the Matrix for fun:" << std::endl;
     auto newMatrix = myMatrix.transpose();
-    newMatrix->print(", ", "\n", true);
+    newMatrix->print("\nExample for Matrix transpose:", ", ", "\n", true);
 
-    std::cout << "\nHow about making the Matrix a little bigger?" << std::endl;
+    ++*(newMatrix);
+    newMatrix->print("\nTesting the prefix increment operator++:");
+
+    (*newMatrix)++;
+    newMatrix->print("\nTesting the postfix increment operator++:");
+
     auto largeMatrix = newMatrix->asMatrix(5, 4);
-    largeMatrix->print();
+    largeMatrix->print("\nMaking the Matrix a little bigger, padding with 0:");
+
+    Vector<int> myVec(7);
+    myVec.print("\nNow let's try with a vector");
+
+    myVec.fill_range(100,-1);
+    myVec.print("\nFilling the vector with a range of numbers, starting from 100, step -1:");
+
+    auto Vec2=myVec.transpose();
+    Vec2->print("\nTransposed version of same vector (this will actually create a 'single column matrix'):");
+
+    Array<int> myArr{4,4,2,2};
+    myArr.fill_random_uniform(0,9);
+    myArr.print("\nTesting the print() function for a 4d array (4x4x2x2), without indices: ", " ", "\n",false);
+    myArr.print("\n... and the same WITH indices: ", " ", "\n",true);
 }

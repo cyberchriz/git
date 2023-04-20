@@ -27,7 +27,7 @@ T Random<T>::cauchy(T x_peak, T gamma) {
 // get random value from a uniform distribution
 template<typename T>
 T Random<T>::uniform(T min, T max) { 
-    double random=(double)rand() / (0.5*RAND_MAX) - 1;      // random value within range +/- 1
+    double random=(double)rand() / RAND_MAX;                // random value within range +/- 1
     random*=(max-min);                                      // expand range
     return T(random+min);                                   // shift by lower margin
 }
