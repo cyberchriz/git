@@ -24,22 +24,22 @@ int main(){
     myVec.fill_range(100,-1);
     myVec.print("\nNow let's try with a vector, filled with a range of numbers, starting from 100, step -1:");
 
-    myVec.shuffle();
-    myVec.print("\nRandom shuffle:");
+    auto shuffled = myVec.shuffle();
+    shuffled->print("\nRandom shuffle:");
     
-    std::cout << "\nMean=" << myVec.mean() << std::endl;
-    std::cout << "Median=" << myVec.median() << std::endl;
-    std::cout << "Standard Deviation=" << myVec.stddev() << std::endl;
-    std::cout << "Ranking: "; (myVec.ranking())->print();
-    std::cout << "Stationary (method=integer, degree=1): "; (myVec.stationary(integer))->print();
+    std::cout << "\nMean=" << shuffled->mean() << std::endl;
+    std::cout << "Median=" << shuffled->median() << std::endl;
+    std::cout << "Standard Deviation=" << shuffled->stddev() << std::endl;
+    std::cout << "Ranking: "; (shuffled->ranking())->print();
+    std::cout << "Stationary (method=integer, degree=1): "; (shuffled->stationary(integer))->print();
     
-    Vector<int> x_axis(myVec.get_elements());
+    Vector<int> x_axis(shuffled->get_elements());
     x_axis.fill_range(0,1);
     auto regr_result = x_axis.linear_regression(myVec);
     std::cout << "Linear Regression Slope=" << regr_result->slope << std::endl;
-    std::cout << "Lin. Reg. r_square=" << regr_result->r_squared << std::endl;
+    std::cout << "Lin. Reg. r_squared=" << regr_result->r_squared << std::endl;
 
-    auto Vec2=myVec.transpose();
+    auto Vec2=shuffled->transpose();
     Vec2->print("\nTransposed version of same vector (this will actually create a 'single column matrix'):");
 
     Array<int> myArr{4,4,2,2};

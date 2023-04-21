@@ -251,8 +251,9 @@ double Array<T>::mean(){
 template<typename T>
 double Array<T>::median() {
     // Copy the data to a temporary array for sorting
+    // note: .get() is used to retrieve a raw pointer from a std::unique_ptr
     T tmp[this->_elements];
-    std::copy(this->_data, this->_data + this->_elements, tmp);
+    std::copy(this->_data.get(), this->_data.get() + this->_elements, tmp);
 
     // Sort the temporary array
     std::sort(tmp, tmp + this->_elements);
@@ -327,7 +328,8 @@ std::unique_ptr<Array<T>> Array<T>::operator+(const Array& other){
 }
 
 // prefix increment operator;
-// increments the values of the array by +1
+// increments the values of the array by +1,
+// returns a reference to the source array itself
 template<typename T>
 Array<T>& Array<T>::operator++(){
     for (int i=0; i<this->_elements; i++){
@@ -344,10 +346,10 @@ Array<T>& Array<T>::operator++(){
 // because of extra copy!
 template<typename T>
 std::unique_ptr<Array<T>> Array<T>::operator++(int){
-    // make a copy
     std::unique_ptr<Array<T>> temp = std::make_unique<Array<T>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        temp->_data[i] = this->_data[i]+1;
+        temp->_data[i] = this->_data[i];
+        this->_data[i]++;
     }
     return temp;
 }
@@ -741,20 +743,61 @@ void Array<T>::function(const T (*pointer_to_function)(T)){
 // | Assignment                      |
 // +=================================+
 
-// assignment operator with second Array as argument:
-// copies the values from a second vector, matrix or array
-// into the values of the current vector, matrix or array;
-// the _dimensions of target and source should match!
-// the operation will otherwise result in a NAN array!
+// copy assignment operator with second Array as argument:
+// copies the values from a second array into the values of
+// the current array; the _dimensions of target and source must match!
 template<typename T>
-void Array<T>::operator=(const Array<T>& other){
-    if (!equal_size(other)){
-        this->fill_values(T(NAN));
-        return;
+Array<T>& Array<T>::operator=(const Array<T>& other) {
+    // Check for self-assignment
+    if (this != &other) {
+        // Allocate new memory for the array
+        std::unique_ptr<T[]> new_data = std::make_unique<T[]>(other._elements);
+        // Copy the elements from the other array to the new array
+        std::copy(other._data.get(), other._data.get() + other._elements, new_data.get());
+        // Assign the new data to this object
+        this->_data = std::move(new_data);
+        this->_elements = other._elements;
+        this->_size = other._size;
     }
-    for (int i=0; i<this->_elements; i++){
-        this->_data[i] = other->_data[i];
+    return *this;
+}
+
+// copy assignment operator with second Matrix as argument:
+// copies the values from a second Matrix into the values of
+// the current Matrix
+template<typename T>
+Matrix<T>& Matrix<T>::operator=(const Matrix<T>& other) {
+    // Check for self-assignment
+    if (this != &other) {
+        // Allocate new memory for the array
+        std::unique_ptr<T[]> new_data = std::make_unique<T[]>(other._elements);
+        // Copy the elements from the other array to the new array
+        std::copy(other._data.get(), other._data.get() + other._elements, new_data.get());
+        // Assign the new data to this object
+        this->_data = std::move(new_data);
+        this->_elements = other._elements;
+        this->_size = other._size;
     }
+    return *this;
+}
+
+// copy assignment operator with second Vector as argument:
+// copies the values from a second Vector into the values of
+// the current Vector
+template<typename T>
+Vector<T>& Vector<T>::operator=(const Vector<T>& other) {
+    // Check for self-assignment
+    if (this != &other) {
+        // Allocate new memory for the array
+        std::unique_ptr<T[]> new_data = std::make_unique<T[]>(other._elements);
+        // Copy the elements from the other array to the new array
+        std::copy(other._data.get(), other._data.get() + other._elements, new_data.get());
+        // Assign the new data to this object
+        this->_data = std::move(new_data);
+        this->_elements = other._elements;
+        this->_size = other._size;
+    }
+    return *this;
 }
 
 // +=================================+   
@@ -1072,7 +1115,9 @@ Array<T>::operator Array<C>(){
 template<typename T>
 std::unique_ptr<Vector<T>> Array<T>::flatten(){
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data=this->_data;
+    for (int i=0;i<this->_elements;i++){
+        result->_data[i]=this->_data[i];
+    }
     return result;
 }
 
@@ -1149,7 +1194,15 @@ std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
     std::unique_ptr<Matrix<T>> result;;
     if (this->_dimensions==2){
         result=std::make_unique<Matrix<T>>(this->_size[0],this->_size[1]);
-        result->_data=this->_data;
+        std::vector<int> index;
+        int element;
+        for (int row=0;row<this->_size[0];row++){
+            for (int col=0;col<this->_size[1];col++){
+                index = {row,col};
+                element = get_element(index);
+                result->_data[element] = this->_data[element];
+            }
+        }
     }
     else {
         result=std::make_unique<Matrix<T>>(this->_size[0],this->_size[1]);
@@ -1176,7 +1229,9 @@ template<typename T>
 std::unique_ptr<Matrix<T>> Vector<T>::asMatrix(){
     std::unique_ptr<Matrix<T>> result;;
     result=std::make_unique<Matrix<T>>(1,this->_elements);
-    result->_data=this->_data;
+    for (int i=0;i<this->_elements;i++){
+        result->_data[i]=this->_data[i];
+    }
     return result;
 }
 
@@ -1236,8 +1291,8 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
     for (int d=0;d<_dimensions;d++){
         this->_elements*=this->_size[d];
     }
-    // create data buffer
-    this->_data=new T[this->_elements];
+    // allocate data buffer
+    this->_data = std::make_unique<T[]>(this->_elements);
 };
 
 // constructor for multidimensional array:
@@ -1258,19 +1313,26 @@ Array<T>::Array(const std::vector<int>& dimensions){
         this->_size.push_back(dimensions[i]);
         this->_elements*=dimensions[i];
     }
-    // create data buffer
-    this->_data=new T[this->_elements];    
+    // allocate data buffer
+    this->_data = std::make_unique<T[]>(this->_elements);   
 }
 
-// destructor for parent class
+// virtual destructor for parent class
 template<typename T>
 Array<T>::~Array(){
-    // note: the following condition tries to avoid deleting
-    // memory that has never been allocated (could happen if the
-    // constructor came with an empty of or invalid initializer list)
-    if (this->_dimensions>0){
-        delete[] _data;
-    }
+    // empty
+}
+
+// override destructor for Matrix<T>
+template<typename T>
+Matrix<T>::~Matrix(){
+    // empty
+}
+
+// override destructor for Matrix<T>
+template<typename T>
+Vector<T>::~Vector(){
+    // empty
 }
 
 // constructor for a one-dimensional vector
@@ -1280,7 +1342,7 @@ Vector<T>::Vector(const int elements) {
     this->_elements = elements;
     this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
-    this->_data=new T[this->_capacity];
+    this->_data = std::make_unique<T[]>(this->_capacity);
 }
 
 // constructor for 2d matrix
@@ -1291,7 +1353,7 @@ Matrix<T>::Matrix(const int rows, const int cols) {
     this->_size.push_back(rows);
     this->_size.push_back(cols);
     this->_dimensions = 2;
-    this->_data = new T[this->_elements];
+    this->_data = std::make_unique<T[]>(this->_elements);
 }
 
 // +=================================+   
@@ -1314,27 +1376,25 @@ bool Array<T>::equal_size(const Array& other){
     return true;
 }    
 
-// change the size of a simple C++ array
-// by allocating new memory and copying the previous
-// data to the new location
+// change the size of a simple C-style array via its std::unique_ptr<T[]>
+// by allocating new memory and copying the previous data to the new location
 template<typename T>
-void Array<T>::resizeArray(T*& arr, const int newSize) {
+void Array<T>::resizeArray(std::unique_ptr<T[]>& arr, const int newSize) {
     // Create a new array with the desired size
-    T* newArr = new T[newSize];
+    std::unique_ptr<T[]> newArr(new T[newSize]);
     // Copy the elements from the old array to the new array
     for (int i = 0; i < newSize; i++) {
-        if (i < sizeof(arr)/sizeof(T)) {
+        if (i < this->__elements) {
             newArr[i] = arr[i];
         } else {
             newArr[i] = 0;
         }
     }
-    // Delete the old array
-    delete[] arr;
     // Assign the new array to the old array variable
-    arr = newArr;
+    arr = std::move(newArr);
+    // Update the number of elements in the array
+    this->_elements = newSize;
 }
-
 
 // +=================================+   
 // | Dynamic Vector Handling         |
@@ -1346,7 +1406,7 @@ int Vector<T>::push_back(const T value){
     this->_elements++;
     if (this->_elements>this->_capacity){
         this->_capacity=int(this->_elements*(1.0+this->_reserve));
-        resizeArray(&this->_data, this->_capacity);
+        resizeArray(this->_data, this->_capacity);
     }
     this->_data[this->_elements-1]=value;
     return this->_elements;
@@ -1358,7 +1418,7 @@ void Vector<T>::resize(const int new_size){
     this->_elements=new_size;
     if (this->_elements>this->_capacity){
         this->_capacity=int(this->_elements*(1.0+this->_reserve));
-        resizeArray(&this->_data, this->_capacity);
+        resizeArray(this->_data, this->_capacity);
     }    
 }
 // grows the vector size by the specified number of
@@ -1400,17 +1460,6 @@ T Vector<T>::pop(){
     return this->_data[this->_elements];
 }
 
-template <typename T>
-T Vector<T>::pop_first(){
-    // store the value of the first element
-    T result = this->_data[0];
-    // shift the data buffer pointer by 1 element
-    this->_data++;
-    // decrement the number of elements
-    this->_elements--;
-    return result;
-}
-
 // returns the available total capacity of a vector
 // without re-allocating memory
 template<typename T>
@@ -1446,36 +1495,25 @@ std::unique_ptr<Matrix<T>> Vector<T>::transpose(){
 // +=================================+
 
 // returns a vector of integers that represent
-// a ranking of the source vector
+// a ranking of the source vector via bubble sorting
+// the ranks
 template<typename T>
-std::unique_ptr<Vector<int>> Vector<T>::ranking(bool ascending){
-    std::unique_ptr<Vector<int>> rank = std::make_unique<Vector<int>>(this->_elements);
+std::unique_ptr<Vector<int>> Vector<T>::ranking(){
     // initialize ranks
-    for (int n=0;n<this->_elements;n++){
-        rank->set(n,n);
-    }
+    std::unique_ptr<Vector<int>> rank = std::make_unique<Vector<int>>(this->_elements);
+    rank->fill_range(0,1);
     // ranking loop
     bool ranking_completed=false;
     while (!ranking_completed){
         ranking_completed=true; //=let's assume this until a wrong order is found
         for (int i=0;i<this->_elements-1;i++){
             // pairwise comparison:
-            if (ascending){
-                if (this->_data[rank->get(i)] > this->_data[rank->get(i+1)]){
-                    ranking_completed=false;
-                    int higher_ranking=rank->get(i+1);
-                    rank->set(i+1, rank->get(i));
-                    rank->set(i,higher_ranking);
-                }
-            }
-            else{
-                if (this->_data[rank->get(i)] < this->_data[rank->get(i+1)]){
-                    ranking_completed=false;
-                    int lower_ranking=rank->get(i+1);
-                    rank->set(i+1, rank->get(i));
-                    rank->set(i, lower_ranking);
-                }
-            }            
+            if ((this->_data[i]>this->_data[i+1] && rank->_data[i]<rank->_data[i+1]) ||
+                (this->_data[i]<this->_data[i+1] && rank->_data[i]>rank->_data[i+1])){
+                ranking_completed=false;
+                // swap ranks
+                std::swap(rank->_data[i+1], rank->_data[i]);
+            }           
         }
     }  
     return rank;
@@ -1538,19 +1576,49 @@ double Vector<T>::weighted_average(bool as_series){
 // time series dataset does not have a unit root and is stationary.
 template<typename T>
 double Vector<T>::Dickey_Fuller(){
-    // make a copy
+    // make two copies
     Vector<T> data_copy(this->_elements);
-    data_copy._data = this->_data;
-    // get a stationary transformation
-    Vector<T> stat_copy(this->_elements);
-    stat_copy._data = this->_data;
+    Vector<T> stat_copy(this->_elements);    
+    for (int i=0;i<this->_elements;i++){
+        data_copy._data[i] = this->_data[i];
+        stat_copy._data[i] = this->_data[i];
+    }
+    // make one the copies stationary
     stat_copy.stationary(integer,1);
-    // erase the first element of data_copy
+    // pop the first element of the other copy to make their size match again
     data_copy.pop_first();
-    // correlate the source data with the corresponding stationary transformation
+    // correlate the raw copy with the corresponding stationary transformation
     double Pearson_R = data_copy.correlation(stat_copy)->Pearson_R;
+    // calculate result
     return Pearson_R*std::sqrt((double)(this->_elements-1)/(1-std::pow(Pearson_R,2)));  
 }
+
+// takes the source vector and another vector (passed as parameter) and
+// performs an Engle-Granger test in order to test the given numeric sample
+// for cointegration, i.e. checking series data for a long-term relationship.
+// The test was proposed by Clive Granger and Robert Engle in 1987.
+// If the returned p-value is less than a chosen significance level (typically 0.05),
+// it suggests that the two time series are cointegrated and have a long-term relationship.
+template<typename T>
+double Vector<T>::Engle_Granger(const Vector<T>& other){
+    // make copies of the x+y source data
+    int elements = std::fmin(this->_elements, other._elements);
+    Vector<T> x_data(elements);
+    Vector<T> y_data(elements);
+    for (int i=0;i<elements;i++){
+        x_data._data[i] = this->_data[i];
+        y_data._data[i] = other._data[i];
+    }
+    // make the data stationary
+    std::unique_ptr<Vector<T>> x_stat = x_data.stationary();
+    std::unique_ptr<Vector<T>> y_stat = y_data.stationary();
+    // perform linear regression on x versus y
+    std::unique_ptr<LinReg<T>> regr_result = x_stat->linear_regression(y_stat);
+    // perform a Dickey_Fuller test on the residuals
+    Vector<double> residuals(elements);
+    residuals._data = regr_result->residuals;
+    return residuals.Dickey_Fuller();
+}      
 
 // returns a stationary transformation of the vector data,
 // e.g. for time series data;
@@ -1561,40 +1629,58 @@ double Vector<T>::Dickey_Fuller(){
 //    deltamean=4,
 //    original=5
 template<typename T>
-std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method,double degree,double fract_exponent){
+std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method, double degree, double fract_exponent) {
     // make a copy
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data = this->_data;
-
-    if (method==integer){
-        for (int d=1;d<=(int)degree;d++){ //=loop allows for higher order differencing
-            for (int t=this->_elements-1;t>0;t--){
-                if (result->_data[t-1]!=0){result->_data[t]-=result->_data[t-1];}
+    for (int i = 0; i < this->_elements; i++) {
+        result->_data[i] = this->_data[i];
+    }
+    if (method == integer) {
+        for (int d = 1; d <= (int)degree; d++) { //=loop allows for higher order differencing
+            for (int t = this->_elements - 1; t > 0; t--) {
+                result->_data[t] -= result->_data[t - 1];
             }
-            result->pop_first();
+            // Remove the first element from the unique_ptr
+            std::unique_ptr<T[]> new_data(new T[this->_elements - 1]);
+            for (int i = 0; i < this->_elements - 1; i++) {
+                new_data[i] = result->_data[i + 1];
+            }
+            result->_data = std::move(new_data);
+            result->_elements--;
         }
     }
-    if (method==logreturn){
-        for (int d=1;d<=round(degree);d++){ //=loop allows for higher order differencing
-            for (int t=this->_elements-1;t>0;t--){
-                if (result->_data[t-1]!=0){
-                    result->_data[t]=log(__DBL_MIN__+std::fabs(result->_data[t]/(result->_data[t-1]+__DBL_MIN__)));
+    if (method == logreturn) {
+        for (int d = 1; d <= round(degree); d++) { //=loop allows for higher order differencing
+            for (int t = this->_elements - 1; t > 0; t--) {
+                if (result->_data[t - 1] != 0) {
+                    result->_data[t] = log(__DBL_MIN__ + std::fabs(result->_data[t] / (result->_data[t - 1] + __DBL_MIN__)));
                 }
             }
-            T first = result->pop_first(); //remove first element
-            (void)first; //=suppressing 'unused variable warning by casting it to void'   
-        }     
+            // for each "degree":
+            // pop the first element from the unique_ptr
+            std::unique_ptr<T[]> new_data(new T[this->_elements - 1]);
+            for (int i = 0; i < this->_elements - 1; i++) {
+                new_data[i] = result->_data[i + 1];
+            }
+            result->_data = std::move(new_data);
+            result->_elements--;
+        }
     }
-    if (method==fractional){
-        for (int t=result->size()-1;t>0;t--){
-            if (result->_data[t-1]!=0){
-                double stat=log(__DBL_MIN__+fabs(this->_data[t]/this->_data[t-1])); //note: DBL_MIN and fabs are used to avoid log(x<=0)
-                double non_stat=log(fabs(this->_data[t])+__DBL_MIN__);
-                result->_data[t]=degree*stat+pow((1-degree),fract_exponent)*non_stat;
+    if (method == fractional) {
+        for (int t = result->size() - 1; t > 0; t--) {
+            if (result->_data[t - 1] != 0) {
+                double stat = log(__DBL_MIN__ + fabs(this->_data[t] / this->_data[t - 1])); //note: DBL_MIN and fabs are used to avoid log(x<=0)
+                double non_stat = log(fabs(this->_data[t]) + __DBL_MIN__);
+                result->_data[t] = degree * stat + pow((1 - degree), fract_exponent) * non_stat;
             }
         }
-        T first = result->pop_first(); //remove first element   
-        (void)first; //=suppressing 'unused variable warning by casting it to void'   
+        // Remove the first element from the unique_ptr
+        std::unique_ptr<T[]> new_data(new T[this->_elements - 1]);
+        for (int i = 0; i < this->_elements - 1; i++) {
+            new_data[i] = result->_data[i + 1];
+        }
+        result->_data = std::move(new_data);
+        result->_elements--;
     }
     if (method==deltamean){
         double sum=0;
@@ -1605,9 +1691,14 @@ std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method,double degr
         for (int t=this->_elements-1;t>0;t--){
             result->_data[t]-=x_mean;
         }
+        result->_elements--;
+        for (int i = 0; i < result->_elements; i++) {
+            result->_data[i] = result->_data[i + 1];
+        }
     }
     return result;
 }
+
 
 // sorts the values of the vector via pairwise comparison
 // default: ascending order;
@@ -1616,7 +1707,9 @@ template<typename T>
 std::unique_ptr<Vector<T>> Vector<T>::sort(bool ascending){
     // make a copy
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data = this->_data;
+    for (int i=0;i<this->_elements;i++){
+        result->_data[i] = this->_data[i];
+    }
     bool completed=false;
     while (!completed){
         completed=true; //let's assume this until proven otherwise
@@ -1647,7 +1740,9 @@ template<typename T>
 std::unique_ptr<Vector<T>> Vector<T>::shuffle(){
     // make a copy
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data = this->_data;
+    for (int i=0;i<this->_elements;i++){
+        result->_data[i] = this->_data[i];
+    }
     // iterate over vector elements and find a random second element to swap places
     for (int i=0;i<this->_elements;i++){
         int new_position=std::floor(Random<double>::uniform()*this->_elements);
@@ -1785,12 +1880,6 @@ std::unique_ptr<Histogram<T>> Vector<T>::histogram(uint bars){
     return histogram;
 }
 
-template <typename T>
-std::unique_ptr<Vector<T>> Vector<T>::operator=(const Vector &other){
-    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(other._elements);
-    result->_data = other._data;
-}
-
 // Matrix transpose
 template<typename T>
 std::unique_ptr<Matrix<T>> Matrix<T>::transpose(){
@@ -1804,12 +1893,6 @@ std::unique_ptr<Matrix<T>> Matrix<T>::transpose(){
         }
     }
     return result;
-}
-
-template <typename T>
-std::unique_ptr<Matrix<T>> Matrix<T>::operator=(const Matrix &other)
-{
-    return std::unique_ptr<Matrix<T>>();
 }
 
 // +=================================+   

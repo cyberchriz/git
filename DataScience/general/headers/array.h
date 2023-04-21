@@ -208,7 +208,7 @@ class Array{
         void function(const T (*pointer_to_function)(T));
 
         // assignment
-        void operator=(const Array& other);
+        virtual Array<T>& operator=(const Array& other);
 
         // elementwise comparison by single value
         std::unique_ptr<Array<bool>> operator>(const T value);
@@ -235,7 +235,7 @@ class Array{
 
         // type casting
         template<typename C> operator Array<C>();
-
+        
         // conversion
         std::unique_ptr<Vector<T>> flatten();
         virtual std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0);
@@ -249,10 +249,10 @@ class Array{
         Array(){};
         Array(const std::initializer_list<int>& init_list);
         Array(const std::vector<int>& dimensions);
-        ~Array();
+        virtual ~Array();
 
         // public member variables
-        T* _data; // 1dimensional array of source _data
+        std::unique_ptr<T[]> _data = nullptr; // 1dimensional array of source _data
     
     protected:
 
@@ -265,7 +265,7 @@ class Array{
         // protected methods
         int get_element(const std::initializer_list<int>& index);
         int get_element(const std::vector<int>& index);
-        void resizeArray(T*& arr, const int newSize);
+        void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);
         std::initializer_list<int> array_to_initlist(int* arr, int size);
         std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst);
 };
@@ -287,7 +287,7 @@ class Matrix : public Array<T>{
         std::unique_ptr<Matrix<T>> transpose();
 
         // assignment
-        std::unique_ptr<Matrix<T>> operator=(const Matrix& other);
+        Matrix<T>& operator=(const Matrix& other);
 
         // conversion
         std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) override;
@@ -295,6 +295,7 @@ class Matrix : public Array<T>{
         // constructor declarations
         Matrix(){};
         Matrix(const int rows, const int cols);
+        ~Matrix() override;
 };
 
 // derived class from Array<T>, for 1d vectors
@@ -313,7 +314,6 @@ class Vector : public Array<T>{
         // dynamic handling
         int push_back(T value);
         T pop();
-        T pop_first();
         int get_capacity();
         int size();
         void resize(const int new_size);
@@ -329,10 +329,11 @@ class Vector : public Array<T>{
         T operator*(const Vector& other);
 
         // sample analysis
-        std::unique_ptr<Vector<int>> ranking(bool ascending=true);
+        std::unique_ptr<Vector<int>> ranking();
         std::unique_ptr<Vector<T>> exponential_smoothing(bool as_series=false);
         double weighted_average(bool as_series=true);
         double Dickey_Fuller();
+        double Engle_Granger(const Vector<T>& other);
         std::unique_ptr<Vector<T>> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
         std::unique_ptr<Vector<T>> sort(bool ascending=true);
         std::unique_ptr<Vector<T>> shuffle();
@@ -341,7 +342,7 @@ class Vector : public Array<T>{
         std::unique_ptr<Histogram<T>> histogram(uint bars);
 
         // assignment
-        std::unique_ptr<Vector<T>> operator=(const Vector& other);
+        Vector<T>& operator=(const Vector& other);
 
         // conversion
         std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) override;
@@ -350,6 +351,7 @@ class Vector : public Array<T>{
         // constructor & destructor declarations
         Vector(){};
         Vector(const int elements);
+        ~Vector() override;
     private:
         const float _reserve = 0.5;
         int _capacity;
