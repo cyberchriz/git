@@ -41,13 +41,12 @@ struct Histogram{
     T max;
     T bar_width;
     T witdh;
-    std::vector<Histogram_bar<T>> bar;
+    std::unique_ptr<Histogram_bar<T>[]> bar;
     Histogram(int bars){
-        bar.reserve(bars);
-        for (int n=0;n<bars;n++){
-            bar.push_back(Histogram_bar<T>());
-        }
+        bar = std::make_unique<Histogram_bar<T>[]>(bars);
     }
+    Histogram() = delete;
+    ~Histogram(){};
 };
 
 // Linear Regression struct
@@ -58,22 +57,19 @@ struct LinReg{
     double y_intercept;
     double slope;
     double r_squared;
-    double* y_regression;
-    double* residuals;
+    std::unique_ptr<double[]> y_regression;
+    std::unique_ptr<double[]> residuals;
     double SST=0;
     double SSR=0;
     T predict(const T x){return y_intercept + slope * x;}
     bool is_good_fit(double threshold=0.95){return r_squared>threshold;}
     // constructor & destructor
     LinReg(const int elements){
-        y_regression = new double(elements);
-        residuals = new double(elements);
+        y_regression = std::make_unique<double[]>(elements);
+        residuals = std::make_unique<double[]>(elements);
     }
     LinReg() = delete;
-    ~LinReg(){
-        delete[] y_regression;
-        delete[] residuals;
-    }
+    ~LinReg(){};
 };
 
 // Polynomial Regression struct
@@ -88,7 +84,7 @@ struct PolyReg{
         double y_mean=0;
         double x_mean=0;
         double r_squared;
-        double* coefficient;  
+        std::unique_ptr<double[]> coefficient;  
         bool is_good_fit(double threshold=0.95){return r_squared>threshold;}
         T predict(const T x){
             double y_pred = 0;
@@ -101,11 +97,9 @@ struct PolyReg{
         PolyReg(const int elements, const int power){
             this->elements=elements;
             this->power=power;
-            coefficient = new double(power+1);
+            coefficient = std::make_unique<double[]>(power+1);
         }
-        ~PolyReg(){
-            delete[] coefficient;
-        }
+        ~PolyReg(){}
     private:
         int elements;
         int power;
