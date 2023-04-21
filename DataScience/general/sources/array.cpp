@@ -29,16 +29,14 @@ void Vector<T>::set(const int index, const T value){
 // matrix via its index (index parameters as const int)
 template<typename T>
 void Matrix<T>::set(const int row, const int col, const T value){
-    std::initializer_list<int> index={row,col};
-    this->_data[this->get_element(index)] = value;
+    this->_data[std::fmin(this->_elements-1,col + row*this->_size[1])] = value;
 }
 
 // returns the value of an array element via its index
 template<typename T>
 T Array<T>::get(const std::initializer_list<int>& index){
     int element=get_element(index);
-    if (std::isnan(element) || element>this->_elements){return T(NAN);}
-    return _data[element];
+    return this->_data[element];
 }
 
 // returns the value of an array element via
@@ -46,25 +44,20 @@ T Array<T>::get(const std::initializer_list<int>& index){
 template<typename T>
 T Array<T>::get(const std::vector<int>& index){
     int element=get_element(index);
-    if (std::isnan(element) || element>this->_elements){return T(NAN);}
-    return _data[element];
+    return this->_data[element];
 }
 
 // returns the value of a vector element via its index
 // (as a const int value)
 template<typename T>
 T Vector<T>::get(const int index){
-    if (index>this->_elements){return T(NAN);}
-    return this->_data[index];
+    return this->_data[std::fmin(index,this->_elements-1)];
 }
 
 // returns the value of a 2d matrix element via its index
 template<typename T>
 T Matrix<T>::get(const int row, const int col){
-    std::initializer_list<int> index={row,col};
-    int element=this->get_element(index);
-    if (element<0 || element>this->_elements){return T(NAN);}
-    return this->_data[element];
+    return this->_data[std::fmin(this->_elements-1,col + row*this->_size[1])];
 }
 
 // returns the number of dimensions of the array
@@ -94,7 +87,7 @@ int Array<T>::get_element(const std::initializer_list<int>& index) {
     if (int(index.size()) > this->_dimensions){
         return -1;
     }
-    // check if one-dimensional
+    // check if single element
     // (note: the end pointer points to directly after(!) the last element)
     if (index.begin()+1==index.end()){
         return *index.begin();
@@ -117,6 +110,8 @@ int Array<T>::get_element(const std::initializer_list<int>& index) {
         // add product to result 
         result += add;
     }
+    // limit to valid boundaries
+    result=std::fmin(this->_elements-1,result);
     return result;
 }
 
@@ -139,6 +134,8 @@ int Array<T>::get_element(const std::vector<int>& index) {
         // add product to result;
         result += add;
     }
+    // limit to valid boundaries
+    result=std::fmin(this->_elements-1,result);
     return result;
 }
 
@@ -1194,13 +1191,11 @@ std::unique_ptr<Matrix<T>> Array<T>::asMatrix(){
     std::unique_ptr<Matrix<T>> result;;
     if (this->_dimensions==2){
         result=std::make_unique<Matrix<T>>(this->_size[0],this->_size[1]);
-        std::vector<int> index;
-        int element;
+        int index;
         for (int row=0;row<this->_size[0];row++){
             for (int col=0;col<this->_size[1];col++){
-                index = {row,col};
-                element = get_element(index);
-                result->_data[element] = this->_data[element];
+                index = col +row*this->_size[1];
+                result->_data[index] = this->_data[index];
             }
         }
     }
@@ -1280,15 +1275,15 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
         return;
     }
     // store size of individual dimensions in std::vector<int> _size member variable
-    this->_size.reserve(_dimensions);
     auto iterator=init_list.begin();
     int n=0;
+    this->_size.resize(this->_dimensions);
     for (; iterator!=init_list.end();n++, iterator++){
-        this->_size.push_back(*iterator);
+        this->_size[n]=*iterator;
     }
     // count total number of elements
     this->_elements=1;
-    for (int d=0;d<_dimensions;d++){
+    for (int d=0;d<this->_dimensions;d++){
         this->_elements*=this->_size[d];
     }
     // allocate data buffer
@@ -1307,10 +1302,10 @@ Array<T>::Array(const std::vector<int>& dimensions){
     }
     // store size of individual dimensions in std::vector<int> _size member variable
     // and count total number of elements
-    this->_size.reserve(this->_dimensions);
     this->_elements=1;
+    this->_size.resize(this->_dimensions);
     for (int i=0;i<this->_dimensions;i++){
-        this->_size.push_back(dimensions[i]);
+        this->_size[i]=dimensions[i];
         this->_elements*=dimensions[i];
     }
     // allocate data buffer
@@ -1338,7 +1333,8 @@ Vector<T>::~Vector(){
 // constructor for a one-dimensional vector
 template<typename T>
 Vector<T>::Vector(const int elements) {
-    this->_size.push_back(elements);
+    this->_size.resize(1);
+    this->_size[0]=elements;
     this->_elements = elements;
     this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
@@ -1348,11 +1344,11 @@ Vector<T>::Vector(const int elements) {
 // constructor for 2d matrix
 template<typename T>
 Matrix<T>::Matrix(const int rows, const int cols) {
-    this->_size.reserve(2);
     this->_elements = rows * cols;
-    this->_size.push_back(rows);
-    this->_size.push_back(cols);
     this->_dimensions = 2;
+    this->_size.resize(this->_dimensions);
+    this->_size[0]=rows;
+    this->_size[1]=cols;
     this->_data = std::make_unique<T[]>(this->_elements);
 }
 
@@ -1483,12 +1479,13 @@ int Vector<T>::size(){
 // i.e. as transposition with data in rows (single column)
 template<typename T>
 std::unique_ptr<Matrix<T>> Vector<T>::transpose(){
-    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(this->_elements,1);
+    std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(this->_elements, 1);
     for (int i=0; i<this->_elements; i++){
-        result->set(i,0,this->_data[i]);
+        result->set(i, 0, this->_data[i]);
     }
     return result;
 }
+
 
 // +=================================+   
 // | Vector Sample Analysis          |
@@ -1641,7 +1638,7 @@ std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method, double deg
                 result->_data[t] -= result->_data[t - 1];
             }
             // Remove the first element from the unique_ptr
-            std::unique_ptr<T[]> new_data(new T[this->_elements - 1]);
+            std::unique_ptr<T[]> new_data = std::make_unique<T[]>(this->_elements - 1);
             for (int i = 0; i < this->_elements - 1; i++) {
                 new_data[i] = result->_data[i + 1];
             }
@@ -1658,7 +1655,7 @@ std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method, double deg
             }
             // for each "degree":
             // pop the first element from the unique_ptr
-            std::unique_ptr<T[]> new_data(new T[this->_elements - 1]);
+            std::unique_ptr<T[]> new_data = std::make_unique<T[]>(this->_elements - 1);
             for (int i = 0; i < this->_elements - 1; i++) {
                 new_data[i] = result->_data[i + 1];
             }
@@ -1889,7 +1886,7 @@ std::unique_ptr<Matrix<T>> Matrix<T>::transpose(){
     for(int i = 0; i < this->_size[0]; i++){
         for(int j = 0; j < this->_size[1]; j++){
             // swap indices and copy element to result
-            result->set(j, i, get(i, j));
+            result->set(j, i, this->get(i, j));
         }
     }
     return result;
