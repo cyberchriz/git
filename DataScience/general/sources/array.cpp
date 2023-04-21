@@ -1,6 +1,4 @@
 #include "../headers/array.h"
-#ifndef ARRAY_CPP
-#define ARRAY_CPP
 
 // +=================================+   
 // | getters & setters               |
@@ -84,7 +82,7 @@ int Array<T>::get_size(int dimension){
 // returns the total number of elements across the array
 // for all dimensions
 template<typename T>
-int Array<T>::get_elements(){
+int Array<T>::get_elements() const {
     return this->_elements;
 }
 
@@ -93,7 +91,7 @@ int Array<T>::get_elements(){
 template<typename T>
 int Array<T>::get_element(const std::initializer_list<int>& index) {
     // confirm valid number of _dimensions
-    if (index.size() > _dimensions){
+    if (int(index.size()) > this->_dimensions){
         return -1;
     }
     // check if one-dimensional
@@ -239,28 +237,52 @@ void Vector<T>::fill_range(const T start, const T step){
 // | Distribution Properties         |
 // +=================================+
 
-// returns the arrithmetic mean of all values of the array
+// returns the arrithmetic mean of all values a vector, matrix or array
 template<typename T>
 double Array<T>::mean(){
-    return Sample<T>(this->_data).mean();
+    double sum=0;
+    for (int n=0;n<this->_elements;n++){
+        sum+=this->_data[n];
+    }
+    return sum/this->_elements;
 }
 
-// returns the median of all values of the array
+// returns the median of all values of a vector, martrix or array
 template<typename T>
-double Array<T>::median(){
-    return Sample<T>(this->_data).median();
+double Array<T>::median() {
+    // Copy the data to a temporary array for sorting
+    T tmp[this->_elements];
+    std::copy(this->_data, this->_data + this->_elements, tmp);
+
+    // Sort the temporary array
+    std::sort(tmp, tmp + this->_elements);
+
+    // Calculate the median based on the number of elements
+    if (this->_elements % 2 == 1) {
+        // Odd number of elements: return the middle element
+        return static_cast<double>(tmp[this->_elements / 2]);
+    } else {
+        // Even number of elements: return the average of the two middle elements
+        return static_cast<double>(tmp[this->_elements / 2 - 1] + tmp[this->_elements / 2]) / 2.0;
+    }
 }
 
-// returns the variance of all values of the array
+// returns the variance of all values of a vector, matrix or array
 template<typename T>
 double Array<T>::variance(){
-    return Sample<T>(this->_data).variance();
+    double mean = this->mean();
+    double sum_of_squares = 0.0;
+    for (int i = 0; i < this->_elements; i++) {
+        double deviation = static_cast<double>(this->_data[i]) - mean;
+        sum_of_squares += deviation * deviation;
+    }
+    return sum_of_squares / static_cast<double>(this->_elements);
 }
 
-// returns the standard deviation of all values of the array
+// returns the standard deviation of all values a the vector, matrix array
 template<typename T>
 double Array<T>::stddev(){
-    return Sample<T>(this->_data).stddev();
+    return std::sqrt(this->variance());
 }
 
 // +=================================+   
@@ -322,9 +344,10 @@ Array<T>& Array<T>::operator++(){
 // because of extra copy!
 template<typename T>
 std::unique_ptr<Array<T>> Array<T>::operator++(int){
-    auto temp = this->copy();
+    // make a copy
+    std::unique_ptr<Array<T>> temp = std::make_unique<Array<T>>(this->_size);
     for (int i=0; i<this->_elements; i++){
-        this->_data[i]+=1;
+        temp->_data[i] = this->_data[i]+1;
     }
     return temp;
 }
@@ -627,6 +650,24 @@ void Array<T>::sqrt(){
     }
 }
 
+// converts the individual values of the array
+// elementwise to their natrual logarithm
+template<typename T>
+void Array<T>::log(){
+    for (int i=0; i<this->_elements; i++){
+        this->_data[i]=std::log(this->_data[i]);
+    }
+}
+
+// converts the individual values of the array
+// elementwise to their base-10 logarithm
+template<typename T>
+void Array<T>::log10(){
+    for (int i=0; i<this->_elements; i++){
+        this->_data[i]=std::log10(this->_data[i]);
+    }
+}
+
 // +=================================+   
 // | Rounding                        |
 // +=================================+
@@ -714,23 +755,6 @@ void Array<T>::operator=(const Array<T>& other){
     for (int i=0; i<this->_elements; i++){
         this->_data[i] = other->_data[i];
     }
-}
-
-// assignment operator with single numeric argument:
-// invokes the fill_values(const T value) method
-template<typename T>
-void Array<T>::operator=(T){
-    this->fill_values(value);
-}
-
-// returns an identical copy of the current array
-template<typename T>
-std::unique_ptr<Array<T>> Array<T>::copy(){
-    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
-    for (int i=0; i<this->_elements; i++){
-        result->_data[i]=this->_data[i];
-    }
-    return result;
 }
 
 // +=================================+   
@@ -1376,6 +1400,17 @@ T Vector<T>::pop(){
     return this->_data[this->_elements];
 }
 
+template <typename T>
+T Vector<T>::pop_first(){
+    // store the value of the first element
+    T result = this->_data[0];
+    // shift the data buffer pointer by 1 element
+    this->_data++;
+    // decrement the number of elements
+    this->_elements--;
+    return result;
+}
+
 // returns the available total capacity of a vector
 // without re-allocating memory
 template<typename T>
@@ -1414,30 +1449,112 @@ std::unique_ptr<Matrix<T>> Vector<T>::transpose(){
 // a ranking of the source vector
 template<typename T>
 std::unique_ptr<Vector<int>> Vector<T>::ranking(bool ascending){
-    std::unique_ptr<Vector<int>> result = std::make_unique<Vector<int>>(this->_elements);
-    result->_data=Sample<T>(this->_data).ranking(ascending);
-    return result;
+    std::unique_ptr<Vector<int>> rank = std::make_unique<Vector<int>>(this->_elements);
+    // initialize ranks
+    for (int n=0;n<this->_elements;n++){
+        rank->set(n,n);
+    }
+    // ranking loop
+    bool ranking_completed=false;
+    while (!ranking_completed){
+        ranking_completed=true; //=let's assume this until a wrong order is found
+        for (int i=0;i<this->_elements-1;i++){
+            // pairwise comparison:
+            if (ascending){
+                if (this->_data[rank->get(i)] > this->_data[rank->get(i+1)]){
+                    ranking_completed=false;
+                    int higher_ranking=rank->get(i+1);
+                    rank->set(i+1, rank->get(i));
+                    rank->set(i,higher_ranking);
+                }
+            }
+            else{
+                if (this->_data[rank->get(i)] < this->_data[rank->get(i+1)]){
+                    ranking_completed=false;
+                    int lower_ranking=rank->get(i+1);
+                    rank->set(i+1, rank->get(i));
+                    rank->set(i, lower_ranking);
+                }
+            }            
+        }
+    }  
+    return rank;
 }
 
-// returns an exponentially smoothed copy of the source vector
+// returns an exponentially smoothed copy of the source vector,
+// e.g. for time series
 template<typename T>
 std::unique_ptr<Vector<T>> Vector<T>::exponential_smoothing(bool as_series){
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data=Sample<T>(this->_data).exponential_smoothing(as_series);
-    return result;
-} 
+    double alpha=2/(this->_elements);
 
-// performs an augmented Dickey-Fuller unit root test
-// for stationarity; a result <0.05 typically implies
-// that the Null hypothesis can be rejected, i.e. the
-// data of the vector are stationary
-template<typename T>
-double Vector<T>::Dickey_Fuller(){
-    return Sample<T>(this->_data).Dickey_Fuller();
+    if (as_series){
+        result->set(this->_elements-1, this->mean());
+        for (int n=this->_elements-2; n>=0; n--){
+            result->set(n, alpha*(this->_data[n] - result->get(n+1)) + result->get(n+1));
+        }     
+    }
+    else{
+        result->set(0, this->mean());
+        for (int n=1; n<this->_elements; n++){
+            result->set(n, alpha*(this->_data[n]-result->get(n-1)) + result->get(n-1));
+        }
+    }
+    return result;
 }
 
-// returns a stationary transformation of the vector data;
-// differencing methods:
+// returns the weighted average of a sample Vector,
+// e.g. for time series data
+template <typename T>
+double Vector<T>::weighted_average(bool as_series){
+    double weight=0, weight_sum=0, sum=0;
+    if (!as_series){ //=indexing from zero, lower index means lower attributed weight
+        for (int n=0;n<this->_elements;n++){
+            weight++;
+            weight_sum+=weight;
+            sum+=weight*this->_data[n];
+        }
+        return sum/(this->_elements*weight_sum);
+    }
+    else {
+        for (int n=this->_elements-2;n>=0;n--) {
+            weight++;
+            weight_sum+=weight;
+            sum+=weight*this->_data[n];
+        }
+        return sum/(this->_elements*weight_sum);
+    }   
+}     
+
+// performs an augmented Dickey-Fuller test
+// (=unit root test for stationarity)
+// on a sample (numeric vector or array)
+// that has been provided with the parametric constructor;
+// The test returns a p-value, which is used to determine whether or not
+// the null hypothesis that the dataset has a unit root
+// (=implying that the sample is non-stationary and has a trend) is rejected.
+// If the p-value is less than a chosen significance level (usually 0.05),
+// then the null hypothesis is rejected and it is concluded that the
+// time series dataset does not have a unit root and is stationary.
+template<typename T>
+double Vector<T>::Dickey_Fuller(){
+    // make a copy
+    Vector<T> data_copy(this->_elements);
+    data_copy._data = this->_data;
+    // get a stationary transformation
+    Vector<T> stat_copy(this->_elements);
+    stat_copy._data = this->_data;
+    stat_copy.stationary(integer,1);
+    // erase the first element of data_copy
+    data_copy.pop_first();
+    // correlate the source data with the corresponding stationary transformation
+    double Pearson_R = data_copy.correlation(stat_copy)->Pearson_R;
+    return Pearson_R*std::sqrt((double)(this->_elements-1)/(1-std::pow(Pearson_R,2)));  
+}
+
+// returns a stationary transformation of the vector data,
+// e.g. for time series data;
+// available differencing methods:
 //    integer=1,
 //    logreturn=2,
 //    fractional=3,
@@ -1445,171 +1562,233 @@ double Vector<T>::Dickey_Fuller(){
 //    original=5
 template<typename T>
 std::unique_ptr<Vector<T>> Vector<T>::stationary(DIFFERENCING method,double degree,double fract_exponent){
+    // make a copy
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data=Sample<T>(this->_data).stationary(method,degree,fract_exponent);
+    result->_data = this->_data;
+
+    if (method==integer){
+        for (int d=1;d<=(int)degree;d++){ //=loop allows for higher order differencing
+            for (int t=this->_elements-1;t>0;t--){
+                if (result->_data[t-1]!=0){result->_data[t]-=result->_data[t-1];}
+            }
+            result->pop_first();
+        }
+    }
+    if (method==logreturn){
+        for (int d=1;d<=round(degree);d++){ //=loop allows for higher order differencing
+            for (int t=this->_elements-1;t>0;t--){
+                if (result->_data[t-1]!=0){
+                    result->_data[t]=log(__DBL_MIN__+std::fabs(result->_data[t]/(result->_data[t-1]+__DBL_MIN__)));
+                }
+            }
+            T first = result->pop_first(); //remove first element
+            (void)first; //=suppressing 'unused variable warning by casting it to void'   
+        }     
+    }
+    if (method==fractional){
+        for (int t=result->size()-1;t>0;t--){
+            if (result->_data[t-1]!=0){
+                double stat=log(__DBL_MIN__+fabs(this->_data[t]/this->_data[t-1])); //note: DBL_MIN and fabs are used to avoid log(x<=0)
+                double non_stat=log(fabs(this->_data[t])+__DBL_MIN__);
+                result->_data[t]=degree*stat+pow((1-degree),fract_exponent)*non_stat;
+            }
+        }
+        T first = result->pop_first(); //remove first element   
+        (void)first; //=suppressing 'unused variable warning by casting it to void'   
+    }
+    if (method==deltamean){
+        double sum=0;
+        for (int i=0;i<this->_elements;i++){
+            sum+=this->_data[i];
+        }
+        double x_mean=sum/this->_elements;
+        for (int t=this->_elements-1;t>0;t--){
+            result->_data[t]-=x_mean;
+        }
+    }
     return result;
 }
 
-// returns a sorted copy of the vector
+// sorts the values of the vector via pairwise comparison
+// default: ascending order;
+// set 'false' flag for sorting in reverse order
 template<typename T>
 std::unique_ptr<Vector<T>> Vector<T>::sort(bool ascending){
+    // make a copy
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data=Sample<T>(this->_data).sort(ascending);
+    result->_data = this->_data;
+    bool completed=false;
+    while (!completed){
+        completed=true; //let's assume this until proven otherwise
+        for (int i=0;i<this->_elements-1;i++){
+            if(ascending){
+                if (result->_data[i] > result->_data[i+1]){
+                    completed=false;
+                    double temp=result->_data[i];
+                    result->_data[i] = result->_data[i+1];
+                    result->_data[i+1] = temp;
+                }
+            }
+            else{
+                if (result->_data[i] < result->_data[i+1]){
+                    completed=false;
+                    double temp=result->_data[i];
+                    result->_data[i] = result->_data[i+1];
+                    result->_data[i+1] = temp;
+                }
+            }
+        }
+    }
     return result;
 }
 
-// returns a shuffled copy of the vector
+// returns a randomly shuffled copy of the vector
 template<typename T>
 std::unique_ptr<Vector<T>> Vector<T>::shuffle(){
+    // make a copy
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data=Sample<T>(this->_data).shuffle();
-    return result;
-}
-
-// returns a logarithmically transformed copy
-// of the source vector
-template<typename T>
-std::unique_ptr<Vector<T>> Vector<T>::log_transform(){
-    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(this->_elements);
-    result->_data=Sample<T>(this->_data).log_transform();
-    return result;
-}
-
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then performs polynomial regression (to the specified
-// power) predicts a new value for a hypothetical new index value
-template<typename T>
-T Vector<T>::polynomial_predict(T x,int power){
-    T x_indices[this->_elements];
+    result->_data = this->_data;
+    // iterate over vector elements and find a random second element to swap places
     for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
+        int new_position=std::floor(Random<double>::uniform()*this->_elements);
+        T temp=this->_data[new_position];
+        result->_data[new_position] = result->_data[i];
+        result->_data[i] = temp;
     }
-    Sample2d<T> temp(x_indices, this->_data);
-    temp.polynomial_regression();
-    return temp.polynomial_predict(x);
+    return result;
 }
 
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then returns the Mean Squared Error (MSE) of polynomial
-// regression to the specified power
-template<typename T>
-double Vector<T>::polynomial_MSE(int power){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }    
-    Sample2d<T> temp(x_indices, this->_data);
-    temp.polynomial_regression(power);
-    return temp.polynomial_MSE();
+// performs linear regression with the source vector as
+// x_data and a second vector as corresponding the y_data;
+// the results will be stored in a struct;
+// make sure that both vectors have the same number of
+// elements (otherwise the surplus elements of the
+// larger vector will be discarded)
+template <typename T>
+std::unique_ptr<LinReg<T>> Vector<T>::linear_regression(const Vector<T> &other){
+    // create result struct
+    int elements=std::fmin(this->_elements, other.get_elements());
+    std::unique_ptr<LinReg<T>> result = std::make_unique<LinReg<T>>(elements);
+    // get mean for x and y values
+    for (int i=0;i<elements;i++){
+        result->x_mean += this->_data[i];
+        result->y_mean += other._data[i];
+    }
+    result->x_mean /= elements;
+    result->y_mean /= elements;
+    // get sum of squared mean deviations
+    double x_mdev2_sum=0,y_mdev2_sum=0,slope_numerator=0;
+    for (int n=0;n<elements;n++){
+        x_mdev2_sum+=std::pow(this->_data[n]-result->x_mean,2); //=slope denominator
+        y_mdev2_sum+=std::pow(other._data[n]-result->y_mean,2); //=SST
+        slope_numerator+=(this->_data[n]-result->x_mean)*(other._data[n]-result->y_mean);
+    }
+    // get slope
+    result->slope=slope_numerator/(x_mdev2_sum+__DBL_MIN__);
+    // get y intercept
+    result->y_intercept = result->y_mean - result->slope * result->x_mean;
+    // get r_squared
+    for (int n=0;n<elements;n++){
+        result->y_regression[n] = result->y_intercept + result->slope * this->_data[n];
+        result->residuals[n] = other._data[n] - result->y_regression[n];
+        result->SST += std::pow(other._data[n] - result->y_mean, 2);
+        result->SSR += std::pow(other._data[n] - result->y_regression[n], 2);
+    }
+    result->r_squared = 1 - result->SSR / (result->SST +__DBL_MIN__);
+
+    return result;
 }
 
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then returns whether linear regression is a good fit
-// with respect to the given confidence interval
-template<typename T>
-bool Vector<T>::isGoodFit_linear(double threshold){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    Sample2d<T> temp(x_indices, this->_data);
-    temp.linear_regression();
-    return temp.isGoodFit(threshold);
+// performs polynomial regression (to the specified power)
+// with the source vector as the x data and a second vector
+// as the corresponding y data;
+// make sure that both vectors have the same number of
+// elements (otherwise the surplus elements of the
+// larger vector will be discarded)
+template <typename T>
+std::unique_ptr<PolyReg<T>> Vector<T>::polynomial_regression(const Vector<T> &other, const int power){
+    // create result struct
+    int elements=std::fmin(this->_elements, other->get_elements());
+    std::unique_ptr<PolyReg<T>> result = std::make_unique<PolyReg<T>>(elements,power);
+
+    // Create matrix of x values raised to different powers
+    double X[elements][power+1];
+    for (int i=0; i<elements; i++) {
+        for (int p = 0; p <= power; p++) {
+            X[i][p] = std::pow(this->_data[i], p);
+        }
+    }
+    // Perform normal equation
+    for (int i = 0; i <= power; i++) {
+        for (int j = 0; j <= power; j++) {
+            double sum = 0;
+            for (int k = 0; k < elements; k++) {
+                sum += X[k][i] * X[k][j];
+            }
+            X[i][j] = sum;
+        }
+        result->coefficient[i] = 0;
+        for (int k = 0; k < elements; k++) {
+            result->coefficient[i] += other._data[k] * X[k][i];
+        }
+    }
+    // Get R-squared value
+    result->y_mean = std::accumulate(other._data.begin(), other._data.end(), 0.0) / elements;
+    result->x_mean = std::accumulate(this->_data.begin(), this->_data.end(), 0.0) / elements;
+    for (int i = 0; i < elements; i++) {
+        double y_pred = 0;
+        for (int j = 0; j <= power; j++) {
+            y_pred += result->coefficient[j] * pow(this->_data[i], j);
+        }
+        result->SS_res += std::pow(other._data[i] - y_pred, 2);
+        result->SS_tot += std::pow(other._data[i] - result->y_mean, 2);
+    }
+    result->r_squared = 1 - result->SS_res / result->SS_tot;
+    result->RSS = std::sqrt(result->SS_res / (elements - power - 1));
+    result->MSE = result->RSS/elements;
 }
 
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values, then
-// returns whether polynomial regression (to the specified
-// power) is a good fit with respect to the given confidence
-// interval
-template<typename T>
-bool Vector<T>::isGoodFit_polynomial(int power,double threshold){
-    T x_indices[this->_elements];
+// returns a histogram of the source vector data
+// with the specified number of bars and returns the 
+// result as type struct Histogram<T>'
+template <typename T>
+std::unique_ptr<Histogram<T>> Vector<T>::histogram(uint bars){
+    std::unique_ptr<Histogram<T>> histogram = std::make_unique<Histogram<T>>(bars);
+    // get min and max value from sample
+    histogram->min=this->_data[0];
+    histogram->max=this->_data[0];
     for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    Sample2d<T> temp(x_indices, this->_data);
-    temp.polynomial_regression(power);
-    return temp.isGoodFit(threshold);
+        histogram->min=std::fmin(histogram->min,this->_data[i]);
+        histogram->max=std::fmax(histogram->max,this->_data[i]);
+    }
+
+    // get histogram x-axis scaling
+    histogram->width = histogram->max - histogram->min;
+    histogram->bar_width = histogram->width / bars;
+    
+    // set histogram x values, initialize count to zero
+    for (int i=0;i<bars;i++){
+        histogram->bar[i].lower_boundary = histogram->min + histogram->bar_width * i;
+        histogram->bar[i].upper_boundary = histogram->min + histogram->bar_width * (i+1);
+        histogram->bar[i].count=0;
+    }
+
+    // count absolute occurences per histogram bar
+    for (int i=0;i<this->_elements;i++){
+        histogram->bar[int((this->_data[i]-histogram->min)/histogram->bar_width)].abs_count++;
+    }
+
+    // convert to relative values
+    for (int i=0;i<bars;i++){
+        histogram->bar[i].rel_count=histogram->bar[i].abs_count/this->_elements;
+    }
+    return histogram;
 }
 
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values, then
-// performs linear regression and predicts a new value
-// for a hypothetical new index x
-template<typename T>
-T Vector<T>::linear_predict(T x){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    return Sample2d<T>(x_indices, this->_data).linear_predict(x);
-}
-
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then returns the slope of linear regression
-template<typename T>
-double Vector<T>::get_slope(){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    return Sample2d<T>(x_indices, this->_data).get_slope();
-} 
-
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then returns the y-axis intercept of linear regression
-template<typename T>
-double Vector<T>::get_y_intercept(){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    return Sample2d<T>(x_indices, this->_data).get_y_intercept();
-}
-
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then returns the coefficient of determination (r2) of
-// linear regression
-template<typename T>
-double Vector<T>::get_r_squared_linear(){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    Sample2d<T> temp(x_indices, this->_data);
-    temp.linear_regression();
-    return temp.get_r_squared();
-};
-
-// interprets the vector data as series data
-// with evenly spaced integer scaling of the x-axis
-// and the vector data as the corresponding y-values,
-// then returns the coefficient of determination (r2)
-// of polynomial regression to the specified power
-template<typename T>
-double Vector<T>::get_r_squared_polynomial(int power){
-    T x_indices[this->_elements];
-    for (int i=0;i<this->_elements;i++){
-        x_indices[i]=i;
-    }        
-    Sample2d<T> temp(x_indices, this->_data);
-    temp.polynomial_regression(power);
-    return temp.get_r_squared();
+template <typename T>
+std::unique_ptr<Vector<T>> Vector<T>::operator=(const Vector &other){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(other._elements);
+    result->_data = other._data;
 }
 
 // Matrix transpose
@@ -1625,6 +1804,12 @@ std::unique_ptr<Matrix<T>> Matrix<T>::transpose(){
         }
     }
     return result;
+}
+
+template <typename T>
+std::unique_ptr<Matrix<T>> Matrix<T>::operator=(const Matrix &other)
+{
+    return std::unique_ptr<Matrix<T>>();
 }
 
 // +=================================+   
@@ -1752,6 +1937,3 @@ std::unique_ptr<int[]> Array<T>::initlist_to_array(const std::initializer_list<i
     }
     return arr;
 }
-
-
-#endif

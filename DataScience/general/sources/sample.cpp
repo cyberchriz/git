@@ -1,26 +1,38 @@
 #include "../headers/sample.h"
 
+// getter function for an element of the sample
+template<typename T>
+Sample<T> get(const int index){
+    return this->_data[index];
+}
+
+// setter function to modifiy an element of the sample
+template<typename T>
+Sample<T> set(const int index, T value){
+    this->_data[index] = value;
+}
+
 // returns the arithmetic mean of a sample
 //that has been provided with the parametric constructor
 template<typename T>
 double Sample<T>::mean(){
     double sum=0;
-    for (int n=0;n<elements;n++){
-        sum+=data[n];
+    for (int n=0;n<this->_elements;n++){
+        sum+=this->_data[n];
     }
-    return sum/elements;
+    return sum/this->_elements;
 }
 
 // returns the median of a sample that has been provided with the parametric constructor
 template<typename T>
 double Sample<T>::median(){
     // make a copy
-    T* sorted_copy = this->sort();
-    if (elements%2>__DBL_EPSILON__){ //=median has odd index
-        return sorted_copy[(int)std::floor(double(elements)/2)];
+    auto sorted_copy = this->sort();
+    if (this->_elements%2 != 0){ //=median has odd index
+        return sorted_copy->get((int)std::floor(double(this->_elements)/2));
     }
     else{ //=median has even index
-        return (sorted_copy[elements/2]+sorted_copy[elements/2+1])/2;
+        return (sorted_copy->get(this->_elements/2) + sorted_copy->get(this->_elements/2+1)) /2;
     }
 }
 
@@ -28,22 +40,22 @@ double Sample<T>::median(){
 // that has been provided with the parametric constructor
 template<typename T>
 double Sample<T>::weighted_average(bool as_series){
-    double weight=0, weight_sum, sum=0;
+    double weight=0, weight_sum=0, sum=0;
     if (!as_series){ //=indexing from zero, lower index means lower attributed weight
-        for (int n=0;n<elements;n++){
+        for (int n=0;n<this->_elements;n++){
             weight++;
             weight_sum+=weight;
-            sum+=weight*data[n];
+            sum+=weight*this->_data[n];
         }
-        return sum/(elements*weight_sum+__DBL_MIN__);
+        return sum/(this->_elements*weight_sum);
     }
     else {
-        for (int n=elements-2;n>=0;n--) {
+        for (int n=this->_elements-2;n>=0;n--) {
             weight++;
             weight_sum+=weight;
-            sum+=weight*data[n];
+            sum+=weight*this->_data[n];
         }
-        return sum/(elements*weight_sum+__DBL_MIN__);
+        return sum/(this->_elements*weight_sum);
     }   
 }     
 
@@ -52,31 +64,31 @@ double Sample<T>::weighted_average(bool as_series){
 // default: rank from low to high (ascending=true)
 // pass "false" in order to rank in descending order
 template<typename T>
-int* Sample<T>::ranking(bool ascending) {
+std::unique_ptr<Sample<int>> Sample<T>::ranking(bool ascending) {
     // initialize ranks
-    int rank[elements];
-    for (int n=0;n<elements;n++){
-        rank[n]=n;
+    std::unique_ptr<Sample<int>> rank = std::make_unique<Sample<int>>(this->elements);
+    for (int n=0;n<this->_elements;n++){
+        rank->set(n,n);
     }
     bool ranking_completed=false;
     while (!ranking_completed){
         ranking_completed=true; //=let's assume this until a wrong order is found
-        for (int i=0;i<elements-1;i++){
+        for (int i=0;i<this->_elements-1;i++){
             // pairwise comparison:
             if (ascending){
-                if (data[rank[i]]>data[rank[i+1]]){
+                if (this->_data[rank->get(i)] > this->_data[rank->get(i+1)]){
                     ranking_completed=false;
-                    int higher_ranking=rank[i+1];
-                    rank[i+1]=rank[i];
-                    rank[i]=higher_ranking;
+                    int higher_ranking=rank->get(i+1);
+                    rank->set(i+1, rank->get(i));
+                    rank->set(i,higher_ranking);
                 }
             }
             else{
-                if (data[rank[i]]<data[rank[i+1]]){
+                if (this->_data[rank.get(i)] < this->_data[rank->get(i+1)]){
                     ranking_completed=false;
-                    int lower_ranking=rank[i+1];
-                    rank[i+1]=rank[i];
-                    rank[i]=lower_ranking;
+                    int lower_ranking=rank->get(i+1);
+                    rank->set(i+1, rank->get(i));
+                    rank->set(i, lower_ranking);
                 }
             }            
         }
@@ -87,20 +99,20 @@ int* Sample<T>::ranking(bool ascending) {
 // returns a modified copy of a numeric data sample (provided with the parametric constructor)
 // with exponential smoothing (e.g. for time series)
 template<typename T>
-T* Sample<T>::exponential_smoothing(bool as_series){
+std::unique_ptr<Sample<T>> Sample<T>::exponential_smoothing(bool as_series){
     double alpha=2/(elements);
-    T result[elements];
+    std::unique_ptr<Sample<T>> result = std::make_unique<Sample<T>>(this->_elements);
 
     if (as_series){
-        result[elements-1]=this->mean();
-        for (int n=elements-2;n>=0;n--){
-            result[n] = alpha*(data[n]-result[n+1]) + result[n+1];
+        result->set(this->_elements-1, this->mean());
+        for (int n=this->_elements-2; n>=0; n--){
+            result->set(n, alpha*(this->_data[n] - result->get(n+1)) + result->get(n+1));
         }     
     }
     else{
-        result[0]=this->mean();
-        for (int n=1;n<elements;n++){
-            result[n] = alpha*(data[n]-result[n-1]) + result[n-1];
+        result->set(0, this->mean());
+        for (int n=1; n<this->_elements; n++){
+            result->set(n, alpha*(this->_data[n]-result->get(n-1)) + result->get(n-1));
         }
     }
     return result;
@@ -112,10 +124,10 @@ template<typename T>
 double Sample<T>::variance(){
     double sample_mean = this->mean();
     double mdev2sum=0;
-    for (int n=0;n<elements;n++){
-        mdev2sum+=pow(data[n]-sample_mean,2);
+    for (int n=0;n<this->_elements;n++){
+        mdev2sum+=pow(this->_data[n]-sample_mean,2);
     }
-    return mdev2sum/elements;
+    return mdev2sum/this->_elements;
 }
 
 // returns the standard deviation of a sample (numeric vector or array)
