@@ -1,11 +1,8 @@
 [[return to main page]](../../../README.md)
-# Custom Vectors, 2d Matrices and n-dimensional Arrays
+# Vectors, 2d Matrices and n-dimensional Arrays,<br>with sample statistics
 usage: `#include <array.h>` or include as part of `<datascience.h>`
 
-description:
-- a powerful library that offers a ton of operations for numeric vectors, matrices and arrays
-- 'under the hood' these are simple one-dimensional arrays
-  (a multidimensional index is internally converted to 1d)
+## A powerful library that offers a ton of operations for numeric vectors, matrices and arrays
 
 # `class Array`
 An instance of the class can be created by passing its dimensions as type `std::initializer_list<int>` to the constructor.
