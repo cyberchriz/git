@@ -88,14 +88,14 @@ int Array<T>::get_element(const std::initializer_list<int>& index) {
         std::cout << "WARNING: The method 'get_element() has been used with an invalid index:";
         // print the invalid index to the console
         auto iterator = index.begin();
-        for (;<iterator!=index.end();iterator++){
+        for (;iterator!=index.end();iterator++){
             std::cout << " " << *iterator;
         }
         std::cout << "\nThe corresponding array has the following dimensions:";
         for (int i=0;i<this->_dimensions;i++){
             std::cout << " " << i;
         }
-        std::cout endl;
+        std::cout << std::endl;
         return -1;
     }
     // deal with the special case of single dimension arrays ("Vector<T>")
