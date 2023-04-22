@@ -38,14 +38,17 @@ Public Methods:
 | `void fill_range(const T start=0,const T step=1)`| fills the array with a continuous range of values in all dimensions, starting from the zero point index; use negative values for descending range |
 
 
-### Distribution Properties
+### Basic Distribution Properties
 
 |method|description|
 |------|-----------|
 | `mean()` | returns the arrithmetic mean of all values of the array (all dimensions) |
 | `median()` | returns the Median of all values of the array (all dimensions) |
+| `mode()`| returns the item that occurs the most number of times (for unimodal data)|
 | `variance()` | returns the variance of all values of the array (all dimensions) |
 | `stddev()` | returns the standard deviation of all values of the array (all dimensions) |
+| `skewness()`|returns the skewness of all the entire value population of the array |
+| `kurtosis()`|returns the kurtosis of the entire value population of the array|
 
 
 ### Addition
@@ -297,6 +300,7 @@ Vector<double> myVec(100);
 | `Vector<T> log_transform()`| returns a pointer to a logarithmically transformed copy of the original Vector|
 | `std::unique_ptr<LinReg<T>> linear_regression(const Vector<T>& other)`| performs linear regression on the source vector as x_data and a second vector as y_data and returns a pointer to a struct that stores all the results and allows predictions of new values:<br>- `double x_mean=0`<br>- `double y_mean=0`<br>- `double y_intercept`<br>- `double slope`<br>- `double r_squared`<br>- `std::unique_ptr<double[]> y_regression`<br>- `std::unique_ptr<double[]> residuals`<br>- `double SST`<br>- `double SSR`<br>- `T predict(const T x)`<br>- `bool is_good_fit(double threshold=0.95)`|
 | `std::unique_ptr<PolyReg<T>> polynomial_regression(const int power)`|performs polynomial regression with the source vector as x_data and a second vector as y_data (to the specified power) and returns a pointer to a struct that stores all the results and allows predictions from new x values:<br>- `double SS_res`<br>- `double SS_tot`<br>- `double RSS`<br>- `double MSE`<br>- `double RSE`<br>- `double y_mean`<br>- `double x_mean`<br>- `double r_squared`<br>- `std::unique_ptr<double[]> coefficient`<br>- `bool is_good_fit(double threshold=0.95)`<br>- `T predict(const T x)`|
+|`std::unique_ptr<Correlation<T>> correlation(const Vector<T>& other)`|returns a pointer to a struct that stores the results of the correlation of the source vector as x_data versus a second vector as y_data:<br>- `double x_mean`<br>- `double y_mean`<br>- `double x_stddev`<br> - `double y_intercept`<br> - `double slope`<br> - `double covariance`<br> - `double Pearson_R`<br> - `double Spearman_Rho`<br> - `double r_squared`<br> - `double RSS`<br> - `double SST`<br> - `double SSE`<br> - `double SSR`<br> - `double z_score`<br> - `double t_score`<br> - `std::vector<T> y_predict`<br> - `void print()`|
 | `std::unique_ptr<Histogram<T>> histogram(unit bars)`|returns a pointer to a struct that stores the boundaries and counts of histogram bars from the data of the source vector:<br>- `T min`<br>- `T max`<br>- `T bar_width`<br>- `T width`<br>- `std::unique_ptr<Histogram_bar<T>[]> bar`<br>   - `T lower_boundary`<br>   - `T upper_boundary`<br>   - `int abs_count`<br>   - `double rel_count`|
 
 

@@ -283,6 +283,28 @@ double Array<T>::median() const {
     }
 }
 
+// find the 'mode', i.e. the item that occurs the most number of times
+template<typename T>
+T mode() {
+    // Sort the array in ascending order
+    auto sorted = this->sort();
+    // Create an unordered map to store the frequency of each element
+    std::unordered_map<T, size_t(this->_elements)> freq_map;
+    for (size_t i = 0; i < size; i++) {
+        freq_map[this->_data[i]]++;
+    }
+    // Find the element with the highest frequency
+    T mode = this->_data[0];
+    size_t max_freq = 0;
+    for (const auto& p : freq_map) {
+        if (p.second > max_freq) {
+            mode = p.first;
+            max_freq = p.second;
+        }
+    }
+    return mode;
+}
+
 // returns the variance of all values of a vector, matrix or array
 template<typename T>
 double Array<T>::variance() const {
@@ -301,6 +323,28 @@ double Array<T>::stddev()  const {
     return std::sqrt(this->variance());
 }
 
+// returns the skewness of all data of the vector/matrix/array
+template<typename T>
+double Array<T>::skewness() const {
+    double skewness = 0;
+    for (size_t i = 0; i < this->_elements; i++) {
+        skewness += std::pow((this->_data[i] - this->mean()) / this->stddev(), 3);
+    }
+    skewness /= this->_elements;
+    return skewness;
+}
+
+// returns the kurtosis of all data of the vector/matrix/array
+template<typename T>
+double Array<T>::kurtosis() const {
+    double kurtosis = 0;
+    for (int i=0; i<this->_elements; i++) {
+        kurtosis += std::pow((this->_data[i] - this->mean()) / this->stddev(), 4);
+    }
+    kurtosis /= this->_elements;
+    kurtosis -= 3;
+    return kurtosis;
+}
 // +=================================+   
 // | Addition                        |
 // +=================================+
@@ -2005,6 +2049,83 @@ std::unique_ptr<PolyReg<T>> Vector<T>::polynomial_regression(const Vector<T> &ot
 
     return result;
 }
+
+// Performs correlation analysis on the source vector as x_data versus
+// a second Vector<T> as y_data (passed in as a parameter)
+// and returns the results in a struct std::unique_ptr<Correlation<T>>
+template<typename T>
+std::unique_ptr<Correlation<T>> Vector<T>::correlation(const Vector<T>& other) const {
+    if (this->_elements != other._elements) {
+        std::cout << "WARNING: Invalid use of method Vector<T>::correlation(); both vectors should have the same number of elements" << std::endl;
+    }
+    int elements=std::min(this->_elements, other._elements);    
+    std::unique_ptr<Correlation<T>> result = std::make_unique<Correlation<T>>(elements);
+
+    // get empirical vector autocorrelation (Pearson coefficient R), assumimg linear dependence
+    result->x_mean=this->mean();
+    result->y_mean=other.mean();
+    result->covariance=0;
+    for (int i=0;i<elements;i++){
+        result->covariance+=(this->_data[i] - result->x_mean) * (other._data[i] - result->y_mean);
+    }
+    result->x_stddev=this->stddev();
+    result->y_stddev=other.stddev();
+    result->Pearson_R = result->covariance / (result->x_stddev * result->y_stddev);   
+
+    // get r_squared (coefficient of determination) assuming linear dependence
+    double x_mdev2_sum=0,y_mdev2_sum=0,slope_numerator=0;
+    for (int i=0;i<elements;i++){
+        x_mdev2_sum += std::pow(this->_data[i] - result->x_mean, 2); //=slope denominator
+        y_mdev2_sum += std::pow(other._data[i] - result->y_mean, 2); //=SST
+        slope_numerator += (this->_data[i] - result->x_mean) * (other-_data[i] - result->y_mean);
+    }
+    result->SST = y_mdev2_sum;
+    result->slope = slope_numerator / x_mdev2_sum;
+    result->y_intercept = result->y_mean - result->slope * result->x_mean;
+
+    // get regression line values
+    for (int i=0; i<elements; i++){
+        result->y_predict[i] = result->y_intercept + result->slope * this->_data[i];
+        // get sum of squared (y-^y) //=SSE   
+        result->SSE += std::pow(result->y_predict[u] - result->y_mean, 2);
+        result->SSR += std::pow(other._data[i] - result->y_predict[i], 2);
+    };
+    r_squared = SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
+
+    // Spearman correlation, assuming non-linear monotonic dependence
+    std::unique_ptr<Vector<int>> rank_x = this->ranking();
+    std::unique_ptr<Vector<int>> rank_y = other.ranking();
+    double numerator=0;
+    for (int i=0;i<elements;i++){
+        numerator+=6*std::pow(rank_x->_data[i]-rank_y->_data[i],2);
+    }
+    result->Spearman_Rho=1-numerator/(elements*(std::pow(elements,2)-1));
+    // test significance against null hypothesis
+    double fisher_transform=0.5*std::log( (1 + result->Spearman_Rho) / (1 - result->Spearman_Rho) );
+    result->z_score = sqrt((elements-3)/1.06)*fisher_transform;
+    result->t_score = result->Spearman_Rho * std::sqrt((elements-2)/(1-std::pow(result->Spearman_Rho,2)));
+    
+    return result;
+}
+
+// return the covariance of the linear relation
+// of the source vector versus a second vector
+template<typename T>
+double Vector<T>::covariance(const Vector<T>& other) const {
+    if (this->_elements != other._elements) {
+        std::cout << "WARNING: Invalid use of method Vector<T>::covariance(); both vectors should have the same number of elements" << std::endl;
+    }
+    int elements=std::min(this->_elements, other._elements);
+    double mean_this = this->mean();
+    double mean_other = other.mean();
+    double cov = 0;
+    for (int i = 0; i < elements; i++) {
+        cov += (this->_data[i] - mean_this) * (other._data[i] - mean_other);
+    }
+    cov /= elements;
+    return cov;
+}
+
 
 // returns a histogram of the source vector data
 // with the specified number of bars and returns the 

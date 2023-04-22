@@ -37,10 +37,9 @@ struct Histogram_bar{
 // histogram structure
 template<typename T>
 struct Histogram{
-    T min;
-    T max;
+    T min, max;
     T bar_width;
-    T witdh;
+    T width;
     std::unique_ptr<Histogram_bar<T>[]> bar;
     Histogram(int bars){
         bar = std::make_unique<Histogram_bar<T>[]>(bars);
@@ -52,10 +51,8 @@ struct Histogram{
 // Linear Regression struct
 template<typename T>
 struct LinReg{
-    double x_mean=0;
-    double y_mean=0;
-    double y_intercept;
-    double slope;
+    double x_mean, y_mean=0;
+    double y_intercept, slope;
     double r_squared;
     std::unique_ptr<double[]> y_regression;
     std::unique_ptr<double[]> residuals;
@@ -107,20 +104,40 @@ struct PolyReg{
 
 // Correlation struct
 template<typename T>
-struct Correlation{
-    double z_score;
-    double t_score;
-    double Spearman_Rho; 
-    double x_mean;
-    double y_mean;   
+struct Correlation{ 
+    double x_mean, y_mean;  
+    double x_stddev, y_stddev;     
+    double y_intercept, slope;
     double covariance;
-    double Pearson_R;   
-    double slope;
-    double r_squared;
-    double y_intercept;    
-    double RSS;            
-    double* y_regression;
-    double* residuals;   
+    double Pearson_R, Spearman_Rho;   
+    double r_squared;    
+    double RSS, SST, SSE, SSR = 0; 
+    double z_score, t_score;          
+    std::vector<T> y_predict;
+    void print(){
+        std::cout
+        << "Correlation Results (this vs. other):"
+        << "\n   - x_mean = " << x_mean
+        << "\n   - y_mean = " << y_mean
+        << "\n   - x_stddev = " << x_stddev
+        << "\n   - y_stddev = " << y_stddev
+        << "\n   - y_intercept = " << y_intercept
+        << "\n   - slope = " << slope
+        << "\n   - covariance = " << covariance
+        << "\n   - Pearson_R = " << Pearson_R
+        << "\n   - Spearman_Rho = " << Spearman_Rho
+        << "\n   - r_squared = " << r_squared
+        << "\n   - RSS = " << RSS
+        << "\n   - SST = " << SST
+        << "\n   - SSE = " << SSE
+        << "\n   - SSR = " << SSR
+        << "\n   - z_score = " << z_score
+        << "\n   - t_score = " << t_score << std::endl;
+    }
+    // constructor
+    Correlation(int elements){
+        y_predict.resize(elements);
+    }  
 };
 
 // class for multidimensional arrays
@@ -145,11 +162,14 @@ class Array{
         void fill_random_uniform(const T min=0, const T max=1.0);
         virtual void fill_range(const T start=0, const T step=1);
 
-        // distribution properties
+        // basic distribution properties
         double mean() const;
         double median() const;
+        T mode() const;
         double variance() const;
         double stddev() const;
+        double skewness() const;
+        double kurtosis() const;
 
         // addition
         T sum() const;
@@ -337,6 +357,8 @@ class Vector : public Array<T>{
         std::unique_ptr<Vector<T>> shuffle() const;
         std::unique_ptr<LinReg<T>> linear_regression(const Vector<T>& other) const;
         std::unique_ptr<PolyReg<T>> polynomial_regression(const Vector<T>& other, const int power=5) const;
+        std::unique_ptr<Correlation<T>> correlation(const Vector<T>& other) const;
+        double covariance(const Vector<T>& other) const;
         std::unique_ptr<Histogram<T>> histogram(uint bars) const;
 
         // assignment
