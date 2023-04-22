@@ -83,14 +83,24 @@ int Array<T>::get_elements() const {
 // a std::initializer_list<int>) to a one-dimensional index (=as a scalar)
 template<typename T>
 int Array<T>::get_element(const std::initializer_list<int>& index) {
-    // confirm valid number of _dimensions
-    if (int(index.size()) > this->_dimensions){
+    // check for invalid index dimensions
+    if (index.size()>this->_dimensions){
+        std::cout << "WARNING: The method 'get_element() has been used with an invalid index:";
+        // print the invalid index to the console
+        auto iterator = index.begin();
+        for (;<iterator!=index.end();iterator++){
+            std::cout << " " << *iterator;
+        }
+        std::cout << "\nThe corresponding array has the following dimensions:";
+        for (int i=0;i<this->_dimensions;i++){
+            std::cout << " " << i;
+        }
+        std::cout endl;
         return -1;
     }
-    // check if single element
-    // (note: the end pointer points to directly after(!) the last element)
-    if (index.begin()+1==index.end()){
-        return *index.begin();
+    // deal with the special case of single dimension arrays ("Vector<T>")
+    if (this->_dimensions == 1){
+        return *(index.begin());
     }
     // initialize result to number of elements belonging to last dimension
     int result = *(index.end()-1);
@@ -110,7 +120,9 @@ int Array<T>::get_element(const std::initializer_list<int>& index) {
         // add product to result 
         result += add;
     }
-    // limit to valid boundaries
+    // limit to valid boundaries,
+    // i.e. double-check that the result isn't higher than the total
+    // number of elements in the corresponding data buffer (this->_data[])
     result=std::fmin(this->_elements-1,result);
     return result;
 }
