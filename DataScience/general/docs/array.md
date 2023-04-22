@@ -168,10 +168,10 @@ Public Methods:
 |method|description|
 |------|-----------|
 | `std::unique_ptr<Array<bool>> operator&&(const bool value)`|returns a boolean array with each value representing the logical `AND` between the corresponding values of the original array and the given value |
-| `std::unique_ptr<Array<bool>> operator||(const bool value)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and the given value |
+| `std::unique_ptr<Array<bool>> operator\|\|(const bool value)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and the given value |
 | `std::unique_ptr<Array<bool>> operator!()`|returns a boolean array with each value representing the logical `NOT` of the corresponding values of the original array |
 | `std::unique_ptr<Array<bool>> operator&&(const Array& other)`|returns a boolean array with each value representing the logical `AND` between the corresponding values of the original array and a second array |
-| `std::unique_ptr<Array<bool>> operator||(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
+| `std::unique_ptr<Array<bool>> operator\|\|(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
 
 
 ### Type Casting
