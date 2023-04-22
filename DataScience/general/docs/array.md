@@ -4,6 +4,7 @@ usage: `#include <array.h>` or include as part of `<datascience.h>`
 ___
 # `class Array`
 An instance of the class can be created by passing its dimensions as type `std::initializer_list<int>` or `std::vector<int>`to the constructor.
+
 For example, for a 3x3x4 array of type `<double>` we can write:
 ```
 Array<double> myArr{3,3,4};
@@ -202,13 +203,13 @@ Public Methods:
 ___
 
 # `class Matrix`
-> This is a **derived class of `class Array<T>`**. It **inherits all its methods**, but deals with the specific case of 2d arrays.<br>Because the dimensions are already known to be 2d, they don't need to be passed in explicitly as a `std::initializer_list`, so there's an additional constrcutor that allows to pass them by simply passing the size of the x and y dimensions instead (`Matrix(const int rows, const int cols)`).<br>Accordingly, there are additional overloads for the `.get()` and `.set()` methods that equally only need two integers for the x and y indices they refer to (plus in case of the `.set()` method a third parameter for the value that is being assigned).
+> ### This is a **derived class of `class Array<T>`**. It **inherits all its methods**, but deals with the specific case of 2d arrays.<br>Because the dimensions are already known to be 2d, they don't need to be passed in explicitly as a `std::initializer_list`, so there's an additional constrcutor that allows to pass them by simply passing the size of the x and y dimensions instead (`Matrix(const int rows, const int cols)`).<br>Accordingly, there are additional overloads for the `.get()` and `.set()` methods that equally only need two integers for the x and y indices they refer to (plus in case of the `.set()` method a third parameter for the value that is being assigned).
 
 For example a 2d matrix of size 4x4 and data type `<float>` can be instantiated like this:
 ```
 Matrix<float> myMatrix(4,4);
 ```
-> ## On top of all the methods given above, inherited from `class Array<T>`, the Matrix class **ADDITIONALLY IMPLEMENTS**:
+## On top of all the methods given above, inherited from `class Array<T>`, the Matrix class **ADDITIONALLY IMPLEMENTS**:
 
 
 ### Matrix Getters & Setters
@@ -235,15 +236,14 @@ Matrix<float> myMatrix(4,4);
 ___
 
 # `class Vector`
-> This is also a **derived class of `class Array<T>`** and it also **inherits all its methods**, but deals with the specific case of 1d arrays.
-Because the dimensions are already known to be 1d, there is no need to pass the dimensions to the constructor as `std::vector<int>` or `std::initializer_list<int>`, hence there is an additional constructor that takes the number of elements is its only argument.<br> Accordingly, there's an additional overload for the `.get()` method that also only needs a single integer for the index it refers to. An additional `.set()` needs needs an integer for the index it refers to, followed by the assigned value as a second argument.
+> ### This is also a **derived class of `class Array<T>`** and it also **inherits all its methods**, but deals with the specific case of 1d arrays.Because the dimensions are already known to be 1d, there is no need to pass the dimensions to the constructor as `std::vector<int>` or `std::initializer_list<int>`, hence there is an additional constructor that takes the number of elements is its only argument.<br> Accordingly, there's an additional overload for the `.get()` method that also only needs a single integer for the index it refers to. An additional `.set()` needs needs an integer for the index it refers to, followed by the assigned value as a second argument.
 
 For example a 1d `Vector` with 100 elements of type `<double>` can be instantiated like this:
 ```
 Vector<double> myVec(100);
 ```
 
-> ## On top of all the methods inherited from `class Array<T>` this class **ADDITIONALLY IMPLEMENTS**:
+## On top of all the methods inherited from `class Array<T>` this class **ADDITIONALLY IMPLEMENTS**:
 
 
 ### Vector Getters & Setters
