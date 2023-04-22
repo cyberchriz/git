@@ -132,8 +132,8 @@ class Array{
         void set(const std::vector<int>& index, const T value);
         T get(const std::initializer_list<int>& index);
         T get(const std::vector<int>& index);
-        int get_dimensions();
-        int get_size(int dimension);
+        int get_dimensions() const;
+        int get_size(int dimension) const;
         int get_elements() const;
 
         // fill, initialize
@@ -182,7 +182,7 @@ class Array{
         void operator%=(const double num);
         std::unique_ptr<Array<double>> operator%(const double num);
 
-        // exponentiation
+        // exponentiation & logarithm
         void pow(const T exponent);
         void pow(const Array& other);
         void sqrt();
@@ -196,7 +196,7 @@ class Array{
 
         // find, replace
         void replace(const T old_value, const T new_value);
-        int find(T value);
+        int find(const T value);
 
         // custom functions
         void function(const T (*pointer_to_function)(T));
@@ -237,7 +237,7 @@ class Array{
         std::unique_ptr<Array<T>> asArray(const std::initializer_list<int>& initlist, T init_value=0);
 
         // output
-        void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);        
+        void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
 
         // constructor & destructor declarations
         Array(){};
@@ -251,7 +251,7 @@ class Array{
     protected:
 
         // protected member variables
-        bool equal_size(const Array& other);
+        bool equal_size(const Array& other) const;
         int _elements=0; // total number of _elements in all _dimensions
         int _dimensions=0;
         std::vector<int> _size; // holds the size (number of _elements) per individual dimension 
@@ -270,7 +270,7 @@ class Matrix : public Array<T>{
     public:
         // getters & setters
         void set(const int row, const int col, T value);
-        T get(const int row, const int col);
+        T get(const int row, const int col) const;
 
         // fill, initialize
         void fill_range(const T start=0, const T step=1) override;
@@ -300,7 +300,7 @@ class Vector : public Array<T>{
         void set(const std::initializer_list<int>& index, const T value) = delete;
         T get(const std::initializer_list<int>& index) = delete;
         void set(const int index, const T value);
-        T get(const int index);
+        T get(const int index) const;
 
         // fill, initialize
         void fill_range(const T start=0, const T step=1) override;
@@ -308,15 +308,13 @@ class Vector : public Array<T>{
         // dynamic handling
         int push_back(T value);
         T pop();
+        T erase(const int index);
+        int grow(const int additional_elements,T value=0);
+        int shrink(const int remove_amount);        
+        void resize(const int new_size);        
         int get_capacity();
         int size();
-        void resize(const int new_size);
-        int grow(const int additional_elements,T value=0);
-        int shrink(const int remove_amount);
         std::unique_ptr<Vector<T>> flatten()=delete;
-
-        // transpose
-        std::unique_ptr<Matrix<T>> transpose();
 
         // Multiplication
         T dotproduct(const Vector& other);
@@ -341,6 +339,8 @@ class Vector : public Array<T>{
         // conversion
         std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) override;
         std::unique_ptr<Matrix<T>> asMatrix() override;
+        std::unique_ptr<Matrix<T>> transpose();
+        std::unique_ptr<Vector<T>> reverse();
 
         // constructor & destructor declarations
         Vector(){};
