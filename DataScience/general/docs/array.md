@@ -22,6 +22,7 @@ Public Methods:
 | `T get(std::vector<int> index)` | returns the value at the given index (with the index as type `std::vector<int>`) |
 | `int get_dimensions() const` | returns an the number of dimensions |
 | `int get_size(int dimension) const` | returns the size of the specified dimension as an integer |
+| `int get_subspace(int dimension)`|returns the size of the subspace of the given dimension|
 | `int get_elements() const` | returns the total number of elements of the entire array (all dimensions) |
 
 
@@ -76,7 +77,11 @@ Public Methods:
 
 |method|description|
 |------|-----------|
+|`T product()`| returns the product reduction, i.e. by multiplying all array elements with each other|
 | `std::unique_ptr<Array<T>> operator*(const T factor)` | returns the result of elementwise multiplication all values of the array with the given factor|
+|`std::unique_ptr<Array<T>> tensordot(const Array<T>& other, const std::vector<int>& axes) const | return the tensor reduction|
+|`T dotproduct(const Array<T>& other) const`|returns the dotproduct (aka scalar product) by elementwise multiplication of elements with corresponding indices in both arrays, then adding them up to a single scalar|
+|`T operator*(const Array<T>& other) const`|alias for the dotproduct|
 | `void operator*=(const T factor)` | elementwise (scalar) multiplication of the individual values of the array by the specified factor|
 | `Hadamard(const Array& other)` | elementwise (scalar) multiplication with a second array of equal dimensions, i.e. the Hadamard product |
 
@@ -219,13 +224,6 @@ Matrix<float> myMatrix(4,4);
 | `void set(const int row, const int col, const T value)` | assigns the given value to the element at the specified index |
 | `T get(const int row, const int col)`| returns the value of the element at the specified index |
 
-### Multiplication
-
-|method|description|
-|------|-----------|
-|`Matrix<T>::dotproduct(const Matrix& other)`|returns the resulting new `Matrix<T>` given by the dotproduct of the current matrix and a second matrix|
-|`Matrix<T>::operator*(const Matrix& other)`| alias method for the dotproduct|
-
 
 ### Matrix Transpose
 
@@ -291,7 +289,7 @@ Vector<double> myVec(100);
 | `std::unique_ptr<Vector<int>> ranking()`| returns a pointer to an integer Vector that holds a ranking of the corresponding values contained in the original Vector |
 | `std::unique_ptr<Vector<T>> exponential_smoothing(bool as_series=false)`| return a pointer to an exponentially smoothed copy of the original Vector |
 | `double weighted_average(bool as_series=true)`|returns the weighted average (e.g. for time series; `as_series`= indexing starts from 0)
-| `double Dickey_Fuller()`| returns the result of an augmented Dickey-Fuller unit root test for stationarity; a value of <0.05 usually implies that the Null hypothesis can be rejected, i.e. the sample is stationary |
+| `double Dickey_Fuller()`| returns the result of an augmented Dickey-Fuller unit root test for stationarity; a value of <0.05 usually implies that the Null hypothesis can be rejected, i.e. the sample is stationary; The method for differencing is set to first order integer by default, by can be optionally be changed to other methods via the arguments|
 | `double Engle_Granger(const Vector<T>& other)`| takes the source vector and another vector (passed as parameter) and performs an Engle-Granger test in order to test the given numeric sample for cointegration, i.e. checking series data for a long-term relationship. The test was proposed by Clive Granger and Robert Engle in 1987. If the returned p-value is less than a chosen significance level (typically 0.05), it suggests that the two time series are cointegrated and have a long-term relationship.|
 | `Vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2)`| returns a stationary copy (e.g. for time series data) of the original Vector; has options for integer differencing, fractional differencing, mean deviation differencing, logarithmic differencing, higher order differencing|
 | `std::unique_ptr<Vector<T>> sort(bool ascending=true)`| returns a pointer to a sorted copy of the original Vector |

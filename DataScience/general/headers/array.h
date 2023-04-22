@@ -130,11 +130,12 @@ class Array{
         // getters & setters
         void set(const std::initializer_list<int>& index, const T value);
         void set(const std::vector<int>& index, const T value);
-        T get(const std::initializer_list<int>& index);
-        T get(const std::vector<int>& index);
+        T get(const std::initializer_list<int>& index) const;
+        T get(const std::vector<int>& index) const;
         int get_dimensions() const;
         int get_size(int dimension) const;
         int get_elements() const;
+        int get_subspace(int dimension) const;        
 
         // fill, initialize
         void fill_values(T value);
@@ -145,46 +146,49 @@ class Array{
         virtual void fill_range(const T start=0, const T step=1);
 
         // distribution properties
-        double mean();
-        double median();
-        double variance();
-        double stddev();
+        double mean() const;
+        double median() const;
+        double variance() const;
+        double stddev() const;
 
         // addition
-        T sum();
-        std::unique_ptr<Array<T>> operator+(const T value);
-        std::unique_ptr<Array<T>> operator+(const Array& other);
-        std::unique_ptr<Array<T>> operator++(int); //=postfix increment
+        T sum() const;
+        std::unique_ptr<Array<T>> operator+(const T value) const;
+        std::unique_ptr<Array<T>> operator+(const Array<T>& other) const;
+        std::unique_ptr<Array<T>> operator++(int) const; //=postfix increment
         Array<T>& operator++(); //=prefix increment
         void operator+=(const T value);
-        void operator+=(const Array& other);
+        void operator+=(const Array<T>& other);
 
         // substraction
         void substract(const T value);
-        std::unique_ptr<Array<T>> operator-(const T value);
-        std::unique_ptr<Array<T>> operator-(const Array& other);
-        std::unique_ptr<Array<T>> operator--(int); //=postfix decrement
+        std::unique_ptr<Array<T>> operator-(const T value) const;
+        std::unique_ptr<Array<T>> operator-(const Array<T>& other) const;
+        std::unique_ptr<Array<T>> operator--(int) const; //=postfix decrement
         Array<T>& operator--(); //=prefix decrement
         void operator-=(const T value);
-        void operator-=(const Array& other);
+        void operator-=(const Array<T>& other);
 
         // multiplication
-        T product();
-        std::unique_ptr<Array<T>> operator*(const T factor);
+        T product() const; // product reduction (=multiplying all elements with each other)
+        virtual std::unique_ptr<Array<T>> operator*(const T factor) const; // elementwise multiplication
+        virtual std::unique_ptr<Array<T>> tensordot(const Array<T>& other, const std::vector<int>& axes) const; //=tensor reduction
+        virtual T dotproduct(const Array<T>& other) const; //=scalar product
+        virtual T operator*(const Array<T>& other) const; //=alias for the dotproduct (=scalar product)
         void operator*=(const T factor);
-        std::unique_ptr<Array<T>> Hadamard(const Array& other);
+        std::unique_ptr<Array<T>> Hadamard(const Array<T>& other) const;
         
         // division
-        std::unique_ptr<Array<T>> operator/(const T quotient);
+        std::unique_ptr<Array<T>> operator/(const T quotient) const;
         void operator/=(const T quotient);
 
         // modulo
         void operator%=(const double num);
-        std::unique_ptr<Array<double>> operator%(const double num);
+        std::unique_ptr<Array<double>> operator%(const double num) const;
 
         // exponentiation & logarithm
         void pow(const T exponent);
-        void pow(const Array& other);
+        void pow(const Array<T>& other);
         void sqrt();
         void log();
         void log10();
@@ -196,48 +200,48 @@ class Array{
 
         // find, replace
         void replace(const T old_value, const T new_value);
-        int find(const T value);
+        int find(const T value) const;
 
         // custom functions
         void function(const T (*pointer_to_function)(T));
 
         // assignment
-        virtual Array<T>& operator=(const Array& other);
+        virtual Array<T>& operator=(const Array<T>& other);
 
         // elementwise comparison by single value
-        std::unique_ptr<Array<bool>> operator>(const T value);
-        std::unique_ptr<Array<bool>> operator>=(const T value);
-        std::unique_ptr<Array<bool>> operator==(const T value);
-        std::unique_ptr<Array<bool>> operator!=(const T value);
-        std::unique_ptr<Array<bool>> operator<(const T value);
-        std::unique_ptr<Array<bool>> operator<=(const T value);
+        std::unique_ptr<Array<bool>> operator>(const T value) const;
+        std::unique_ptr<Array<bool>> operator>=(const T value) const;
+        std::unique_ptr<Array<bool>> operator==(const T value) const;
+        std::unique_ptr<Array<bool>> operator!=(const T value) const;
+        std::unique_ptr<Array<bool>> operator<(const T value) const;
+        std::unique_ptr<Array<bool>> operator<=(const T value) const;
 
         // elementwise comparison with second array
-        std::unique_ptr<Array<bool>> operator>(const Array& other);
-        std::unique_ptr<Array<bool>> operator>=(const Array& other);
-        std::unique_ptr<Array<bool>> operator==(const Array& other);
-        std::unique_ptr<Array<bool>> operator!=(const Array& other);
-        std::unique_ptr<Array<bool>> operator<(const Array& other);
-        std::unique_ptr<Array<bool>> operator<=(const Array& other);
+        std::unique_ptr<Array<bool>> operator>(const Array<T>& other) const;
+        std::unique_ptr<Array<bool>> operator>=(const Array<T>& other) const;
+        std::unique_ptr<Array<bool>> operator==(const Array<T>& other) const;
+        std::unique_ptr<Array<bool>> operator!=(const Array<T>& other) const;
+        std::unique_ptr<Array<bool>> operator<(const Array<T>& other) const;
+        std::unique_ptr<Array<bool>> operator<=(const Array<T>& other) const;
 
         // elementwise logical operations
-        std::unique_ptr<Array<bool>> operator&&(const bool value);
-        std::unique_ptr<Array<bool>> operator||(const bool value);
-        std::unique_ptr<Array<bool>> operator!();
-        std::unique_ptr<Array<bool>> operator&&(const Array& other);
-        std::unique_ptr<Array<bool>> operator||(const Array& other);
+        std::unique_ptr<Array<bool>> operator&&(const bool value) const;
+        std::unique_ptr<Array<bool>> operator||(const bool value) const;
+        std::unique_ptr<Array<bool>> operator!() const;
+        std::unique_ptr<Array<bool>> operator&&(const Array<T>& other) const;
+        std::unique_ptr<Array<bool>> operator||(const Array<T>& other) const;
 
         // type casting
         template<typename C> operator Array<C>();
         
         // conversion
-        std::unique_ptr<Vector<T>> flatten();
-        virtual std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0);
-        virtual std::unique_ptr<Matrix<T>> asMatrix();
-        std::unique_ptr<Array<T>> asArray(const std::initializer_list<int>& initlist, T init_value=0);
+        std::unique_ptr<Vector<T>> flatten() const;
+        virtual std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) const;
+        virtual std::unique_ptr<Matrix<T>> asMatrix() const;
+        std::unique_ptr<Array<T>> asArray(const std::initializer_list<int>& initlist, T init_value=0) const;
 
         // output
-        void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false);
+        void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false) const;
 
         // constructor & destructor declarations
         Array(){};
@@ -251,17 +255,18 @@ class Array{
     protected:
 
         // protected member variables
-        bool equal_size(const Array& other) const;
+        bool equal_size(const Array<T>& other) const;
         int _elements=0; // total number of _elements in all _dimensions
         int _dimensions=0;
         std::vector<int> _size; // holds the size (number of _elements) per individual dimension 
+        std::vector<int> _subspace_size;
         
         // protected methods
-        int get_element(const std::initializer_list<int>& index);
-        int get_element(const std::vector<int>& index);
+        int get_element(const std::initializer_list<int>& index) const;
+        int get_element(const std::vector<int>& index) const;
         void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);
-        std::initializer_list<int> array_to_initlist(int* arr, int size);
-        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst);
+        std::initializer_list<int> array_to_initlist(int* arr, int size) const;
+        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst) const;
 };
 
 // derived class from Array<T>, for 2d matrix
@@ -276,15 +281,16 @@ class Matrix : public Array<T>{
         void fill_range(const T start=0, const T step=1) override;
 
         // special matrix operations
-        std::unique_ptr<Matrix<T>> dotproduct(const Matrix& other);
-        std::unique_ptr<Matrix<T>> operator*(const Matrix& otehr);
-        std::unique_ptr<Matrix<T>> transpose();
+        T dotproduct(const Matrix<T>& other) const; //=scalar product
+        T operator*(const Matrix<T>& other) const; //=Alias for the dotproduct (=scalar product)
+        std::unique_ptr<Matrix<T>> tensordot(const Matrix<T>& other) const; //=tensor reduction, alias for operator*
+        std::unique_ptr<Matrix<T>> transpose() const;
 
         // assignment
-        Matrix<T>& operator=(const Matrix& other);
+        Matrix<T>& operator=(const Matrix<T>& other);
 
         // conversion
-        std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) override;
+        std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) const override;
 
         // constructor declarations
         Matrix(){};
@@ -312,35 +318,35 @@ class Vector : public Array<T>{
         int grow(const int additional_elements,T value=0);
         int shrink(const int remove_amount);        
         void resize(const int new_size);        
-        int get_capacity();
-        int size();
+        int get_capacity() const;
+        int size() const;
         std::unique_ptr<Vector<T>> flatten()=delete;
 
         // Multiplication
-        T dotproduct(const Vector& other);
-        T operator*(const Vector& other);
+        T dotproduct(const Vector<T>& other) const; //=scalar product, alias for operator*
+        T operator*(const Vector<T>& other) const; //=scalar product, alias for dotproduct()
 
         // sample analysis
-        std::unique_ptr<Vector<int>> ranking();
-        std::unique_ptr<Vector<T>> exponential_smoothing(bool as_series=false);
-        double weighted_average(bool as_series=true);
-        double Dickey_Fuller();
-        double Engle_Granger(const Vector<T>& other);
-        std::unique_ptr<Vector<T>> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2);
-        std::unique_ptr<Vector<T>> sort(bool ascending=true);
-        std::unique_ptr<Vector<T>> shuffle();
-        std::unique_ptr<LinReg<T>> linear_regression(const Vector<T>& other);
-        std::unique_ptr<PolyReg<T>> polynomial_regression(const Vector<T>& other, const int power=5);
-        std::unique_ptr<Histogram<T>> histogram(uint bars);
+        std::unique_ptr<Vector<int>> ranking() const;
+        std::unique_ptr<Vector<T>> exponential_smoothing(bool as_series=false) const;
+        double weighted_average(bool as_series=true) const;
+        double Dickey_Fuller(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
+        double Engle_Granger(const Vector<T>& other) const;
+        std::unique_ptr<Vector<T>> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
+        std::unique_ptr<Vector<T>> sort(bool ascending=true) const;
+        std::unique_ptr<Vector<T>> shuffle() const;
+        std::unique_ptr<LinReg<T>> linear_regression(const Vector<T>& other) const;
+        std::unique_ptr<PolyReg<T>> polynomial_regression(const Vector<T>& other, const int power=5) const;
+        std::unique_ptr<Histogram<T>> histogram(uint bars) const;
 
         // assignment
-        Vector<T>& operator=(const Vector& other);
+        Vector<T>& operator=(const Vector<T>& other);
 
         // conversion
-        std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0) override;
-        std::unique_ptr<Matrix<T>> asMatrix() override;
-        std::unique_ptr<Matrix<T>> transpose();
-        std::unique_ptr<Vector<T>> reverse();
+        std::unique_ptr<Matrix<T>> asMatrix(const int rows, const int cols, T init_value=0)  const override;
+        std::unique_ptr<Matrix<T>> asMatrix() const override;
+        std::unique_ptr<Matrix<T>> transpose() const;
+        std::unique_ptr<Vector<T>> reverse() const;
 
         // constructor & destructor declarations
         Vector(){};
