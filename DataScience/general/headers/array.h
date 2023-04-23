@@ -6,11 +6,13 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <unordered_map>
 #include "../../distributions/headers/random_distributions.h"
 //#define MEMLOG
 #include "../../../utilities/headers/memlog.h"
 
 // forward declarations
+template<typename T> class Array;
 template<typename T> class Matrix;
 template<typename T> class Vector;
 
@@ -163,6 +165,8 @@ class Array{
         virtual void fill_range(const T start=0, const T step=1);
 
         // basic distribution properties
+        T min() const;
+        T max() const;
         double mean() const;
         double median() const;
         T mode() const;
@@ -269,8 +273,58 @@ class Array{
         Array(const std::vector<int>& dimensions);
         virtual ~Array();
 
+    protected:
+        // member struct for scaling methods
+        struct Scaling {
+            private:
+                Array<T>* source;    
+            public:
+                void minmax(T min=0,T max=1){
+                    T data_min = source->_data.min();
+                    T data_max = source->_data.max();
+                    double factor = (max-min) / (data_max-data_min);
+                    for (int i=0; i<source->_elements; i++){
+                        source->_data[i] = (source->_data[i] - data_min) * factor + min;
+                    }
+                };
+                void mean(){
+                    T data_min = source->_data.min();
+                    T data_max = source->_data.max();
+                    T range = data_max - data_min;
+                    double mean = source->mean();
+                    for (int i=0; i<source->get_elements(); i++){
+                        source->_data[i] = (source->_data[i] - mean) / range;
+                    }
+                };
+                void standardized(){
+                    double mean = source->mean();
+                    double stddev = source->stddev();
+                    for (int i=0; i<source->get_elements(); i++){
+                        source->_data[i] = (source->_data[i] - mean) / stddev;
+                    }                    
+                };
+                void unit_length(){
+                    // calculate the Euclidean norm of the data array
+                    T norm = 0;
+                    int elements = source->get_elements();
+                    for (int i = 0; i < elements; i++) {
+                        norm += std::pow(source->_data[i], 2);
+                    }
+                    if (norm==0){return;}
+                    norm = std::sqrt(norm);
+                    // scale the data array to unit length
+                    for (int i = 0; i < elements; i++) {
+                        source->_data[i] /= norm;
+                    }                    
+                };
+                // constructor
+                Scaling(Array<T>* source) : source(source){};
+        };
+
+    public:
         // public member variables
         std::unique_ptr<T[]> _data = nullptr; // 1dimensional array of source _data
+        std::unique_ptr<Scaling> scale = std::make_unique<Scaling>(this);
     
     protected:
 

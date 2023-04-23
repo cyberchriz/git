@@ -252,6 +252,34 @@ void Vector<T>::fill_range(const T start, const T step){
 // | Distribution Properties         |
 // +=================================+
 
+// returns the lowest value of all values of a vector, matrix or array
+template<typename T>
+T Array<T>::min() const {
+    if (this->_elements==0){
+        std::cout << "WARNING: improper use of method Array<T>::min(): not defined for empty array!\n";
+        return T(NAN);
+    }
+    T result = this->_data[0];
+    for (int i=0;i<this->_elements;i++){
+        result = std::fmin(result, this->_data[i]);
+    }
+    return result;
+}
+
+// returns the highest value of all values of a vector, matrix or array
+template<typename T>
+T Array<T>::max() const {
+    if (this->_elements==0){
+        std::cout << "WARNING: improper use of method Array<T>::min(): not defined for empty array!\n";
+        return T(NAN);
+    }
+    T result = this->_data[0];
+    for (int i=0;i<this->_elements;i++){
+        result = std::fmax(result, this->_data[i]);
+    }
+    return result;
+}
+
 // returns the arrithmetic mean of all values a vector, matrix or array
 template<typename T>
 double Array<T>::mean() const {
@@ -285,25 +313,38 @@ double Array<T>::median() const {
 
 // find the 'mode', i.e. the item that occurs the most number of times
 template<typename T>
-T mode() {
+T Array<T>::mode() const {
     // Sort the array in ascending order
     auto sorted = this->sort();
     // Create an unordered map to store the frequency of each element
-    std::unordered_map<T, size_t(this->_elements)> freq_map;
-    for (size_t i = 0; i < size; i++) {
-        freq_map[this->_data[i]]++;
+    std::unordered_map<T, size_t> freq_map;
+    for (size_t i = 0; i < this->_elements; i++) {
+        freq_map[sorted->_data[i]]++;
     }
-    // Find the element with the highest frequency
-    T mode = this->_data[0];
+    // Find the element(s) with the highest frequency
+    T mode;
+    std::vector<T> modes;
     size_t max_freq = 0;
     for (const auto& p : freq_map) {
         if (p.second > max_freq) {
-            mode = p.first;
+            modes.clear();
+            modes.push_back(p.first);
             max_freq = p.second;
+        } else if (p.second == max_freq) {
+            modes.push_back(p.first);
         }
+    }
+    // If there is only one mode, return it
+    if (modes.size() == 1) {
+        mode = modes[0];
+    } else {
+        // If there are multiple modes, return the first one
+        mode = modes[0];
     }
     return mode;
 }
+
+
 
 // returns the variance of all values of a vector, matrix or array
 template<typename T>
@@ -1454,7 +1495,7 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
         this->_elements*=this->_size[d];
     }
     // allocate data buffer
-    this->_data = std::make_unique<T[]>(this->_elements);    
+    this->_data = std::make_unique<T[]>(this->_elements);   
 };
 
 // constructor for multidimensional array:
@@ -2077,7 +2118,7 @@ std::unique_ptr<Correlation<T>> Vector<T>::correlation(const Vector<T>& other) c
     for (int i=0;i<elements;i++){
         x_mdev2_sum += std::pow(this->_data[i] - result->x_mean, 2); //=slope denominator
         y_mdev2_sum += std::pow(other._data[i] - result->y_mean, 2); //=SST
-        slope_numerator += (this->_data[i] - result->x_mean) * (other-_data[i] - result->y_mean);
+        slope_numerator += (this->_data[i] - result->x_mean) * (other._data[i] - result->y_mean);
     }
     result->SST = y_mdev2_sum;
     result->slope = slope_numerator / x_mdev2_sum;
@@ -2087,10 +2128,10 @@ std::unique_ptr<Correlation<T>> Vector<T>::correlation(const Vector<T>& other) c
     for (int i=0; i<elements; i++){
         result->y_predict[i] = result->y_intercept + result->slope * this->_data[i];
         // get sum of squared (y-^y) //=SSE   
-        result->SSE += std::pow(result->y_predict[u] - result->y_mean, 2);
+        result->SSE += std::pow(result->y_predict[i] - result->y_mean, 2);
         result->SSR += std::pow(other._data[i] - result->y_predict[i], 2);
     };
-    r_squared = SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
+    result->r_squared = result->SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
 
     // Spearman correlation, assuming non-linear monotonic dependence
     std::unique_ptr<Vector<int>> rank_x = this->ranking();
