@@ -163,88 +163,73 @@ int Array<T>::get_subspace(int dimension) const {
 
 // fill entire array with given value
 template<typename T>
-void Array<T>::fill_values(const T value){
-    for (int i=0;i<this->_elements;i++){
-        _data[i]=value;
+void Array<T>::Fill::values(const T value){
+    for (int i=0;i<arr._elements;i++){
+        arr._data[i]=value;
     }
-};
+}
 
-// fill array with identity matrix
+// initialize all values of the array with zeros
 template<typename T>
-void Array<T>::fill_identity(){
-    // set matrix to zeros
-    this->fill_values(0);
+void Array<T>::Fill::zeros(){
+    values(0);
+}
+
+// fill with identity matrix
+template<typename T>
+void Array<T>::Fill::identity(){
+    // initialize with zeros
+    values(0);
     // get size of smallest dimension
-    int max_index=__INT_MAX__;
-    for (int i=0; i<this->_dimensions; i++){
-        max_index=std::fmin(max_index,this->_size[i]);
+    int max_index=arr._size[0];
+    for (int i=1; i<arr._dimensions; i++){
+        max_index=std::min(max_index,arr._size[i]);
     }
-    std::vector<int> index(this->_dimensions);
+    std::vector<int> index(arr._dimensions);
     // add 'ones' of identity matrix
     for (int i=0;i<max_index;i++){
-        for (int d=0;d<this->_dimensions;d++){
+        for (int d=0;d<arr._dimensions;d++){
             index[d]=i;
         }
-        set(index,1);
+        arr.set(index,1);
     }
 }
 
-// fill with random normal distribution
+// fill with values from a random normal distribution
 template<typename T>
-void Array<T>::fill_random_gaussian(const T mu, const T sigma){
-    for (int i=0; i<this->_elements; i++){
-        this->_data[i] = Random<T>::gaussian(mu,sigma);
-    }
-};
-
-// fill with random uniform distribution
-template<typename T>
-void Array<T>::fill_random_uniform(const T min, const T max){
-    for (int i=0; i<this->_elements;i++){
-        this->_data[i] = Random<T>::uniform(min,max);
-    }
-};
-
-// fill the array with zeros
-template<typename T>
-void Array<T>::fill_zeros(){
-    this->fill_values(0);
+void Array<T>::Fill::random_gaussian(const T mu, const T sigma){
+    for (int i=0; i<arr._elements; i++){
+        arr._data[i] = Random<T>::gaussian(mu,sigma);
+    }           
 }
 
-// fills a multidimensional array with a continuous
+// fill with values from a random uniform distribution
+template<typename T>
+void Array<T>::Fill::random_uniform(const T min, const T max){
+    for (int i=0; i<arr._elements;i++){
+        arr._data[i] = Random<T>::uniform(min,max);
+    }
+}
+// fills the array with a continuous
 // range of numbers (with specified start parameter
 // referring to the zero position and a step parameter)
 // in all dimensions
 template<typename T>
-void Array<T>::fill_range(const T start, const T step){
-    std::vector<int> index(this->_dimensions);
-    std::fill(index.begin(),index.end(),0);
-    for (int d=0;d<this->_dimensions;d++){
-        for (int i=0;i<this->_size[d];i++){
-            index[d]=i;
-            this->set(index,start+i*step);
+void Array<T>::Fill::range(const T start, const T step){
+    if (arr._dimensions==1){
+        for (int i=0;i<arr._elements;i++){
+            arr._data[i]=start+i*step;
         }
     }
-}
-
-// fills a 2d Matrix with a continuous range of numbers
-// in both dimensions, from a starting point at the zero
-// index, a start value and a step parameter
-template<typename T>
-void Matrix<T>::fill_range(const T start, const T step) {
-    for (int row=0;row<this->_size[0];row++){
-        for (int col=0;col<this->_size[1];col++){
-            this->set(row,col,start+step*std::fmax(row,col));
+    else {
+        std::vector<int> index(arr._dimensions);
+        std::fill(index.begin(),index.end(),0);
+        for (int d=0;d<arr._dimensions;d++){
+            for (int i=0;i<arr._size[d];i++){
+                index[d]=i;
+                arr.set(index,start+i*step);
+            }
         }
-    }
-}
-
-// fills a vector with a continuous range of numbers
-// with a start value at index 0 and a step parameter
-template<typename T>
-void Vector<T>::fill_range(const T start, const T step){
-    for (int i=0;i<this->_elements;i++){
-        this->_data[i]=start+i*step;
     }
 }
 
@@ -417,7 +402,7 @@ template<typename T>
 std::unique_ptr<Array<T>> Array<T>::operator+(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     if (!equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -471,7 +456,7 @@ void Array<T>::operator+=(const T value) {
 template<typename T>
 void Array<T>::operator+=(const Array<T>& other){
     if (!equal_size(other)){
-        this->fill_values(T(NAN));
+        this->fill->values(T(NAN));
         return;
     }
     for (int i=0; i<this->_elements; i++){
@@ -500,7 +485,7 @@ template<typename T>
 std::unique_ptr<Array<T>> Array<T>::operator-(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     if (!equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -554,7 +539,7 @@ void Array<T>::operator-=(const T value) {
 template<typename T>
 void Array<T>::operator-=(const Array<T>& other){
     if (!equal_size(other)){
-        this->fill_values(T(NAN));
+        this->fill->values(T(NAN));
         return;
     }
     for (int i=0; i<this->_elements; i++){
@@ -607,7 +592,7 @@ template<typename T>
 std::unique_ptr<Array<T>> Array<T>::Hadamard(const Array<T>& other)  const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->_size);
     if(!equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -742,7 +727,7 @@ std::unique_ptr<Matrix<T>> Matrix<T>::tensordot(const Matrix<T>& other) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(this->_size[0], other._size[1]);
     // Check if the matrices can be multiplied
     if (this->_size[1] != other._size[0]){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
         return result;
     }
     // Compute the dot product
@@ -831,7 +816,7 @@ void Array<T>::pow(const T exponent){
 template<typename T>
 void Array<T>::pow(const Array<T>& other){
     if (!equal_size(other)){
-        this->fill_values(T(NAN));
+        this->fill->values(T(NAN));
         return;
     }
     else {
@@ -1097,7 +1082,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator>(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1118,7 +1103,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator>=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1139,7 +1124,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator==(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1160,7 +1145,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator!=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1181,7 +1166,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator<(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1202,7 +1187,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator<=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1260,7 +1245,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator&&(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1280,7 +1265,7 @@ template<typename T>
 std::unique_ptr<Array<bool>> Array<T>::operator||(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->_size);
     if (!this->equal_size(other)){
-        result->fill_values(T(NAN));
+        result->fill->values(T(NAN));
     }
     else {
         for (int i=0; i<this->_elements; i++){
@@ -1327,7 +1312,7 @@ std::unique_ptr<Vector<T>> Array<T>::flatten() const {
 template<typename T>
 std::unique_ptr<Matrix<T>> Array<T>::asMatrix(const int rows, const int cols, T init_value) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill_values(init_value);
+    result->fill->values(init_value);
     std::vector<int> index(this->_dimensions);
     // reset the indices of higher dimensions to all zeros
     for (int d=0;d<this->_dimensions;d++){
@@ -1353,7 +1338,7 @@ std::unique_ptr<Matrix<T>> Array<T>::asMatrix(const int rows, const int cols, T 
 template<typename T>
 std::unique_ptr<Matrix<T>> Matrix<T>::asMatrix(const int rows, const int cols, T init_value) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill_values(init_value);
+    result->fill->values(init_value);
     for (int r=0;r<std::fmin(rows,this->_size[0]);r++){
         for (int c=0;c<std::fmin(cols,this->_size[1]);c++){
             result->set(r,c,this->get(r,c));
@@ -1372,7 +1357,7 @@ std::unique_ptr<Matrix<T>> Matrix<T>::asMatrix(const int rows, const int cols, T
 template<typename T>
 std::unique_ptr<Matrix<T>> Vector<T>::asMatrix(const int rows, const int cols, T init_value) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill_values(init_value);
+    result->fill->values(init_value);
     for (int i=0;i<std::fmin(this->_elements,cols);i++){
         result->set(0,i, this->_data[i]);
     }
@@ -1442,7 +1427,7 @@ std::unique_ptr<Matrix<T>> Vector<T>::asMatrix() const {
 template<typename T>
 std::unique_ptr<Array<T>> Array<T>::asArray(const std::initializer_list<int>& init_list, T init_value) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(init_list);
-    result->fill_values(init_value);
+    result->fill->values(init_value);
     // reset result index to all zeros
     std::vector<int> result_index(result->get_dimensions());
     std::fill(result_index.begin(),result_index.end(),0);
@@ -1495,7 +1480,11 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
         this->_elements*=this->_size[d];
     }
     // allocate data buffer
-    this->_data = std::make_unique<T[]>(this->_elements);   
+    this->_data = std::make_unique<T[]>(this->_elements);
+    // instantiate helper structs
+    this->scale = std::make_unique<Scaling>(*this);
+    this->fill = std::make_unique<Fill>(*this);
+    this->activation = std::make_unique<Activation>(*this);
 };
 
 // constructor for multidimensional array:
@@ -1524,7 +1513,11 @@ Array<T>::Array(const std::vector<int>& dimensions){
         total_size *= this->_size[i];
     }       
     // allocate data buffer
-    this->_data = std::make_unique<T[]>(this->_elements);   
+    this->_data = std::make_unique<T[]>(this->_elements);
+    // instantiate helper structs
+    this->scale = std::make_unique<Scaling>(*this);
+    this->fill = std::make_unique<Fill>(*this);
+    this->activation = std::make_unique<Activation>(*this);      
 }
 
 // virtual destructor for parent class
@@ -1555,6 +1548,10 @@ Vector<T>::Vector(const int elements) {
     this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
     this->_data = std::make_unique<T[]>(this->_capacity);
+    // instantiate helper structs
+    this->scale = std::make_unique<typename Array<T>::Scaling>(*this);
+    this->fill = std::make_unique<typename Array<T>::Fill>(*this);
+    this->activation = std::make_unique<typename Array<T>::Activation>(*this);    
 }
 
 // constructor for 2d matrix
@@ -1571,6 +1568,10 @@ Matrix<T>::Matrix(const int rows, const int cols) {
     this->_subspace_size[0]=rows;
     this->_subspace_size[1]=rows*cols;
     this->_data = std::make_unique<T[]>(this->_elements);
+    // instantiate helper structs
+    this->scale = std::make_unique<typename Array<T>::Scaling>(*this);
+    this->fill = std::make_unique<typename Array<T>::Fill>(*this);
+    this->activation = std::make_unique<typename Array<T>::Activation>(*this);    
 }
 
 // +=================================+   
@@ -1741,7 +1742,7 @@ template<typename T>
 std::unique_ptr<Vector<int>> Vector<T>::ranking() const {
     // initialize ranks
     std::unique_ptr<Vector<int>> rank = std::make_unique<Vector<int>>(this->_elements);
-    rank->fill_range(0,1);
+    rank->fill->range(0,1);
     // ranking loop
     bool ranking_completed=false;
     while (!ranking_completed){
@@ -2344,4 +2345,128 @@ std::unique_ptr<int[]> Array<T>::initlist_to_array(const std::initializer_list<i
         arr[i++] = *it;
     }
     return arr;
+}
+
+// +=================================+   
+// | Activation Functions            |
+// +=================================+
+
+template<typename T>
+void Array<T>::Activation::Function::ReLU(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] *= this->_data[i]>0;
+    }                        
+}
+
+template<typename T>
+void Array<T>::Activation::Function::lReLU(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = this->_data[i]>0 ? this->_data[i] : this->_data[i]*alpha;
+    }                        
+}
+
+template<typename T>
+void Array<T>::Activation::Function::ELU(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = this->_data[i]>0 ? this->_data[i] : alpha*(std::exp(this->_data[i])-1); 
+    }                        
+}
+
+template<typename T>
+void Array<T>::Activation::Function::sigmoid(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = 1/(1+std::exp(-this->_data[i])); 
+    } 
+}
+
+template<typename T>
+void Array<T>::Activation::Function::tanh(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = std::tanh(this->_data[i]);
+    }                        
+};
+
+template<typename T>
+void Array<T>::Activation::Function::softmax(){
+    // TODO !!
+};           
+
+template<typename T>
+void Array<T>::Activation::Function::ident(){
+    // do nothing
+    return;
+}
+
+template<typename T>
+void Array<T>::Activation::Derivative::ReLU(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = this->_data[i]>0 ? 1 : 0;
+    }                        
+}
+
+template<typename T>
+void Array<T>::Activation::Derivative::lReLU(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = this->_data[i]>0 ? 1 : alpha;
+    }                        
+}
+
+template<typename T>
+void Array<T>::Activation::Derivative::ELU(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = this->_data[i]>0 ? 1 : alpha*std::exp(this->_data[i]);
+    }                        
+}
+
+template<typename T>
+void Array<T>::Activation::Derivative::sigmoid(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = std::exp(this->_data[i])/std::pow(std::exp(this->_data[i])+1,2); 
+    } 
+}
+
+template<typename T>
+void Array<T>::Activation::Derivative::tanh(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = 1-std::pow(std::tanh(this->_data[i]),2);
+    }                        
+}
+template<typename T>
+void Array<T>::Activation::Derivative::softmax(){
+    // TODO !!
+};
+
+template<typename T>
+void Array<T>::Activation::Derivative::ident(){
+    for (int i=0;i<this->get_elements();i++){
+        this->_data[i] = 1;
+    }                         
+}
+
+template<typename T>
+void Array<T>::Activation::function(Method method){
+    switch (method){
+        case ReLU: Function::ReLU(); break;
+        case lReLU: Function::lReLU(); break;
+        case ELU: Function::ELU(); break;
+        case sigmoid: Function::sigmoid(); break;   
+        case tanh: Function::tanh(); break;
+        case softmax: Function::softmax(); break;
+        case ident: Function::ident(); break;
+        default: /* do nothing */ break;
+    }
+}
+
+template<typename T>
+void Array<T>::Activation::derivative(Method method){
+    switch (method){
+        case ReLU: Derivative::ReLU(); break;
+        case lReLU: Derivative::lReLU(); break;
+        case ELU: Derivative::ELU(); break;
+        case sigmoid: Derivative::sigmoid(); break;   
+        case tanh: Derivative::tanh(); break;
+        case softmax: Derivative::softmax(); break;
+        case ident: Derivative::ident(); break;
+        default: /* do nothing */ break;
+    }
 }

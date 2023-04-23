@@ -156,13 +156,18 @@ class Array{
         int get_elements() const;
         int get_subspace(int dimension) const;        
 
-        // fill, initialize
-        void fill_values(T value);
-        void fill_zeros();
-        void fill_identity();
-        void fill_random_gaussian(const T mu=0, const T sigma=1);
-        void fill_random_uniform(const T min=0, const T max=1.0);
-        virtual void fill_range(const T start=0, const T step=1);
+        // nested Struct for Filling / Intializing
+        struct Fill {
+            void values(const T value);
+            void zeros();
+            void identity();
+            void random_gaussian(const T mu=0, const T sigma=1);
+            void random_uniform(const T min=0, const T max=1.0);
+            virtual void range(const T start=0, const T step=1);
+            Fill(Array<T>& arr):arr(arr){}
+            Array<T>& arr;
+        };
+        friend class Array<T>::Fill;
 
         // basic distribution properties
         T min() const;
@@ -267,130 +272,27 @@ class Array{
         // output
         void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false) const;
 
-        // constructor & destructor declarations
-        Array(){};
-        Array(const std::initializer_list<int>& init_list);
-        Array(const std::vector<int>& dimensions);
-        virtual ~Array();
-
-    protected:
-        // nested member struct for scaling methods
-        struct Scaling {  
-            public:
-                void minmax(T min=0,T max=1){
-                    T data_min = this->_data.min();
-                    T data_max = this->_data.max();
-                    double factor = (max-min) / (data_max-data_min);
-                    for (int i=0; i<this->get_elements(); i++){
-                        this->_data[i] = (this->_data[i] - data_min) * factor + min;
-                    }
-                };
-                void mean(){
-                    T data_min = this->_data.min();
-                    T data_max = this->_data.max();
-                    T range = data_max - data_min;
-                    double mean = this->mean();
-                    for (int i=0; i<this->get_elements(); i++){
-                        this->_data[i] = (this->_data[i] - mean) / range;
-                    }
-                };
-                void standardized(){
-                    double mean = this->mean();
-                    double stddev = this->stddev();
-                    for (int i=0; i<this->get_elements(); i++){
-                        this->_data[i] = (this->_data[i] - mean) / stddev;
-                    }                    
-                };
-                void unit_length(){
-                    // calculate the Euclidean norm of the data array
-                    T norm = 0;
-                    int elements = this->get_elements();
-                    for (int i = 0; i < elements; i++) {
-                        norm += std::pow(this->_data[i], 2);
-                    }
-                    if (norm==0){return;}
-                    norm = std::sqrt(norm);
-                    // scale the data array to unit length
-                    for (int i = 0; i < elements; i++) {
-                        this->_data[i] /= norm;
-                    }                    
-                };
-                // constructor
-                Scaling(){};
-        };
-
-        // nested member struct for neural network activations
+        // nested Struct for neural network activations
         struct Activation {
             private:
-                static const double alpha = 0.01; // slope constant for lReLU and lELU
+                static constexpr double alpha = 0.01; // slope constant for lReLU and lELU
                 struct Function {
-                    void ReLU(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] *= this->_data[i]>0;
-                        }                        
-                    };
-                    void lReLU(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = this->_data[i]>0 ? this->_data[i] : this->_data[i]*alpha;
-                        }                        
-                    };
-                    void ELU(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = this->_data[i]>0 ? this->_data[i] : alpha*(std::exp(this->_data[i])-1); 
-                        }                        
-                    };
-                    void sigmoid(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = 1/(1+std::exp(-this->_data[i])); 
-                        } 
-                    };
-                    void tanh(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = std::tanh(this->_data[i]);
-                        }                        
-                    };
-                    void softmax(){
-                        // TODO !!
-                    };           
-                    void ident(){
-                        // do nothing
-                        return;
-                    }         
+                    void ReLU();
+                    void lReLU();
+                    void ELU();
+                    void sigmoid();
+                    void tanh();
+                    void softmax();     
+                    void ident();   
                 };
                 struct Derivative {
-                    void ReLU(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] =
-                        }                        
-                    };
-                    void lReLU(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = 
-                        }                        
-                    };
-                    void ELU(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] =  
-                        }                        
-                    };
-                    void sigmoid(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = std::exp(this->_data[i])/std::pow(std::exp(this->_data[i])+1,2); 
-                        } 
-                    };
-                    void tanh(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = 1-std::pow(std::tanh(this->_data[i]),2);
-                        }                        
-                    };
-                    void softmax(){
-                        // TODO !!
-                    }; 
-                    void ident(){
-                        for (int i=0;i<this->get_elements();i++){
-                            this->_data[i] = 1;
-                        }                         
-                    }
+                    void ReLU();
+                    void lReLU();
+                    void ELU();
+                    void sigmoid();
+                    void tanh();
+                    void softmax();
+                    void ident();
                 };
             public:
                 enum Method {
@@ -399,43 +301,71 @@ class Array{
                     ELU,        // exponential linar unit (ELU)
                     sigmoid,    // sigmoid (=logistic)
                     tanh,       // hyperbolic tangent (tanh)
+                    softmax,    // softmax (=normalized exponential)
                     ident       // identity function
                 };
-                void function(Method method){
-                    switch (method){
-                        case ReLU: Function::ReLU(); break;
-                        case lReLU: Function::lReLU(); break;
-                        case ELU: Function::ELU(); break;
-                        case sigmoid: Function::sigmoid(); break;   
-                        case tanh: Function::tanh(); break;
-                        case softmax: Function::softmax(); break;
-                        case ident: Funtction::ident(); break;
-                        default: /* do nothing */ break;
-                    }
-                }
-                void derivative(Method method){
-                    switch (method){
-                        case ReLU: Derivative::ReLU(); break;
-                        case lReLU: Derivative::lReLU(); break;
-                        case ELU: Derivative::ELU(); break;
-                        case sigmoid: Derivative::sigmoid(); break;   
-                        case tanh: Derivative::tanh(); break;
-                        case softmax: Derivative::softmax(); break;
-                        case ident: Derivative::ident(); break;
-                        default: /* do nothing */ break;
-                    }
-                }
-                Function function;
-                Derivative derivative;
+                void function(Method method);
+                void derivative(Method method);
+                Function _function;
+                Derivative _derivative;
+                Activation(Array<T>& arr):arr(arr){}
+                Array<T>& arr;
         };
-    public:
-        // public member variables
-        std::unique_ptr<T[]> _data = nullptr; // 1dimensional array of source _data
-        std::unique_ptr<Scaling> scale = std::make_unique<Scaling>();
-        Activation activation;
-    
-    protected:
+        friend class Array<T>::Activation;
 
+        // nested Struct for scaling methods
+        struct Scaling {  
+            void minmax(T min=0,T max=1){
+                T data_min = this->_data.min();
+                T data_max = this->_data.max();
+                double factor = (max-min) / (data_max-data_min);
+                for (int i=0; i<this->get_elements(); i++){
+                    this->_data[i] = (this->_data[i] - data_min) * factor + min;
+                }
+            };
+            void mean(){
+                T data_min = this->_data.min();
+                T data_max = this->_data.max();
+                T range = data_max - data_min;
+                double mean = this->mean();
+                for (int i=0; i<this->get_elements(); i++){
+                    this->_data[i] = (this->_data[i] - mean) / range;
+                }
+            };
+            void standardized(){
+                double mean = this->mean();
+                double stddev = this->stddev();
+                for (int i=0; i<this->get_elements(); i++){
+                    this->_data[i] = (this->_data[i] - mean) / stddev;
+                }                    
+            };
+            void unit_length(){
+                // calculate the Euclidean norm of the data array
+                T norm = 0;
+                int elements = this->get_elements();
+                for (int i = 0; i < elements; i++) {
+                    norm += std::pow(this->_data[i], 2);
+                }
+                if (norm==0){return;}
+                norm = std::sqrt(norm);
+                // scale the data array to unit length
+                for (int i = 0; i < elements; i++) {
+                    this->_data[i] /= norm;
+                }                    
+            };
+            Scaling(Array<T>& arr):arr(arr){}
+            Array<T>& arr;
+        };
+        friend class Array<T>::Scaling;
+
+        // constructor & destructor declarations
+        Array(){};
+        Array(const std::initializer_list<int>& init_list);
+        Array(const std::vector<int>& dimensions);
+        virtual ~Array();
+
+    protected:
+    
         // protected member variables
         bool equal_size(const Array<T>& other) const;
         int _elements=0; // total number of _elements in all _dimensions
@@ -448,7 +378,14 @@ class Array{
         int get_element(const std::vector<int>& index) const;
         void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);
         std::initializer_list<int> array_to_initlist(int* arr, int size) const;
-        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst) const;
+        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst) const;            
+
+    public:
+        // public member variables
+        std::unique_ptr<T[]> _data = nullptr; // 1dimensional array of source _data
+        std::unique_ptr<Fill> fill;
+        std::unique_ptr<Activation> activation;
+        std::unique_ptr<Scaling> scale;
 };
 
 // derived class from Array<T>, for 2d matrix
@@ -458,9 +395,6 @@ class Matrix : public Array<T>{
         // getters & setters
         void set(const int row, const int col, T value);
         T get(const int row, const int col) const;
-
-        // fill, initialize
-        void fill_range(const T start=0, const T step=1) override;
 
         // special matrix operations
         T dotproduct(const Matrix<T>& other) const; //=scalar product
@@ -489,9 +423,6 @@ class Vector : public Array<T>{
         T get(const std::initializer_list<int>& index) = delete;
         void set(const int index, const T value);
         T get(const int index) const;
-
-        // fill, initialize
-        void fill_range(const T start=0, const T step=1) override;
 
         // dynamic handling
         int push_back(T value);
@@ -540,6 +471,8 @@ class Vector : public Array<T>{
         const float _reserve = 0.5;
         int _capacity;
 };
+
+
 
 // the corresponding file with the definitions must be included
 // because this is the template class

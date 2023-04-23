@@ -41,26 +41,26 @@ int main(){
 
     Matrix1.print("\nPrinting the same matrix without indices:");
 
-    Matrix1.fill_values(5);
-    Matrix1.print("\nTesting the method void fill_values(T value): filling all elements with '5':");
+    Matrix1.fill->values(5);
+    Matrix1.print("\nTesting the method void fill->values(T value): filling all elements with '5':");
 
-    Matrix1.fill_zeros();
-    Matrix1.print("\nTesting the method void fill_zeros():");
+    Matrix1.fill->zeros();
+    Matrix1.print("\nTesting the method void fill->zeros():");
 
-    Matrix1.fill_identity();
-    Matrix1.print("\nTesting the method void fill_identity()");
+    Matrix1.fill->identity();
+    Matrix1.print("\nTesting the method void fill->identity()");
 
     Vector<double> Vector1(9);
     Vector1.print("\nCreating a Vector<double> with 9 elements:");
 
-    Vector1.fill_random_gaussian();
-    Vector1.print("\nTesting the method fill_random_gaussian():");
+    Vector1.fill->random_gaussian();
+    Vector1.print("\nTesting the method fill->random_gaussian():");
 
-    Vector1.fill_random_uniform();
-    Vector1.print("\nTesting the method fill_random_uniform():");    
+    Vector1.fill->random_uniform();
+    Vector1.print("\nTesting the method fill->random_uniform():");    
 
-    Vector1.fill_range(20,1);
-    Vector1.print("\nTesting the method fill_range(), start value 20, step 1.0):");
+    Vector1.fill->range(20,1);
+    Vector1.print("\nTesting the method fill->range(), start value 20, step 1.0):");
 
     std::cout << "\nMean = " << Vector1.mean() << std::endl;
     std::cout << "Median = " << Vector1.median() << std::endl;
@@ -78,10 +78,10 @@ int main(){
     Vector2->print("\nTesting the operator+=, (*this)+=5;");
 
     Vector<int> Vector3(15);
-    Vector3.fill_random_uniform(0,9);
+    Vector3.fill->random_uniform(0,9);
     Vector3.print("\nExample Vector 1: ",", ");
     Vector<int> Vector4(15);
-    Vector4.fill_random_uniform(0,9);
+    Vector4.fill->random_uniform(0,9);
     Vector4.print("Example Vector 2: ",", ");
 
     auto Vector5 = Vector3 + Vector4;
