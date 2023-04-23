@@ -334,6 +334,18 @@ class Array{
         };
         friend class Array<T>::Scaling;
 
+        // nested Struct for outlier treatment
+        struct Outliers {
+            void truncate(double z_score=3);
+            void winsoring(double z_score=3);
+            void mean_imputation(double z_score=3);
+            void median_imputation(double z_score=3);
+            void value_imputation(T value=0, double z_score=3);
+            Outliers(Array<T>& arr):arr(arr){}
+            Array<T>& arr;
+        };
+        friend class Array<T>::Outliers;
+
         // protected member variables
         bool equal_size(const Array<T>& other) const;
         int _elements=0; // total number of _elements in all _dimensions
@@ -346,7 +358,8 @@ class Array{
         int get_element(const std::vector<int>& index) const;
         void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);
         std::initializer_list<int> array_to_initlist(int* arr, int size) const;
-        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst) const;            
+        std::unique_ptr<int[]> initlist_to_array(const std::initializer_list<int>& lst) const; 
+        void init();           
 
     public:
         // public member variables
@@ -354,6 +367,7 @@ class Array{
         std::unique_ptr<Fill> fill;
         std::unique_ptr<Activation> activation;
         std::unique_ptr<Scaling> scale;
+        std::unique_ptr<Outliers> outliers;
 };
 
 // derived class from Array<T>, for 2d matrix

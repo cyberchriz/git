@@ -1497,12 +1497,7 @@ Array<T>::Array(const std::initializer_list<int>& init_list) {
     for (int d=0;d<this->_dimensions;d++){
         this->_elements*=this->_size[d];
     }
-    // allocate data buffer
-    this->_data = std::make_unique<T[]>(this->_elements);
-    // instantiate helper structs
-    this->scale = std::make_unique<Scaling>(*this);
-    this->fill = std::make_unique<Fill>(*this);
-    this->activation = std::make_unique<Activation>(*this);
+    this->init();
 };
 
 // constructor for multidimensional array:
@@ -1530,12 +1525,7 @@ Array<T>::Array(const std::vector<int>& dimensions){
         this->_subspace_size[i] = total_size;
         total_size *= this->_size[i];
     }       
-    // allocate data buffer
-    this->_data = std::make_unique<T[]>(this->_elements);
-    // instantiate helper structs
-    this->scale = std::make_unique<Scaling>(*this);
-    this->fill = std::make_unique<Fill>(*this);
-    this->activation = std::make_unique<Activation>(*this);      
+    this->init();    
 }
 
 // virtual destructor for parent class
@@ -1565,11 +1555,7 @@ Vector<T>::Vector(const int elements) {
     this->_elements = elements;
     this->_capacity = (1.0f+this->_reserve)*elements;
     this->_dimensions = 1;
-    this->_data = std::make_unique<T[]>(this->_capacity);
-    // instantiate helper structs
-    this->scale = std::make_unique<typename Array<T>::Scaling>(*this);
-    this->fill = std::make_unique<typename Array<T>::Fill>(*this);
-    this->activation = std::make_unique<typename Array<T>::Activation>(*this);    
+    this->init();  
 }
 
 // constructor for 2d matrix
@@ -1585,11 +1571,19 @@ Matrix<T>::Matrix(const int rows, const int cols) {
     this->_subspace_size.resize(2);
     this->_subspace_size[0]=rows;
     this->_subspace_size[1]=rows*cols;
+    this->init();    
+}
+
+// protected helper function for constructors
+template<typename T>
+void Array<T>::init(){
+    // set up data buffer
     this->_data = std::make_unique<T[]>(this->_elements);
     // instantiate helper structs
     this->scale = std::make_unique<typename Array<T>::Scaling>(*this);
     this->fill = std::make_unique<typename Array<T>::Fill>(*this);
-    this->activation = std::make_unique<typename Array<T>::Activation>(*this);    
+    this->activation = std::make_unique<typename Array<T>::Activation>(*this);
+    this->outliers = std::make_unique<Outliers>(*this);    
 }
 
 // +=================================+   
