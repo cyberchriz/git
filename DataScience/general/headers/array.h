@@ -274,57 +274,165 @@ class Array{
         virtual ~Array();
 
     protected:
-        // member struct for scaling methods
-        struct Scaling {
-            private:
-                Array<T>* source;    
+        // nested member struct for scaling methods
+        struct Scaling {  
             public:
                 void minmax(T min=0,T max=1){
-                    T data_min = source->_data.min();
-                    T data_max = source->_data.max();
+                    T data_min = this->_data.min();
+                    T data_max = this->_data.max();
                     double factor = (max-min) / (data_max-data_min);
-                    for (int i=0; i<source->_elements; i++){
-                        source->_data[i] = (source->_data[i] - data_min) * factor + min;
+                    for (int i=0; i<this->get_elements(); i++){
+                        this->_data[i] = (this->_data[i] - data_min) * factor + min;
                     }
                 };
                 void mean(){
-                    T data_min = source->_data.min();
-                    T data_max = source->_data.max();
+                    T data_min = this->_data.min();
+                    T data_max = this->_data.max();
                     T range = data_max - data_min;
-                    double mean = source->mean();
-                    for (int i=0; i<source->get_elements(); i++){
-                        source->_data[i] = (source->_data[i] - mean) / range;
+                    double mean = this->mean();
+                    for (int i=0; i<this->get_elements(); i++){
+                        this->_data[i] = (this->_data[i] - mean) / range;
                     }
                 };
                 void standardized(){
-                    double mean = source->mean();
-                    double stddev = source->stddev();
-                    for (int i=0; i<source->get_elements(); i++){
-                        source->_data[i] = (source->_data[i] - mean) / stddev;
+                    double mean = this->mean();
+                    double stddev = this->stddev();
+                    for (int i=0; i<this->get_elements(); i++){
+                        this->_data[i] = (this->_data[i] - mean) / stddev;
                     }                    
                 };
                 void unit_length(){
                     // calculate the Euclidean norm of the data array
                     T norm = 0;
-                    int elements = source->get_elements();
+                    int elements = this->get_elements();
                     for (int i = 0; i < elements; i++) {
-                        norm += std::pow(source->_data[i], 2);
+                        norm += std::pow(this->_data[i], 2);
                     }
                     if (norm==0){return;}
                     norm = std::sqrt(norm);
                     // scale the data array to unit length
                     for (int i = 0; i < elements; i++) {
-                        source->_data[i] /= norm;
+                        this->_data[i] /= norm;
                     }                    
                 };
                 // constructor
-                Scaling(Array<T>* source) : source(source){};
+                Scaling(){};
         };
 
+        // nested member struct for neural network activations
+        struct Activation {
+            private:
+                static const double alpha = 0.01; // slope constant for lReLU and lELU
+                struct Function {
+                    void ReLU(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] *= this->_data[i]>0;
+                        }                        
+                    };
+                    void lReLU(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = this->_data[i]>0 ? this->_data[i] : this->_data[i]*alpha;
+                        }                        
+                    };
+                    void ELU(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = this->_data[i]>0 ? this->_data[i] : alpha*(std::exp(this->_data[i])-1); 
+                        }                        
+                    };
+                    void sigmoid(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = 1/(1+std::exp(-this->_data[i])); 
+                        } 
+                    };
+                    void tanh(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = std::tanh(this->_data[i]);
+                        }                        
+                    };
+                    void softmax(){
+                        // TODO !!
+                    };           
+                    void ident(){
+                        // do nothing
+                        return;
+                    }         
+                };
+                struct Derivative {
+                    void ReLU(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] =
+                        }                        
+                    };
+                    void lReLU(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = 
+                        }                        
+                    };
+                    void ELU(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] =  
+                        }                        
+                    };
+                    void sigmoid(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = std::exp(this->_data[i])/std::pow(std::exp(this->_data[i])+1,2); 
+                        } 
+                    };
+                    void tanh(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = 1-std::pow(std::tanh(this->_data[i]),2);
+                        }                        
+                    };
+                    void softmax(){
+                        // TODO !!
+                    }; 
+                    void ident(){
+                        for (int i=0;i<this->get_elements();i++){
+                            this->_data[i] = 1;
+                        }                         
+                    }
+                };
+            public:
+                enum Method {
+                    ReLU,       // rectified linear unit (ReLU)
+                    lReLU,      // leaky rectified linear unit (LReLU)
+                    ELU,        // exponential linar unit (ELU)
+                    sigmoid,    // sigmoid (=logistic)
+                    tanh,       // hyperbolic tangent (tanh)
+                    ident       // identity function
+                };
+                void function(Method method){
+                    switch (method){
+                        case ReLU: Function::ReLU(); break;
+                        case lReLU: Function::lReLU(); break;
+                        case ELU: Function::ELU(); break;
+                        case sigmoid: Function::sigmoid(); break;   
+                        case tanh: Function::tanh(); break;
+                        case softmax: Function::softmax(); break;
+                        case ident: Funtction::ident(); break;
+                        default: /* do nothing */ break;
+                    }
+                }
+                void derivative(Method method){
+                    switch (method){
+                        case ReLU: Derivative::ReLU(); break;
+                        case lReLU: Derivative::lReLU(); break;
+                        case ELU: Derivative::ELU(); break;
+                        case sigmoid: Derivative::sigmoid(); break;   
+                        case tanh: Derivative::tanh(); break;
+                        case softmax: Derivative::softmax(); break;
+                        case ident: Derivative::ident(); break;
+                        default: /* do nothing */ break;
+                    }
+                }
+                Function function;
+                Derivative derivative;
+        };
     public:
         // public member variables
         std::unique_ptr<T[]> _data = nullptr; // 1dimensional array of source _data
-        std::unique_ptr<Scaling> scale = std::make_unique<Scaling>(this);
+        std::unique_ptr<Scaling> scale = std::make_unique<Scaling>();
+        Activation activation;
     
     protected:
 
