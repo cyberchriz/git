@@ -182,6 +182,18 @@ Public Methods:
 | `std::unique_ptr<Array<bool>> operator\|\|(const Array& other)`|returns a boolean array with each value representing the logical `OR` between the corresponding values of the original array and a second array |
 
 
+### Feature Scaling
+
+`class Array<T>` has a member object `std::unique_ptr<Scaling> scale` with the constructor `Scaling(Array<T>* source)`, serving as an interface for scaling methods:
+
+|method|description|
+|------|-----------|
+| `void scale->minmax(const T min=0, const T max=1)`| used for rescaling as minmax normalisation |
+| `void scale->mean()`|zero mean, range +/- 1|
+| `void scale->standardized()`|zero mean, variance 1|
+| `void scale->unit_length()`| x' = x / Euclidian_Unit_Length|
+
+
 ### Type Casting
 
 |method|description|
