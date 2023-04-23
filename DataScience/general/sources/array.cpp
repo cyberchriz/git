@@ -233,6 +233,24 @@ void Array<T>::Fill::range(const T start, const T step){
     }
 }
 
+// randomly sets a specified fraction of the values to zero
+// and retains the rest
+template<typename T>
+void Array<T>::Fill::dropout(double ratio){
+    for (int i=0;i<arr._elements;i++){
+        arr._data[i] *= Random<double>::uniform() > ratio;
+    }
+}
+
+// randomly sets the specified fraction of the values to zero
+// and the rest to 1 (default: 0.5, i.e. 50%)
+template<typename T>
+void Array<T>::Fill::binary(double ratio){
+    for (int i=0;i<arr._elements;i++){
+        arr._data[i] = Random<double>::uniform() > ratio;
+    }
+}
+
 // +=================================+   
 // | Distribution Properties         |
 // +=================================+
@@ -2206,6 +2224,55 @@ std::unique_ptr<Histogram<T>> Vector<T>::histogram(uint bars) const {
     return histogram;
 }
 
+// Vector binning, i.e. quantisizing into n bins,
+// each represented by the mean of the values inside that bin;
+// returning the result as pointer to a new Vector of size n
+template<typename T>
+std::unique_ptr<Vector<T>> Vector<T>::binning(const int bins){
+    if (this->_elements == 0) {
+        throw std::runtime_error("Cannot bin an empty vector.");
+    }
+    if (bins <= 0) {
+        throw std::invalid_argument("Number of bins must be positive.");
+    }
+    if (bins >= this->_elements) {
+        throw std::invalid_argument("Number of bins must be less than the number of elements in the vector.");
+    }
+    // prepare the data structure to put the results
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(bins);    
+    result->fill->zeros();
+    // get a sorted copy of the original data (ascending order)
+    auto sorted = this->sort();
+    // calculate bin size
+    T min = this->min();
+    T max = this->max();
+    if (min == max) {
+        // There's only one unique value in the vector, so we can't bin it
+        throw std::runtime_error("Cannot bin a vector with only one unique value.");
+    }
+    T bin_size = (max - min) / bins;
+    int bin = 0;
+    int bin_items = 0;
+    int i = 0;
+    while (bin < bins && i < this->_elements) {
+        // until bin is full
+        while (sorted->_data[i] <= min + bin_size * (bin + 1)) {
+            result->_data[bin] += this->_data[i];
+            bin_items++;
+            i++;
+            if (i == this->_elements) {
+                break;
+            }
+        }
+        // calculate mean and move to next bin
+        result->_data[bin] /= bin_items;
+        bin++;
+        bin_items = 0;
+    }
+    return result;
+}
+
+
 // Matrix transpose
 template<typename T>
 std::unique_ptr<Matrix<T>> Matrix<T>::transpose() const {
@@ -2469,4 +2536,55 @@ void Array<T>::Activation::derivative(Method method){
         case ident: Derivative::ident(); break;
         default: /* do nothing */ break;
     }
+}
+
+
+// +=================================+   
+// | Feature Scaling                 |
+// +=================================+
+
+template<typename T>
+void Array<T>::Scaling::minmax(T min,T max){
+    T data_min = arr._data.min();
+    T data_max = arr._data.max();
+    double factor = (max-min) / (data_max-data_min);
+    for (int i=0; i<arr.get_elements(); i++){
+        arr._data[i] = (arr._data[i] - data_min) * factor + min;
+    }
+}
+
+template<typename T>
+void Array<T>::Scaling::mean(){
+    T data_min = arr._data.min();
+    T data_max = arr._data.max();
+    T range = data_max - data_min;
+    double mean = arr.mean();
+    for (int i=0; i<arr.get_elements(); i++){
+        arr._data[i] = (arr._data[i] - mean) / range;
+    }
+}
+
+template<typename T>
+void Array<T>::Scaling::standardized(){
+    double mean = arr.mean();
+    double stddev = arr.stddev();
+    for (int i=0; i<arr.get_elements(); i++){
+        arr._data[i] = (arr._data[i] - mean) / stddev;
+    }                    
+}
+
+template<typename T>
+void Array<T>::Scaling::unit_length(){
+    // calculate the Euclidean norm of the data array
+    T norm = 0;
+    int elements = arr.get_elements();
+    for (int i = 0; i < elements; i++) {
+        norm += std::pow(arr._data[i], 2);
+    }
+    if (norm==0){return;}
+    norm = std::sqrt(norm);
+    // scale the data array to unit length
+    for (int i = 0; i < elements; i++) {
+        arr._data[i] /= norm;
+    }                    
 }

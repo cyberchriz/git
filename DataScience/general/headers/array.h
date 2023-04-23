@@ -163,7 +163,9 @@ class Array{
             void identity();
             void random_gaussian(const T mu=0, const T sigma=1);
             void random_uniform(const T min=0, const T max=1.0);
-            virtual void range(const T start=0, const T step=1);
+            void range(const T start=0, const T step=1);
+            void dropout(double ratio=0.2);
+            void binary(double ratio=0.5);
             Fill(Array<T>& arr):arr(arr){}
             Array<T>& arr;
         };
@@ -272,6 +274,14 @@ class Array{
         // output
         void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false) const;
 
+        // constructor & destructor declarations
+        Array(){};
+        Array(const std::initializer_list<int>& init_list);
+        Array(const std::vector<int>& dimensions);
+        virtual ~Array();
+
+    protected:
+
         // nested Struct for neural network activations
         struct Activation {
             private:
@@ -315,57 +325,15 @@ class Array{
 
         // nested Struct for scaling methods
         struct Scaling {  
-            void minmax(T min=0,T max=1){
-                T data_min = this->_data.min();
-                T data_max = this->_data.max();
-                double factor = (max-min) / (data_max-data_min);
-                for (int i=0; i<this->get_elements(); i++){
-                    this->_data[i] = (this->_data[i] - data_min) * factor + min;
-                }
-            };
-            void mean(){
-                T data_min = this->_data.min();
-                T data_max = this->_data.max();
-                T range = data_max - data_min;
-                double mean = this->mean();
-                for (int i=0; i<this->get_elements(); i++){
-                    this->_data[i] = (this->_data[i] - mean) / range;
-                }
-            };
-            void standardized(){
-                double mean = this->mean();
-                double stddev = this->stddev();
-                for (int i=0; i<this->get_elements(); i++){
-                    this->_data[i] = (this->_data[i] - mean) / stddev;
-                }                    
-            };
-            void unit_length(){
-                // calculate the Euclidean norm of the data array
-                T norm = 0;
-                int elements = this->get_elements();
-                for (int i = 0; i < elements; i++) {
-                    norm += std::pow(this->_data[i], 2);
-                }
-                if (norm==0){return;}
-                norm = std::sqrt(norm);
-                // scale the data array to unit length
-                for (int i = 0; i < elements; i++) {
-                    this->_data[i] /= norm;
-                }                    
-            };
+            void minmax(T min=0,T max=1);
+            void mean();
+            void standardized();
+            void unit_length();
             Scaling(Array<T>& arr):arr(arr){}
             Array<T>& arr;
         };
         friend class Array<T>::Scaling;
 
-        // constructor & destructor declarations
-        Array(){};
-        Array(const std::initializer_list<int>& init_list);
-        Array(const std::vector<int>& dimensions);
-        virtual ~Array();
-
-    protected:
-    
         // protected member variables
         bool equal_size(const Array<T>& other) const;
         int _elements=0; // total number of _elements in all _dimensions
@@ -453,6 +421,7 @@ class Vector : public Array<T>{
         std::unique_ptr<Correlation<T>> correlation(const Vector<T>& other) const;
         double covariance(const Vector<T>& other) const;
         std::unique_ptr<Histogram<T>> histogram(uint bars) const;
+        std::unique_ptr<Vector<T>> binning(const int bins);
 
         // assignment
         Vector<T>& operator=(const Vector<T>& other);

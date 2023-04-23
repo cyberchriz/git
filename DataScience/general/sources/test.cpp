@@ -50,7 +50,7 @@ int main(){
     Matrix1.fill->identity();
     Matrix1.print("\nTesting the method void fill->identity()");
 
-    Vector<double> Vector1(9);
+    Vector<double> Vector1(9); 
     Vector1.print("\nCreating a Vector<double> with 9 elements:");
 
     Vector1.fill->random_gaussian();
