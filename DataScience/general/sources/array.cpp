@@ -2582,3 +2582,83 @@ void Array<T>::Scaling::unit_length(){
         arr._data[i] /= norm;
     }                    
 }
+
+template<typename T>
+void Array<T>::Outliers::truncate(double z_score){
+    double mean = arr.mean();
+    double stddev = arr.stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<arr._elements;i++){
+        if (arr._data[i] > upper_margin){
+            arr,_data[i] = upper_margin;
+        }
+        if (arr._data[i] < lower_margin){
+            arr.data[i] = lower_margin;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::Outliers::winsoring(double z_score){
+    double mean = arr.mean();
+    double stddev = arr.stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    T highest_valid = mean;
+    T lowest_valid = mean;
+    for (int i=0;i<arr._elements;i++){
+        if (arr._data[i] < upper_margin && arr._data[i] > lower_margin){
+            highest_valid = std::fmax(highest_valid, arr._data[i]);
+            lowest_valid = std::fmin(lowest_valid, arr._data[i]);
+        }
+    }    
+    for (int i=0;i<arr._elements;i++){
+        if (arr._data[i] > upper_margin){
+            arr.data[i] = highest_valid;
+        }
+        else if (arr._data[i] < lower_margin){
+            arr.data[i] = lowest_valid;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::Outliers::mean_imputation(double z_score){
+    double mean = arr.mean();
+    double stddev = arr.stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<arr._elements;i++){
+        if (arr._data[i] > upper_margin || arr._data[i] < lower_margin){
+            arr._data[i] = mean;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::Outliers::median_imputation(double z_score){
+    double median = arr.median();
+    double mean = arr.mean();
+    double stddev = arr.stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<arr._elements;i++){
+        if (arr._data[i] > upper_margin || arr._data[i] < lower_margin){
+            arr._data[i] = median;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::Outliers::value_imputation(T value, double z_score){
+    double mean = arr.mean();
+    double stddev = arr.stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<arr._elements;i++){
+        if (arr._data[i] > upper_margin || arr._data[i] < lower_margin){
+            arr._data[i] = value;
+        }
+    }
+}
