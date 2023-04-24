@@ -18,15 +18,15 @@ class Fill {
         void dropout(double ratio=0.2);
         void binary(double ratio=0.5);
         // constructor
-        Fill() : _arr(nullptr), _elements(0), _dimensions(0) {}
-        Fill(Array<T>* arr) : _arr(arr){
-            this->_elements = arr->get_elements();
-            this->_dimensions = arr->get_dimensions();
+        Fill() : arr(nullptr), elements(0), dimensions(0) {}
+        Fill(Array<T>* arr) : arr(arr){
+            this->elements = arr->get_elements();
+            this->dimensions = arr->get_dimensions();
         }; 
     private:            
-        Array<T>* _arr;
-        int _elements;
-        int _dimensions;
+        Array<T>* arr;
+        int elements;
+        int dimensions;
 };
 
 
@@ -37,8 +37,8 @@ class Fill {
 // fill entire array with given value
 template<typename T>
 void Fill<T>::values(const T value){
-    for (int i=0;i<_elements;i++){
-        _arr->_data[i]=value;
+    for (int i=0;i<elements;i++){
+        arr->data[i]=value;
     }
 }
 
@@ -54,53 +54,53 @@ void Fill<T>::identity(){
     // initialize with zeros
     values(0);
     // get size of smallest dimension
-    int max_index=_arr->get_size(0);
-    for (int i=1; i<_dimensions; i++){
-        max_index=std::min(max_index,_arr->get_size(i));
+    int max_index=arr->get_size(0);
+    for (int i=1; i<dimensions; i++){
+        max_index=std::min(max_index,arr->get_size(i));
     }
-    std::vector<int> index(_dimensions);
+    std::vector<int> index(dimensions);
     // add 'ones' of identity matrix
     for (int i=0;i<max_index;i++){
-        for (int d=0;d<_dimensions;d++){
+        for (int d=0;d<dimensions;d++){
             index[d]=i;
         }
-        _arr->set(index,1);
+        arr->set(index,1);
     }
 }
 
 // fill with values from a random normal distribution
 template<typename T>
 void Fill<T>::random_gaussian(const T mu, const T sigma){
-    for (int i=0; i<_elements; i++){
-        _arr->_data[i] = Random<T>::gaussian(mu,sigma);
+    for (int i=0; i<elements; i++){
+        arr->data[i] = Random<T>::gaussian(mu,sigma);
     }           
 }
 
 // fill with values from a random uniform distribution
 template<typename T>
 void Fill<T>::random_uniform(const T min, const T max){
-    for (int i=0; i<_elements;i++){
-        _arr->_data[i] = Random<T>::uniform(min,max);
+    for (int i=0; i<elements;i++){
+        arr->data[i] = Random<T>::uniform(min,max);
     }
 }
-// fills the _array with a continuous
+// fills the array with a continuous
 // range of numbers (with specified start parameter
 // referring to the zero position and a step parameter)
 // in all dimensions
 template<typename T>
 void Fill<T>::range(const T start, const T step){
-    if (_dimensions==1){
-        for (int i=0;i<_elements;i++){
-            _arr->_data[i]=start+i*step;
+    if (dimensions==1){
+        for (int i=0;i<elements;i++){
+            arr->data[i]=start+i*step;
         }
     }
     else {
-        std::vector<int> index(_dimensions);
+        std::vector<int> index(dimensions);
         std::fill(index.begin(),index.end(),0);
-        for (int d=0;d<_dimensions;d++){
-            for (int i=0;i<_arr->get_size(d);i++){
+        for (int d=0;d<dimensions;d++){
+            for (int i=0;i<arr->get_size(d);i++){
                 index[d]=i;
-                _arr->set(index,start+i*step);
+                arr->set(index,start+i*step);
             }
         }
     }
@@ -110,8 +110,8 @@ void Fill<T>::range(const T start, const T step){
 // and retains the rest
 template<typename T>
 void Fill<T>::dropout(double ratio){
-    for (int i=0;i<_elements;i++){
-        _arr->_data[i] *= Random<double>::uniform() > ratio;
+    for (int i=0;i<elements;i++){
+        arr->data[i] *= Random<double>::uniform() > ratio;
     }
 }
 
@@ -119,7 +119,7 @@ void Fill<T>::dropout(double ratio){
 // and the rest to 1 (default: 0.5, i.e. 50%)
 template<typename T>
 void Fill<T>::binary(double ratio){
-    for (int i=0;i<_elements;i++){
-        _arr->_data[i] = Random<double>::uniform() > ratio;
+    for (int i=0;i<elements;i++){
+        arr->data[i] = Random<double>::uniform() > ratio;
     }
 }

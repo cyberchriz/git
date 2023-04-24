@@ -29,8 +29,8 @@ class Pooling {
         friend class Vector<T>;
     public:
         // constructor
-        Pooling() : _arr(nullptr){}
-        Pooling(Array<T>* arr) : _arr(arr){}
+        Pooling() : arr(nullptr){}
+        Pooling(Array<T>* arr) : arr(arr){}
     private:           
-        Array<T>* _arr;
+        Array<T>* arr;
 };

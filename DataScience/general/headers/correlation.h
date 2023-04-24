@@ -49,38 +49,38 @@ class Correlation{
     public:
         CorrelationResults<T> get(const Vector<T>& y_data) const;
         // constructor
-        Correlation() : _x_data(nullptr){};
-        Correlation(Vector<T>& x_data) : _x_data(x_data){};
+        Correlation() : x_data(nullptr){};
+        Correlation(Vector<T>& x_data) : x_data(x_data){};
     private:
-        Vector<T> _x_data;
+        Vector<T> x_data;
 };
 
 
 template<typename T>
 CorrelationResults<T> Correlation<T>::get(const Vector<T>& y_data) const {
-    if (_x_data._elements != y_data._elements) {
+    if (x_data._elements != y_data._elements) {
         std::cout << "WARNING: Invalid use of method Vector<T>::correlation(); both vectors should have the same number of elements" << std::endl;
     }
-    int elements=std::min(_x_data._elements, y_data._elements);    
+    int elements=std::min(x_data._elements, y_data._elements);    
     std::unique_ptr<typename Array<T>::Correlation> result = std::make_unique<typename Array<T>::Correlation>(elements);
 
     // get empirical vector autocorrelation (Pearson coefficient R), assumimg linear dependence
-    result->x_mean=_x_data.mean();
+    result->x_mean=x_data.mean();
     result->y_mean=y_data.mean();
     result->covariance=0;
     for (int i=0;i<elements;i++){
-        result->covariance+=(_x_data._data[i] - result->x_mean) * (y_data._data[i] - result->y_mean);
+        result->covariance+=(x_data._data[i] - result->x_mean) * (y_data._data[i] - result->y_mean);
     }
-    result->x_stddev=_x_data.stddev();
+    result->x_stddev=x_data.stddev();
     result->y_stddev=y_data.stddev();
     result->Pearson_R = result->covariance / (result->x_stddev * result->y_stddev);   
 
     // get r_squared (coefficient of determination) assuming linear dependence
     double x_mdev2_sum=0,y_mdev2_sum=0,slope_numerator=0;
     for (int i=0;i<elements;i++){
-        x_mdev2_sum += std::pow(_x_data._data[i] - result->x_mean, 2); //=slope denominator
+        x_mdev2_sum += std::pow(x_data._data[i] - result->x_mean, 2); //=slope denominator
         y_mdev2_sum += std::pow(y_data._data[i] - result->y_mean, 2); //=SST
-        slope_numerator += (_x_data._data[i] - result->x_mean) * (y_data._data[i] - result->y_mean);
+        slope_numerator += (x_data._data[i] - result->x_mean) * (y_data._data[i] - result->y_mean);
     }
     result->SST = y_mdev2_sum;
     result->slope = slope_numerator / x_mdev2_sum;
@@ -88,7 +88,7 @@ CorrelationResults<T> Correlation<T>::get(const Vector<T>& y_data) const {
 
     // get regression line values
     for (int i=0; i<elements; i++){
-        result->y_predict[i] = result->y_intercept + result->slope * _x_data._data[i];
+        result->y_predict[i] = result->y_intercept + result->slope * x_data._data[i];
         // get sum of squared (y-^y) //=SSE   
         result->SSE += std::pow(result->y_predict[i] - result->y_mean, 2);
         result->SSR += std::pow(y_data._data[i] - result->y_predict[i], 2);
@@ -96,7 +96,7 @@ CorrelationResults<T> Correlation<T>::get(const Vector<T>& y_data) const {
     result->r_squared = result->SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
 
     // Spearman correlation, assuming non-linear monotonic dependence
-    auto rank_x = _x_data.ranking();
+    auto rank_x = x_data.ranking();
     auto rank_y = y_data.ranking();
     double numerator=0;
     for (int i=0;i<elements;i++){

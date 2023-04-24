@@ -155,22 +155,20 @@ class Array{
     protected:
 
         // protected member variables
-        bool equal_size(const Array<T>& other) const;
-        int _elements=0; // total number of _elements in all _dimensions
-        int _dimensions=0;
-        std::vector<int> _size; // holds the size (number of _elements) per individual dimension 
-        std::vector<int> _subspace_size;
+        bool equalsize(const Array<T>& other) const;
+        int data_elements=0; // total number of data_elements in all _dimensions
+        int dimensions=0;
+        std::vector<int> dim_size; // holds the size (number of data_elements) per individual dimension 
+        std::vector<int> subspace_size;
         
         // protected methods
         int get_element(const std::initializer_list<int>& index) const;
         int get_element(const std::vector<int>& index) const;
-        void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);
-        std::initializer_list<int> array_to_initlist(int* arr, int size) const;
-        void init();           
+        void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);         
 
     public:
         // main data buffer
-        std::unique_ptr<T[]> _data = nullptr; // 1dimensional array of source _data
+        std::unique_ptr<T[]> data = nullptr; // 1dimensional array of source data
 
         // outsourced classes
         Fill<T> fill;
@@ -232,7 +230,7 @@ class Vector : public Array<T>{
         T erase(const int index);
         int grow(const int additional_elements,T value=0);
         int shrink(const int remove_amount);       
-        void resize(const int new_size);        
+        void resize(const int newsize);        
         int get_capacity() const;
         int size() const;
         Vector<T> flatten()=delete;
@@ -273,7 +271,7 @@ class Vector : public Array<T>{
         Vector(Vector&& other) noexcept; //=move constructor
     private:
         const float _reserve = 0.5;
-        int _capacity;
+        int capacity;
 };
 
 
