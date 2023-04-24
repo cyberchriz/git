@@ -19,29 +19,29 @@ struct CorrelationResults{
     double ANOVA_F, ANOVA_p=0;
     double z_score, t_score;          
     std::vector<T> y_predict;
-    void print(){
-        std::cout
-        << "Correlation Results (this vs. other):"
-        << "\n   - x_mean = " << x_mean
-        << "\n   - y_mean = " << y_mean
-        << "\n   - x_stddev = " << x_stddev
-        << "\n   - y_stddev = " << y_stddev
-        << "\n   - y_intercept = " << y_intercept
-        << "\n   - slope = " << slope
-        << "\n   - covariance = " << covariance
-        << "\n   - Pearson_R = " << Pearson_R
-        << "\n   - Spearman_Rho = " << Spearman_Rho
-        << "\n   - r_squared = " << r_squared
-        << "\n   - RSS = " << RSS
-        << "\n   - SST = " << SST
-        << "\n   - SSE = " << SSE
-        << "\n   - SSR = " << SSR
-        << "\n   - MSE = " << MSE
-        << "\n   - ANOVA_F = " << ANOVA_F
-        << "\n   - ANOVA_p = " << ANOVA_p
-        << "\n   - z_score = " << z_score
-        << "\n   - t_score = " << t_score << std::endl;
-    }
+void print(){
+    std::cout // print to console
+    << "Correlation Results (this vs. other):"
+    << "\n   - mean value of x = " << x_mean
+    << "\n   - mean value of y = " << y_mean
+    << "\n   - standard deviation of x = " << x_stddev
+    << "\n   - standard deviation of y = " << y_stddev
+    << "\n   - regression line y_intercept = " << y_intercept
+    << "\n   - regression line slope = " << slope
+    << "\n   - covariance between x&y = " << covariance
+    << "\n   - Pearson correlation coefficient R = " << Pearson_R
+    << "\n   - Spearman correlation coefficient Rho = " << Spearman_Rho
+    << "\n   - coefficient of determination (r_squared) = " << r_squared
+    << "\n   - residual sum of squares (RSS) = " << RSS
+    << "\n   - total sum of squares (SST) = " << SST
+    << "\n   - explained sum of squares (SSE) = " << SSE
+    << "\n   - regression sum of squares (SSR) = " << SSR
+    << "\n   - mean squared error (MSE) = " << MSE
+    << "\n   - ANOVA F-statistic = " << ANOVA_F
+    << "\n   - ANOVA p-value = " << ANOVA_p
+    << "\n   - z-score (hypothesis testing) = " << z_score
+    << "\n   - t-score (hypothesis testing) = " << t_score << std::endl;
+}
     // constructor
     CorrelationResults(int elements){
         y_predict.resize(elements);
