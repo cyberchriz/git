@@ -25,6 +25,8 @@ class PdfObject{
         static T laplace(T x_val, T mu=0, T sigma=1);
         static T pareto(T x_val, T alpha=1, T tail_index=1);
         static T lomax(T x_val, T alpha=1, T tail_index=1);
+        static T F_distribution(T x_val, T d1, T d2);
+        static T poisson(T k, T lambda);
         // constructor
         PdfObject(){};
         // destructor

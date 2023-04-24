@@ -49,3 +49,58 @@ template<typename T>
 T PdfObject<T>::lomax(T x_val,T alpha,T tail_index) {
     return (alpha/tail_index)*pow(1+std::fmax(x_val,0)/tail_index,-(alpha+1));
 }
+
+template<typename T>
+T PdfObject<T>::F_distribution(T x_val, T d1, T d2) {
+    if (x_val < 0) {
+        return 0;
+    }
+    T numerator = pow(d1*x_val, d1/2) * pow(d2, d2/2);
+    T denominator = pow((d1*x_val + d2), (d1+d2)/2) * gamma(d1/2) * gamma(d2/2);
+    return numerator/denominator;
+}
+
+template<typename T>
+T PdfObject<T>::poisson(T k, T lambda) {
+    return pow(lambda,k)*exp(-lambda)/tgamma(k+1);
+}
+
+
+
+template<typename T>
+T gamma_helper(T x) {
+    // Constants
+    static const T P[] = { -1.716185138865495, 24.76565080557592,
+        -379.80425647094563, 629.3311553128184, 866.9662027904133,
+        -31451.272968848367, -36144.413418691172, 66456.14382024054 };
+    static const int N = sizeof(P) / sizeof(T);
+    static const T SQRT_TWO_PI = sqrt(2 * M_PI);
+
+    T d = 0.0;
+    T s = P[N - 1];
+    int i;
+    for (i = N - 2; i >= 0; i--) {
+        d = 1.0 / (x + i + 1 - 0.5 * (N - 1)) + d;
+        s += P[i] * d;
+    }
+
+    T res = sqrt(2 * M_PI) * pow(x + N - 1.5, x + 0.5) * exp(-x - N + 1.5) * s;
+    return res;
+}
+
+// gamma function based on the Lanczos approximation
+template<typename T>
+T gamma(T x) {
+    if (x < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+    if (x == 0) {
+        return std::numeric_limits<T>::infinity();
+    }
+    if (x < 0.5) {
+        return M_PI / (sin(M_PI * x) * gamma_helper(1 - x));
+    }
+    else {
+        return gamma_helper(x - 1);
+    }
+}

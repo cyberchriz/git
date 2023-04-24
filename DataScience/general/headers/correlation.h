@@ -6,6 +6,7 @@ template<typename T> class Array;
 template<typename T> class Vector;
 
 // return struct for correlation results
+// (Pearson, Spearman, ANOVA, covariance)
 template<typename T>
 struct CorrelationResults{ 
     double x_mean, y_mean;  
@@ -14,7 +15,8 @@ struct CorrelationResults{
     double covariance;
     double Pearson_R, Spearman_Rho;   
     double r_squared;    
-    double RSS, SST, SSE, SSR = 0; 
+    double RSS, SST, SSE, SSR, MSE = 0; 
+    double ANOVA_F, ANOVA_p=0;
     double z_score, t_score;          
     std::vector<T> y_predict;
     void print(){
@@ -34,6 +36,9 @@ struct CorrelationResults{
         << "\n   - SST = " << SST
         << "\n   - SSE = " << SSE
         << "\n   - SSR = " << SSR
+        << "\n   - MSE = " << MSE
+        << "\n   - ANOVA_F = " << ANOVA_F
+        << "\n   - ANOVA_p = " << ANOVA_p
         << "\n   - z_score = " << z_score
         << "\n   - t_score = " << t_score << std::endl;
     }
@@ -94,6 +99,14 @@ CorrelationResults<T> Correlation<T>::get(const Vector<T>& y_data) const {
         result->SSR += std::pow(y_data._data[i] - result->y_predict[i], 2);
     };
     result->r_squared = result->SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
+    
+    // ANOVA
+    double df_error = elements - 2;
+    result->MSE = result->SSE / df_error;
+    double df_regression = 1;
+    result->MSR = result->SSR / df_regression;
+    result->ANOVA_F = MSR / MSE;
+    result->ANOVA_p = 1 - cdf::F_distribution(F, df_regression, df_error);
 
     // Spearman correlation, assuming non-linear monotonic dependence
     auto rank_x = x_data.ranking();
