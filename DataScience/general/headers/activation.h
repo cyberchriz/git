@@ -1,0 +1,125 @@
+// +=================================+   
+// | Activation Functions            |
+// +=================================+
+#pragma once
+
+// forward declaration
+template<typename T> class Array;
+
+// class declaration
+template<typename T>
+class Activation {
+    private:
+        Array<T>* _arr;
+        static constexpr double alpha = 0.01; // slope constant for lReLU and lELU
+        struct Function {
+            public:
+                void ReLU(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] *= _arr->_data[i]>0;
+                    }  
+                }
+                void lReLU(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = _arr->_data[i]>0 ? _arr->_data[i] : _arr->_data[i]*alpha;
+                    }
+                }
+                void ELU(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = _arr->_data[i]>0 ? _arr->_data[i] : alpha*(std::exp(_arr->_data[i])-1); 
+                    } 
+                }
+                void sigmoid(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = 1/(1+std::exp(-_arr->_data[i])); 
+                    } 
+                }
+                void tanh(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = std::tanh(_arr->_data[i]);
+                    } 
+                }
+                void softmax(){
+
+                }     
+                void ident(){
+                    // do nothing
+                    return;
+                }   
+            };
+        struct Derivative {
+            public:
+                void ReLU(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = _arr->_data[i]>0 ? 1 : 0;
+                    }  
+                }
+                void lReLU(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = _arr->_data[i]>0 ? 1 : alpha;
+                    }
+                }
+                void ELU(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = _arr->_data[i]>0 ? 1 : alpha*std::exp(_arr->_data[i]);
+                    }
+                }
+                void sigmoid(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = std::exp(_arr->_data[i])/std::pow(std::exp(_arr->_data[i])+1,2); 
+                    }
+                }
+                void tanh(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = 1-std::pow(std::tanh(_arr->_data[i]),2);
+                    }
+                }
+                void softmax(){
+                    // TO DO !!
+                }
+                void ident(){
+                    for (int i=0;i<_arr->get_elements();i++){
+                        _arr->_data[i] = 1;
+                    } 
+                }
+            };
+    public:
+        enum Method {
+            ReLU,       // rectified linear unit (ReLU)
+            lReLU,      // leaky rectified linear unit (LReLU)
+            ELU,        // exponential linar unit (ELU)
+            sigmoid,    // sigmoid (=logistic)
+            tanh,       // hyperbolic tangent (tanh)
+            softmax,    // softmax (=normalized exponential)
+            ident       // identity function
+        };
+        void function(Method method){
+            switch (method){
+                case ReLU: Function::ReLU(); break;
+                case lReLU: Function::lReLU(); break;
+                case ELU: Function::ELU(); break;
+                case sigmoid: Function::sigmoid(); break;   
+                case tanh: Function::tanh(); break;
+                case softmax: Function::softmax(); break;
+                case ident: Function::ident(); break;
+                default: /* do nothing */ break;
+            }
+        }
+        void derivative(Method method){
+            switch (method){
+                case ReLU: Derivative::ReLU(); break;
+                case lReLU: Derivative::lReLU(); break;
+                case ELU: Derivative::ELU(); break;
+                case sigmoid: Derivative::sigmoid(); break;   
+                case tanh: Derivative::tanh(); break;
+                case softmax: Derivative::softmax(); break;
+                case ident: Derivative::ident(); break;
+                default: /* do nothing */ break;
+            }
+        }
+        Function _function;
+        Derivative _derivative;
+        // constructor
+        Activation() : _arr(nullptr){} 
+        Activation(Array<T>* arr) : _arr(arr){}         
+};
