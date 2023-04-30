@@ -1,5 +1,5 @@
 #pragma once
-#include "array.h"
+#include "datastructures.h"
 
 // forward declaration
 template<typename T> class Array;
@@ -21,26 +21,30 @@ struct CorrelationResults{
     std::vector<T> y_predict;
 void print(){
     std::cout // print to console
-    << "Correlation Results (this vs. other):"
+    << "=========================================================================="
+    << "\nCorrelation Results (this=x vs. other=y):"
     << "\n   - mean value of x = " << x_mean
     << "\n   - mean value of y = " << y_mean
     << "\n   - standard deviation of x = " << x_stddev
     << "\n   - standard deviation of y = " << y_stddev
-    << "\n   - regression line y_intercept = " << y_intercept
+    << "\n   - regression line y-intercept = " << y_intercept
     << "\n   - regression line slope = " << slope
-    << "\n   - covariance between x&y = " << covariance
+    << "\n   - covariance between x & y = " << covariance
     << "\n   - Pearson correlation coefficient R = " << Pearson_R
     << "\n   - Spearman correlation coefficient Rho = " << Spearman_Rho
-    << "\n   - coefficient of determination (r_squared) = " << r_squared
+    << "\n   - coefficient of determination (r-squared) = " << r_squared
     << "\n   - residual sum of squares (RSS) = " << RSS
     << "\n   - total sum of squares (SST) = " << SST
     << "\n   - explained sum of squares (SSE) = " << SSE
     << "\n   - regression sum of squares (SSR) = " << SSR
     << "\n   - mean squared error (MSE) = " << MSE
+    << "\nANOVA:"
     << "\n   - ANOVA F-statistic = " << ANOVA_F
     << "\n   - ANOVA p-value = " << ANOVA_p
-    << "\n   - z-score (hypothesis testing) = " << z_score
-    << "\n   - t-score (hypothesis testing) = " << t_score << std::endl;
+    << "\nHypothesis Testing:"
+    << "\n   - z-score = " << z_score
+    << "\n   - t-score = " << t_score
+    << "\n==========================================================================" << std::endl;
 }
     // constructor
     CorrelationResults(int elements){

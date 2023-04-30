@@ -1,5 +1,5 @@
 #pragma once
-#include "array.h"
+#include "datastructures.h"
 
 // forward declaration
 template<typename T> class Vector;

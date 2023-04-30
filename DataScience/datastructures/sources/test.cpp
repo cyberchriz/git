@@ -1,4 +1,4 @@
-#include "../headers/array.h"
+#include "../headers/datastructures.h"
 #include <iostream>
 #include <vector>
 
@@ -90,6 +90,6 @@ int main(){
     Vector5 = Vector3 - Vector4;
     Vector5.print("\nElementwise substraction of Vectors 1-2:");
 
-    Vector5 = Vector3.Hadamard(Vector4);
+    Vector5 = Vector3.Hadamard_product(Vector4);
     Vector5.print("\nElementwise multiplication of Vectors 1*2 ('Hadamard product'):");
 }

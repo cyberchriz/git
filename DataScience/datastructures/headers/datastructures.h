@@ -23,6 +23,7 @@
 template<typename T> class Array;
 template<typename T> class Matrix;
 template<typename T> class Vector;
+enum LossFunction;
 
 // list of time series differencing methods for stationarity transformation
 enum DIFFERENCING{
@@ -68,7 +69,6 @@ class Array{
         void operator+=(const Array<T>& other);
 
         // substraction
-        void substract(const T value);
         Array<T> operator-(const T value) const;
         Array<T> operator-(const Array<T>& other) const;
         Array<T> operator--(int) const; //=postfix decrement
@@ -83,34 +83,60 @@ class Array{
         virtual T dotproduct(const Array<T>& other) const; //=scalar product
         virtual T operator*(const Array<T>& other) const; //=alias for the dotproduct (=scalar product)
         void operator*=(const T factor);
-        Array<T> Hadamard(const Array<T>& other) const;
+        Array<T> Hadamard_product(const Array<T>& other) const;
         
         // division
         Array<T> operator/(const T quotient) const;
         void operator/=(const T quotient);
+        Array<T> Hadamard_division(const Array<T>& other) const;
+
 
         // modulo
         void operator%=(const double num);
         Array<double> operator%(const double num) const;
 
         // exponentiation & logarithm
-        void pow(const T exponent);
-        void pow(const Array<T>& other);
-        void sqrt();
-        void log();
-        void log10();
+        Array<T> pow(const T exponent);
+        Array<T> pow(const Array<T>& other);
+        Array<T> sqrt();
+        Array<T> log();
+        Array<T> log10();
 
-        // rounding
-        void round();
-        void floor();
-        void ceil();
+        // rounding (elementwise)
+        Array<T> round();
+        Array<T> floor();
+        Array<T> ceil();
+        Array<T> abs();
+
+        // min, max (elementwise comparison)
+        Array<T> min(const T value);
+        Array<T> max(const T value);
+        Array<T> min(const Array<T>& other);
+        Array<T> max(const Array<T>& other);
+
+        // trigonometric functions (elementwise)
+        Array<T> cos();
+        Array<T> sin();
+        Array<T> tan();
+        Array<T> acos();
+        Array<T> asin();
+        Array<T> atan();  
+
+        // hyperbolic functions (elementwise)
+        Array<T> cosh();
+        Array<T> sinh();
+        Array<T> tanh();
+        Array<T> acosh();
+        Array<T> asinh();
+        Array<T> atanh();                
 
         // find, replace
-        void replace(const T old_value, const T new_value);
+        Array<T> replace(const T old_value, const T new_value);
         int find(const T value) const;
+        Array<char> sign();
 
         // custom functions
-        void function(const T (*pointer_to_function)(T));
+        Array<T> function(const T (*pointer_to_function)(T));
 
         // assignment
         virtual Array<T>& operator=(const Array<T>& other);
@@ -148,6 +174,7 @@ class Array{
         Array<T> asArray(const std::initializer_list<int>& initlist, T init_value=0) const;
         virtual void reshape(std::vector<int> shape);
         virtual void reshape(std::initializer_list<int> shape);
+        virtual Array<T> concatenate(const Array<T>& other, const int axis=0);
 
         // output
         void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false) const;
@@ -164,6 +191,7 @@ class Array{
         // protected methods
         int get_element(const std::initializer_list<int>& index) const;
         int get_element(const std::vector<int>& index) const;
+        std::vector<int> get_index(int flattened_index) const;
         void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);         
 
     public:
@@ -205,6 +233,7 @@ class Matrix : public Array<T>{
         // conversion
         Matrix<T> asMatrix(const int rows, const int cols, T init_value=0) const override;
         void reshape(const int rows, const int cols);
+        Matrix<T> concatenate(const Matrix<T>& other, const int axis=0);
 
 
         // constructor declarations
@@ -226,9 +255,10 @@ class Vector : public Array<T>{
 
         // dynamic handling
         int push_back(T value);
-        T pop();
+        T pop_last();
+        T pop_first();
         T erase(const int index);
-        int grow(const int additional_elements,T value=0);
+        int grow(const int additional_elements);
         int shrink(const int remove_amount);       
         void resize(const int newsize);        
         int get_capacity() const;
@@ -254,11 +284,16 @@ class Vector : public Array<T>{
         // assignment
         Vector<T>& operator=(const Vector<T>& other);
 
+        // indexing
+        T& operator[](const int index) const;
+        T& operator[](const int index);
+
         // conversion
         Matrix<T> asMatrix(const int rows, const int cols, T init_value=0)  const override;
         Matrix<T> asMatrix() const override;
         Matrix<T> transpose() const;
         Vector<T> reverse() const;
+        Vector<T> concatenate(const Vector<T>& other);
 
         // outsourced classes
         Regression<T> regression;
@@ -279,4 +314,4 @@ class Vector : public Array<T>{
 // the corresponding file with the definitions must be included
 // because this is the template class
 // (in order to avoid 'undefined reference' compiler errors)
-#include "../sources/array.cpp"
+#include "../sources/datastructures.cpp"

@@ -1,5 +1,5 @@
 #pragma once
-#include "array.h"
+#include "datastructures.h"
 
 // forward declaration
 template<typename T> class Array;
@@ -17,6 +17,11 @@ class Fill {
         void range(const T start=0, const T step=1);
         void dropout(double ratio=0.2);
         void binary(double ratio=0.5);
+        void Xavier_normal(int fan_in, int fan_out);
+        void Xavier_uniform(int fan_in, int fan_out);
+        void Xavier_sigmoid(int fan_in, int fan_out);
+        void He_ReLU(int fan_in);
+        void He_ELU(int fan_in);
         // constructor
         Fill() : arr(nullptr), elements(0), dimensions(0) {}
         Fill(Array<T>* arr) : arr(arr){
@@ -121,5 +126,55 @@ template<typename T>
 void Fill<T>::binary(double ratio){
     for (int i=0;i<elements;i++){
         arr->data[i] = Random<double>::uniform() > ratio;
+    }
+}
+
+// fill with normal "Xavier" weight initialization
+// (by Xavier Glorot & Bengio) for tanh activation
+template<typename T>
+void Fill<T>::Xavier_normal(int fan_in, int fan_out){
+    for (int i=0;i<elements;i++){
+        arr->data[i] = Random<double>::gaussian(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
+        arr->data[i] *= sqrt(6/sqrt(double(fan_in+fan_out)));
+    }
+}
+
+// fill with uniform "Xavier" weight initializiation
+// (by Xavier Glorot & Bengio) for tanh activation
+template<typename T>
+void Fill<T>::Xavier_uniform(int fan_in, int fan_out){
+    for (int i=0;i<elements;i++){
+        arr->data[i] = Random<double>::uniform(0.0,1.0);
+        arr->data[i] *= sqrt(2/sqrt(double(fan_in+fan_out)));
+    }
+}
+
+// fill with uniform "Xavier" weight initialization
+// for sigmoid activation
+template<typename T>
+void Fill<T>::Xavier_sigmoid(int fan_in, int fan_out){
+    for (int i=0;i<elements;i++){
+        arr->data[i] = Random<double>::uniform(0.0,1.0);
+        arr->data[i] *= 4*sqrt(6/(double(fan_in+fan_out)));
+    }
+}
+
+// fill with "Kaiming He" normal weight initialization,
+// used for ReLU activation
+template<typename T>
+void Fill<T>::He_ReLU(int fan_in){
+    for (int i=0;i<elements;i++){
+        arr->data[i] = Random<double>::gaussian(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
+        arr->data[i] *= sqrt(2/((double)(fan_in)));
+    }
+}
+
+// fill with modified "Kaiming He" nornal weight initialization,
+// used for ELU activation
+template<typename T>
+void Fill<T>::He_ELU(int fan_in){
+    for (int i=0;i<elements;i++){
+        arr->data[i] = Random<double>::gaussian(0.0,1.0);
+        arr->data[i] *= sqrt(1.55/(double(fan_in)));
     }
 }
