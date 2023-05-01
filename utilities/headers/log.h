@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
 
 enum LogLevel {
@@ -11,54 +13,65 @@ enum LogLevel {
 
 class Log {
 public:
-    static void error(const std::string& message) {
+    void error(const std::string& message) {
         log(LOG_LEVEL_ERROR, message);
     }
 
-    static void warning(const std::string& message) {
+    void warning(const std::string& message) {
         log(LOG_LEVEL_WARNING, message);
     }
 
-    static void info(const std::string& message) {
+    void info(const std::string& message) {
         log(LOG_LEVEL_INFO, message);
     }
 
-    static void debug(const std::string& message) {
+    void debug(const std::string& message) {
         log(LOG_LEVEL_DEBUG, message);
     }
 
-    static void set_level(LogLevel level) {
+    void set_level(LogLevel level) {
         logLevel_ = level;
     }
 
-private:
-    static void log(int level, const std::string& message) {
-        if (level >LogLevel::LOG_LEVEL_NONE &&
+    void set_filepath(const std::string& filepath) {
+        logFilepath_ = filepath + "log.txt";
+    }
+
+    void enable_to_console(bool active=true){
+        logToConsole_ = active;
+    }
+
+    void enable_to_file(bool active=true){
+        logToFile_ = active;
+    }    
+
+    template <typename... Args>
+    void log(int level, Args&&... args) {
+        if (level > LogLevel::LOG_LEVEL_NONE &&
             level <= logLevel_) {
-            static const char* const levelStrings[] = {
+            const char* const levelStrings[] = {
                 "ERROR", "WARNING", "INFO", "DEBUG"
             };
-            std::cout << "[" << levelStrings[level] << "]: " << message << std::endl;
+            std::stringstream stream;
+            (stream << ... << std::forward<Args>(args));
+            std::string logMessage = "[" + std::string(levelStrings[level]) + "]: " + stream.str();
+
+            if (logToConsole_) {
+                std::cout << logMessage << std::endl;
+            }
+
+            if (logToFile_) {
+                std::ofstream fileStream(logFilepath_, std::ios_base::app);
+                if (fileStream.good()) {
+                    fileStream << logMessage << std::endl;
+                }
+            }
         }
     }
 
-    static LogLevel logLevel_;
+private:
+    LogLevel logLevel_ = LOG_LEVEL_NONE;
+    bool logToConsole_ = true;
+    bool logToFile_ = false;
+    std::string logFilepath_ = "log.txt";
 };
-
-/* usage example
-int main() {
-    Log::set_level(LOG_LEVEL_DEBUG);
-    Log::error("An error occurred.");
-    Log::warning("This is a warning message.");
-    Log::info("This is an informational message.");
-    Log::debug("Debugging information here.");
-
-    Log::set_level(LOG_LEVEL_WARNING);
-    Log::error("This should still be logged.");
-    Log::warning("This should be logged.");
-    Log::info("This should not be logged.");
-    Log::debug("This should not be logged.");
-
-    return 0;
-}
-*/
