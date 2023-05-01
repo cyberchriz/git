@@ -1,5 +1,6 @@
 #pragma once
 #include "datastructures.h"
+#include "../../distributions/headers/cumulative_distribution_functions.h"
 
 // forward declaration
 template<typename T> class Array;
@@ -15,7 +16,7 @@ struct CorrelationResults{
     double covariance;
     double Pearson_R, Spearman_Rho;   
     double r_squared;    
-    double RSS, SST, SSE, SSR, MSE = 0; 
+    double RSS, SST, SSE, SSR, MSE, MSR = 0; 
     double ANOVA_F, ANOVA_p=0;
     double z_score, t_score;          
     std::vector<T> y_predict;
@@ -109,8 +110,8 @@ CorrelationResults<T> Correlation<T>::get(const Vector<T>& y_data) const {
     result->MSE = result->SSE / df_error;
     double df_regression = 1;
     result->MSR = result->SSR / df_regression;
-    result->ANOVA_F = MSR / MSE;
-    result->ANOVA_p = 1 - cdf::F_distribution(F, df_regression, df_error);
+    result->ANOVA_F = result->MSR / result->MSE;
+    result->ANOVA_p = 1 - cdf<double>::F_distribution(result->ANOVA_F, df_regression, df_error);
 
     // Spearman correlation, assuming non-linear monotonic dependence
     auto rank_x = x_data.ranking();

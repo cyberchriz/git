@@ -18,10 +18,21 @@ void Array<T>::set(const std::vector<int>& index, const T value){
     this->data[get_element(index)] = value;
 }
 
-// assigns a value to an element of a one-dimensional vector
-// via its index (with index parameter as type const int)
+// assigns a value to an array element, with index parameter
+// as const Vector<int>&
 template<typename T>
-void Vector<T>::set(const int index, const T value){
+void Array<T>::set(const Vector<int>& index, const T value){
+    // copy Vector to std::vector
+    std::vector<int> temp(index.size());
+    for (int i=0;i<index.size();i++){
+        temp[i] = index[i];
+    }
+    this->data[get_element(temp)] = value;
+}
+
+// assigns a value via its flattened index
+template<typename T>
+void Array<T>::set(const int index, const T value){
     this->data[index] = value;
 };
 
@@ -47,11 +58,17 @@ T Array<T>::get(const std::vector<int>& index) const {
     return this->data[element];
 }
 
-// returns the value of a vector element via its index
-// (as a const int value)
+// returns the value of an array element via
+// its index (as type const Vector<int>&)
 template<typename T>
-T Vector<T>::get(const int index) const {
-    return this->data[std::fmin(index,this->data_elements-1)];
+T Array<T>::get(const Vector<int>& index) const {
+    // copy Vector to std::vector
+    std::vector<int> temp(index.size());
+    for (int i=0;i<index.size();i++){
+        temp[i] = index[i];
+    }    
+    int element=get_element(temp);
+    return this->data[element];
 }
 
 // returns the value of a 2d matrix element via its index
@@ -518,7 +535,7 @@ template<typename T>
 Array<T> Array<T>::operator*(const T factor) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0; i<this->data_elements; i++){
-        result->data[i]=this->data[i]*factor;
+        result->data[i] = this->data[i] * factor;
     }
     return std::move(*result);
 }
@@ -785,7 +802,7 @@ Array<T> Array<T>::pow(const Array<T>& other){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         result->fill.values(T(NAN));
-        return;
+        return std::move(*result);
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -880,7 +897,7 @@ Array<T> Array<T>::abs(){
 // | Min, Max                        |
 // +=================================+
 template<typename T>
-Array<T> min(const T value){
+Array<T> Array<T>::min(const T value){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
         result->data[i]=std::fmin(this->data[i], value);
@@ -889,7 +906,7 @@ Array<T> min(const T value){
 }
 
 template<typename T>
-Array<T> max(const T value){
+Array<T> Array<T>::max(const T value){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
         result->data[i]=std::fmax(this->data[i], value);
@@ -898,7 +915,7 @@ Array<T> max(const T value){
 }
 
 template<typename T>
-Array<T> min(const Array<T>& other){
+Array<T> Array<T>::min(const Array<T>& other){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         result->fill.values(T(NAN));
@@ -911,7 +928,7 @@ Array<T> min(const Array<T>& other){
 }
 
 template<typename T>
-Array<T> max(const Array<T>& other){
+Array<T> Array<T>::max(const Array<T>& other){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         result->fill.values(T(NAN));
@@ -932,7 +949,7 @@ template<typename T>
 Array<T> Array<T>::cos(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::cos(this->data[i], value);
+        result->data[i]=std::cos(this->data[i]);
     }
     return std::move(*result);
 }
@@ -942,7 +959,7 @@ template<typename T>
 Array<T> Array<T>::sin(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::sin(this->data[i], value);
+        result->data[i]=std::sin(this->data[i]);
     }
     return std::move(*result);
 }
@@ -952,7 +969,7 @@ template<typename T>
 Array<T> Array<T>::tan(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::tan(this->data[i], value);
+        result->data[i]=std::tan(this->data[i]);
     }
     return std::move(*result);
 }
@@ -962,7 +979,7 @@ template<typename T>
 Array<T> Array<T>::acos(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::acos(this->data[i], value);
+        result->data[i]=std::acos(this->data[i]);
     }
     return std::move(*result);
 }
@@ -972,7 +989,7 @@ template<typename T>
 Array<T> Array<T>::asin(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::asin(this->data[i], value);
+        result->data[i]=std::asin(this->data[i]);
     }
     return std::move(*result);
 }
@@ -982,7 +999,7 @@ template<typename T>
 Array<T> Array<T>::atan(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::atan(this->data[i], value);
+        result->data[i]=std::atan(this->data[i]);
     }
     return std::move(*result);
 }
@@ -996,7 +1013,7 @@ template<typename T>
 Array<T> Array<T>::cosh(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::cosh(this->data[i], value);
+        result->data[i]=std::cosh(this->data[i]);
     }
     return std::move(*result);
 }
@@ -1006,7 +1023,7 @@ template<typename T>
 Array<T> Array<T>::sinh(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::sinh(this->data[i], value);
+        result->data[i]=std::sinh(this->data[i]);
     }
     return std::move(*result);
 }
@@ -1016,7 +1033,7 @@ template<typename T>
 Array<T> Array<T>::tanh(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::tanh(this->data[i], value);
+        result->data[i]=std::tanh(this->data[i]);
     }
     return std::move(*result);
 }
@@ -1026,7 +1043,7 @@ template<typename T>
 Array<T> Array<T>::acosh(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::acosh(this->data[i], value);
+        result->data[i]=std::acosh(this->data[i]);
     }
     return std::move(*result);
 }
@@ -1036,7 +1053,7 @@ template<typename T>
 Array<T> Array<T>::asinh(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::asinh(this->data[i], value);
+        result->data[i]=std::asinh(this->data[i]);
     }
     return std::move(*result);
 }
@@ -1046,7 +1063,7 @@ template<typename T>
 Array<T> Array<T>::atanh(){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
-        result->data[i]=std::atanh(this->data[i], value);
+        result->data[i]=std::atanh(this->data[i]);
     }
     return std::move(*result);
 }
@@ -1121,6 +1138,7 @@ Array<T>& Array<T>::operator=(const Array<T>& other) {
             this->data = std::move(newdata);
             this->data_elements = other.get_elements();
             this->dim_size = other.dim_size;
+            this->subspace_size = other.subspace_size;
         }
         else {
             std::copy(other.data.get(), other.data.get() + other.get_elements(), this->data.get());
@@ -1495,13 +1513,36 @@ Array<bool> Array<T>::operator||(const Array<T>& other) const {
 template<typename T>
 template<typename C>
 Array<T>::operator Array<C>(){
-    Array<C> result = std::make_unique<Array<C>>(this->size);
+    Array<C> result = std::make_unique<Array<C>>(this->dim_size);
     for (int i=0; i<this->data_elements; i++){
         result->data[i]=C(this->data[i]);
     }
     return result;
 }
 
+// +=================================+   
+// | pointer                         |
+// +=================================+
+
+// dereference operator
+template<typename T>
+Array<T&> Array<T>::operator*() {
+    Array<T&> result(this->dim_size);
+    for (int i = 0; i < this->data_elements; i++) {
+        result.data[i] = *(this->data[i]);
+    }
+    return result;
+}
+
+// 'address-of' operator
+template<typename T>
+Array<T*> Array<T>::operator&() {
+    Array<T*> result(this->dim_size);
+    for (int i = 0; i < this->data_elements; i++) {
+        result.data[i] = &(this->data[i]);
+    }
+    return result;
+}
 // +=================================+   
 // | Class Conversion                |
 // +=================================+
@@ -1562,6 +1603,15 @@ Matrix<T> Matrix<T>::asMatrix(const int rows, const int cols, T init_value) cons
 template<typename T>
 void Matrix<T>::reshape(const int rows, const int cols){
     // TO DO !!
+}
+
+template<typename T>
+Vector<T> Vector<T>::asVector(const std::vector<T>& other){
+    std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(other.size());
+    for (int i=0;i<other.size();i++){
+        result.data[i] = other[i];
+    }
+    return std::move(*result);
 }
 
 // converts a vector into a 2d matrix of the specified size;
@@ -1844,6 +1894,17 @@ Array<T>::Array(Array&& other) noexcept {
     this->dim_size = std::move(other.dim_size);
     other.data.reset();
 }
+
+// Array copy constructor
+template<typename T>
+Array<T>::Array(const Array& other) {
+    dimensions = other.dimensions;
+    dim_size = other.dim_size;
+    subspace_size = other.subspace_size;
+    data_elements = other.data_elements;
+    data = std::make_unique<T>(data_elements);
+    std::copy(other.data, other.data + data_elements, data);
+}  
 
 // virtual destructor for parent class Array<T>
 template<typename T>

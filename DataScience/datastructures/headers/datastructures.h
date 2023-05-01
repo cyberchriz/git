@@ -23,7 +23,6 @@
 template<typename T> class Array;
 template<typename T> class Matrix;
 template<typename T> class Vector;
-enum LossFunction;
 
 // list of time series differencing methods for stationarity transformation
 enum DIFFERENCING{
@@ -41,12 +40,19 @@ class Array{
         // getters & setters
         void set(const std::initializer_list<int>& index, const T value);
         void set(const std::vector<int>& index, const T value);
+        void set(const Vector<int>& index, const T value);
+        void set(const int index, const T value);
         T get(const std::initializer_list<int>& index) const;
         T get(const std::vector<int>& index) const;
+        T get(const Vector<int>& index) const;
         int get_dimensions() const;
         int get_size(int dimension) const;
+        std::vector<int> get_shape() const {return dim_size};
         int get_elements() const;
-        int get_subspace(int dimension) const;        
+        int get_subspace(int dimension) const;    
+        int get_element(const std::initializer_list<int>& index) const;
+        int get_element(const std::vector<int>& index) const;
+        std::vector<int> get_index(int flattened_index) const;            
 
         // basic distribution properties
         T min() const;
@@ -166,6 +172,10 @@ class Array{
 
         // type casting
         template<typename C> operator Array<C>();
+
+        // pointers
+        Array<T&> operator*(); // dereference operator
+        Array<T*> operator&(); // 'address-of' operator
         
         // conversion
         Vector<T> flatten() const;
@@ -189,9 +199,6 @@ class Array{
         std::vector<int> subspace_size;
         
         // protected methods
-        int get_element(const std::initializer_list<int>& index) const;
-        int get_element(const std::vector<int>& index) const;
-        std::vector<int> get_index(int flattened_index) const;
         void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);         
 
     public:
@@ -209,7 +216,12 @@ class Array{
         Array(){};
         Array(const std::initializer_list<int>& shape);
         Array(const std::vector<int>& shape);
-        Array(Array&& other) noexcept; //=move constructor
+        
+        //=move constructor
+        Array(Array&& other) noexcept;
+
+        // copy constructor
+        Array(const Array& other);
         virtual ~Array();   
 };
 
@@ -247,12 +259,6 @@ class Matrix : public Array<T>{
 template<typename T>
 class Vector : public Array<T>{
     public:
-        // getters & setters
-        void set(const std::initializer_list<int>& index, const T value) = delete;
-        T get(const std::initializer_list<int>& index) = delete;
-        void set(const int index, const T value);
-        T get(const int index) const;
-
         // dynamic handling
         int push_back(T value);
         T pop_last();
@@ -289,6 +295,7 @@ class Vector : public Array<T>{
         T& operator[](const int index);
 
         // conversion
+        static Vector<T> asVector(const std::vector<T>& other);
         Matrix<T> asMatrix(const int rows, const int cols, T init_value=0)  const override;
         Matrix<T> asMatrix() const override;
         Matrix<T> transpose() const;
