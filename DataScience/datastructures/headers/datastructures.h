@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_map>
+#include <typeinfo>
 #include "../../distributions/headers/random_distributions.h"
 //#define MEMLOG
 #include "../../../utilities/headers/memlog.h"
@@ -52,18 +53,25 @@ class Array{
         int get_subspace(int dimension) const;    
         int get_element(const std::initializer_list<int>& index) const;
         int get_element(const std::vector<int>& index) const;
-        std::vector<int> get_index(int flattened_index) const;            
+        std::vector<int> get_index(int flattened_index) const;    
+        std::type_info const& get_type(){return typeid(T);}
 
         // basic distribution properties
         T min() const;
         T max() const;
+        T mode() const;
         double mean() const;
         double median() const;
-        T mode() const;
         double variance() const;
         double stddev() const;
+        Array<T> nested_min() const;
+        Array<T> nested_max() const;        
+        Array<double> nested_mean() const;
+        Array<double> nested_variance() const;
+        Array<double> nested_stddev() const;        
         double skewness() const;
         double kurtosis() const;
+
 
         // addition
         T sum() const;
@@ -146,6 +154,7 @@ class Array{
 
         // assignment
         virtual Array<T>& operator=(const Array<T>& other);
+        virtual Array<T>& operator=(Array<T>&& other) noexcept; // =move assignment
 
         // elementwise comparison by single value
         Array<bool> operator>(const T value) const;
@@ -241,6 +250,7 @@ class Matrix : public Array<T>{
 
         // assignment
         Matrix<T>& operator=(const Matrix<T>& other);
+        Matrix<T>& operator=(Matrix<T>&& other) noexcept; // =move assignment
 
         // conversion
         Matrix<T> asMatrix(const int rows, const int cols, T init_value=0) const override;
@@ -289,6 +299,7 @@ class Vector : public Array<T>{
 
         // assignment
         Vector<T>& operator=(const Vector<T>& other);
+        Vector<T>& operator=(Vector<T>&& other) noexcept; // =move assignment
 
         // indexing
         T& operator[](const int index) const;
@@ -307,7 +318,7 @@ class Vector : public Array<T>{
         Histogram<T> histogram;
 
         // constructor & destructor declarations
-        Vector(){};
+        Vector();
         Vector(const int elements);
         ~Vector() override;
         Vector(Vector&& other) noexcept; //=move constructor

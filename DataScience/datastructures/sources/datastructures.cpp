@@ -206,7 +206,7 @@ int Array<T>::get_subspace(int dimension) const {
 template<typename T>
 T Array<T>::min() const {
     if (this->data_elements==0){
-        std::cout << "WARNING: improper use of method Array<T>::min(): not defined for empty array!\n";
+        logger.log(LOG_LEVEL_WARNING, "improper use of method Array<T>::min(): not defined for empty array!");
         return T(NAN);
     }
     T result = this->data[0];
@@ -216,11 +216,29 @@ T Array<T>::min() const {
     return result;
 }
 
+// returns the elementwise lowest values of an array of arrays
+template<typename T>
+Array<T> Array<T>::nested_min() const {
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data[0].get_shape());
+    if (this->data_elements==0){
+        logger.log(LOG_LEVEL_WARNING, "improper use of method Array<T>::min(): not defined for empty array!");
+        result->fill.values(T(NAN));
+        return std::move(*result);
+    }
+    result = this->data[0];
+    for (int i=1;i<this->data_elements;i++){
+        for (int j=0;j<this->data[0].get_elements();j++){
+            result.data[j] = std::fmin(result.data[j], this->data[i].data[j]);
+        }
+    }
+    return std::move(*result);
+}
+
 // returns the highest value of all values of a vector, matrix or array
 template<typename T>
 T Array<T>::max() const {
     if (this->data_elements==0){
-        std::cout << "WARNING: improper use of method Array<T>::min(): not defined for empty array!\n";
+        logger.log(LOG_LEVEL_WARNING, "improper use of method Array<T>::max(): not defined for empty array!");;
         return T(NAN);
     }
     T result = this->data[0];
@@ -228,6 +246,24 @@ T Array<T>::max() const {
         result = std::fmax(result, this->data[i]);
     }
     return result;
+}
+
+// returns the elementwise lowest values of an array of arrays
+template<typename T>
+Array<T> Array<T>::nested_max() const {
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data[0].get_shape());
+    if (this->data_elements==0){
+        logger.log(LOG_LEVEL_WARNING, "improper use of method Array<T>::max(): not defined for empty array!");
+        result->fill.values(T(NAN));
+        return std::move(*result);
+    }
+    result = this->data[0];
+    for (int i=1;i<this->data_elements;i++){
+        for (int j=0;j<this->data[0].get_elements();j++){
+            result.data[j] = std::fmax(result.data[j], this->data[i].data[j]);
+        }
+    }
+    return std::move(*result);
 }
 
 // returns the arrithmetic mean of all values a vector, matrix or array
@@ -238,6 +274,14 @@ double Array<T>::mean() const {
         sum+=this->data[n];
     }
     return sum/this->data_elements;
+}
+
+// returns the elementwise arrithmetic mean of all members of an array of arrays
+template<typename T>
+Array<double> Array<T>::nested_mean() const {
+    std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->data[0].get_shape());
+    result = this->sum()/this->data_elements;
+    return std::move(*result);
 }
 
 // returns the median of all values of a vector, martrix or array
@@ -297,6 +341,7 @@ T Array<T>::mode() const {
 
 
 // returns the variance of all values of a vector, matrix or array
+// as a floating point number of type <double>
 template<typename T>
 double Array<T>::variance() const {
     double mean = this->mean();
@@ -308,10 +353,30 @@ double Array<T>::variance() const {
     return sum_of_squares / static_cast<double>(this->data_elements);
 }
 
+// returns the elementwise variance of an array of arrays
+template<typename T>
+Array<double> Array<T>::nested_variance() const {
+    Array<T> mean = this->mean();
+    std::unique_ptr<Array<double>> sum_of_squares = std::make_unique<Array<double>>(this->data[0].get_shape());
+    sum_of_squares.fill.zeros();
+    for (int i = 0; i < this->data_elements; i++) {
+        sum_of_squares += (this->data[i] - mean).pow(2);
+    }
+    return std::move(*(sum_of_squares.Hadamard_division(this->data_elements)));
+}
+
 // returns the standard deviation of all values a the vector, matrix array
+// as a floating point number of type <double>
 template<typename T>
 double Array<T>::stddev()  const {
     return std::sqrt(this->variance());
+}
+
+// returns the standard deviation of all values a the vector, matrix array
+// as a floating point number of type <double>
+template<typename T>
+Array<double> Array<T>::nested_stddev()  const {
+    return (this->variance()).sqrt();
 }
 
 // returns the skewness of all data of the vector/matrix/array
@@ -343,8 +408,8 @@ double Array<T>::kurtosis() const {
 // returns the sum of all array elements
 template<typename T>
 T Array<T>::sum() const {
-    T result=0;
-    for (int i=0; i<this->data_elements; i++){
+    T result=this->data[0];
+    for (int i=1; i<this->data_elements; i++){
         result+=this->data[i];
     }
     return result;
@@ -1195,6 +1260,44 @@ Vector<T>& Vector<T>::operator=(const Vector<T>& other) {
     return *this;
 }
 
+// Array move assignment
+template<typename T>
+Array<T>& Array<T>::operator=(Array<T>&& other) noexcept {
+    if (this!=&other){
+        this->data_elements = other.get_elements();
+        this->data = std::move(other.data);
+        this->dim_size = std::move(other.dim_size);
+        this->subspace_size = std::move(other.subspace_size);
+        other.data.reset();
+    }
+    return *this;
+}
+
+// Matrix move assignment
+template<typename T>
+Matrix<T>& Matrix<T>::operator=(Matrix<T>&& other) noexcept {
+    if (this!=&other){
+        this->data_elements = other.get_elements();
+        this->data = std::move(other.data);
+        this->dim_size = std::move(other.dim_size);
+        this->subspace_size = std::move(other.subspace_size);
+        other.data.reset();
+    }
+    return *this;
+}
+
+// Vector move assignment
+template<typename T>
+Vector<T>& Vector<T>::operator=(Vector<T>&& other) noexcept {
+    if (this!=&other){
+        this->data_elements = other.get_elements();
+        this->data = std::move(other.data);
+        this->dim_size = std::move(other.dim_size);
+        this->subspace_size = std::move(other.subspace_size);
+        other.data.reset();
+    }
+    return *this;
+}
 // indexing operator [] for reading
 template<typename T>
 T& Vector<T>::operator[](const int index) const {
@@ -1892,6 +1995,7 @@ Array<T>::Array(Array&& other) noexcept {
     this->data_elements = other.get_elements();
     this->data = std::move(other.data);
     this->dim_size = std::move(other.dim_size);
+    this->subspace_size = std::move(other.subspace_size);
     other.data.reset();
 }
 
@@ -1922,6 +2026,25 @@ Matrix<T>::~Matrix(){
 template<typename T>
 Vector<T>::~Vector(){
     // empty
+}
+
+// constructor for empty vector
+template<typename T>
+Vector<T>::Vector() {    
+    this->dim_size.resize(1);
+    this->subspace_size.push_back(0);
+    this->dim_size[0]=0;
+    this->data_elements = 0;
+    this->capacity = 0;
+    this->dimensions = 1;
+    // initialize data buffer
+    this->data = std::make_unique<T[]>(0);
+    // initialize instances of outsourced classes    
+    this->scale = Scaling<T>(this);
+    this->fill = Fill<T>(this);
+    this->activation = Activation<T>(this);
+    this->outliers = Outliers<T>(this);
+    this->pool = Pooling<T>(this);         
 }
 
 // constructor for a one-dimensional vector

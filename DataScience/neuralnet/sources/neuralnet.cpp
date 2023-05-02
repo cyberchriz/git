@@ -3,15 +3,55 @@
 // batch training
 void NeuralNet::fit(const Vector<Array<double>>& features, const Vector<Array<double>>& labels, const int batch_size, const int epochs){
     int total_samples = features.get_elements();
+    // get scaling parameters from entire dataset
+    if (scaling_method == ScalingMethod::min_max_normalized || scaling_method == ScalingMethod::mean_normalized){
+        features_min = features.nested_min();
+        features_max = features.nested_max();
+        labels_min = labels.nested_min();
+        labels_max = labels.nested_max();
+    }
+    if (scaling_method == ScalingMethod::mean_normalized || scaling_method == ScalingMethod::standardized){
+        features_mean = features.nested_mean();
+        labels_mean = labels.nested_mean();
+    }
+    if (scaling_method == ScalingMethod::standardized){
+        features_stddev = features.nested_stddev();
+        labels_stddev = labels.nested_stddev();
+    }
+    // iterate over epochs
     for (int epoch = 0; epoch<epochs; epoch++){
         int batch = 0;
+        // iterate over samples
         for (int sample = 0; sample < total_samples; sample++){
+            // process sample within its batch
             if (batch_counter < batch_size){
-                predict(features[sample]);
-                layer[layers-1].label = labels[sample];
+
+                // scale features and run prediction
+                if (scaling_method==ScalingMethod::min_max_normalized){
+                    predict((features[sample]-features_min).Hadamard_division(features_max-features_min),false);
+                }
+                if (scaling_method==ScalingMethod::mean_normalized){
+                    predict((features[sample]-features_mean).Hadamard_division(features_max-features_min),false);
+                }
+                if (scaling_method==ScalingMethod::standardized){
+                    predict((features[sample]-features_mean).Hadamard_division(features_stddev),false);
+                }
+
+                // assign scaled labels
+                if (scaling_method==ScalingMethod::min_max_normalized){
+                    layer[layers-1].label = (labels[sample]-labels_min).Hadamard_division(labels_max-labels_min);
+                }
+                if (scaling_method==ScalingMethod::min_max_normalized){
+                    layer[layers-1].label = (labels[sample]-labels_mean).Hadamard_division(labels_max-labels_min);
+                }
+                if (scaling_method==ScalingMethod::min_max_normalized){
+                    layer[layers-1].label = (labels[sample]-labels_mean).Hadamard_division(labels_stddev);
+                }                                
+
                 calculate_loss();
                 logger.log(LOG_LEVEL_DEBUG, "epoch ", epoch, ", batch ", batch, ", sample ", batch_counter, "/", batch_size, ", average loss across all outputs ", loss_avg);
             }
+            // finalize batch
             else {
                 logger.log(LOG_LEVEL_INFO, "epoch ", epoch, ", batch ", batch, "FINISHED, average loss (across all outputs) = ", loss_avg, "starting backprop (iteration ", backprop_iterations, ")");
                 backpropagate();
@@ -24,17 +64,40 @@ void NeuralNet::fit(const Vector<Array<double>>& features, const Vector<Array<do
     }
 }
 
-// single iteration online training
+// single iteration online training;
+// note: always perform batch training first,
+// otherwise proper scaling isn't possible
 void NeuralNet::fit(const Array<double>& features, const Array<double>& labels){
-    predict(features);
-    layer[layers-1].label = labels;
+
+        // scale features and run prediction
+    if (scaling_method==ScalingMethod::min_max_normalized){
+        predict((features-features_min).Hadamard_division(features_max-features_min),false);
+    }
+    if (scaling_method==ScalingMethod::mean_normalized){
+        predict((features-features_mean).Hadamard_division(features_max-features_min),false);
+    }
+    if (scaling_method==ScalingMethod::standardized){
+        predict((features-features_mean).Hadamard_division(features_stddev),false);
+    }
+
+    // assign scaled labels
+    if (scaling_method==ScalingMethod::min_max_normalized){
+        layer[layers-1].label = (labels-labels_min).Hadamard_division(labels_max-labels_min);
+    }
+    if (scaling_method==ScalingMethod::min_max_normalized){
+        layer[layers-1].label = (labels-labels_mean).Hadamard_division(labels_max-labels_min);
+    }
+    if (scaling_method==ScalingMethod::min_max_normalized){
+        layer[layers-1].label = (labels-labels_mean).Hadamard_division(labels_stddev);
+    }
+
     calculate_loss();
     logger.log(LOG_LEVEL_DEBUG, "average loss (across all output neurons): ", loss_avg, "; starting backprop (iteration ", backprop_iterations, ")");
     backpropagate();
 }
 
 // feedforward, i.e. predict output from new feature input
-void NeuralNet::predict(const Array<double>& features){
+Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
     // iterate over layers
     for (int l=1;l<layers;l++){
         switch (layer[l].type){
@@ -155,6 +218,22 @@ void NeuralNet::predict(const Array<double>& features){
             } break;
         }        
     }
+    // return output
+    if (!rescale || scaling_method==ScalingMethod::none){
+        return layer[layers-1].h;
+    }
+    else {
+        // rescale
+        if (scaling_method == ScalingMethod::min_max_normalized){
+            return layer[layers-1].h.Hadamard_product(labels_max-labels_min)+labels_min;
+        }
+        if (scaling_method == ScalingMethod::mean_normalized){
+            return layer[layers-1].h.Hadamard_product(labels_max-labels_min)+labels_mean;
+        }
+        if (scaling_method == ScalingMethod::standardized){
+            return layer[layers-1].h.Hadamard_product(labels_stddev)+labels_mean;
+        }
+    }
 }
 
 // save the model to a file
@@ -196,47 +275,6 @@ void NeuralNet::backpropagate(){
                 break;
             case lstm_layer:
                 // TODO
-                /* STEPS:
-                Iterate over the timesteps from last (current) to oldest (first); for each timestep:
-
-                Compute the derivative of the loss function with respect to the output at the current time step:
-
-                dL/dy(t) = the derivative of the loss function with respect to the output y(t) at time step t. This will depend on the specific loss function you are using.
-                Compute the derivative of the loss function with respect to the LSTM output gate activation at the current time step:
-
-                dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_prime(o(t))
-                where sigmoid_prime(o(t)) is the derivative of the sigmoid activation function applied to the output gate activation o(t)
-                Compute the derivative of the loss function with respect to the LSTM cell state at the current time step:
-
-                dL/dc(t) = dL/dy(t) * o(t) * tanh_prime(c(t)) + dL/dc(t+1) * f(t+1)
-                where tanh_prime(c(t)) is the derivative of the hyperbolic tangent activation function applied to the cell state c(t), and f(t+1) is the forget gate activation at the next time step
-                Compute the derivative of the loss function with respect to the LSTM forget gate activation at the current time step:
-
-                dL/df(t) = dL/dc(t) * c(t-1) * sigmoid_prime(f(t))
-                Compute the derivative of the loss function with respect to the LSTM input gate activation at the current time step:
-
-                dL/di(t) = dL/dc(t) * g(t) * sigmoid_prime(i(t))
-                Compute the derivative of the loss function with respect to the LSTM candidate activation at the current time step:
-
-                dL/dg(t) = dL/dc(t) * i(t) * tanh_prime(g(t))
-                Compute the gradients of the weight matrices and bias vectors for the current time step:
-
-                dL/dW_i = dL/di(t) * x(t)^T
-                dL/dW_f = dL/df(t) * x(t)^T
-                dL/dW_o = dL/do(t) * x(t)^T
-                dL/dW_c = dL/dg(t) * x(t)^T
-                dL/dU_i = dL/di(t) * h(t-1)^T
-                dL/dU_f = dL/df(t) * h(t-1)^T
-                dL/dU_o = dL/do(t) * h(t-1)^T
-                dL/dU_c = dL/dg(t) * h(t-1)^T
-                dL/db_i = dL/di(t)
-                dL/db_f = dL/df(t)
-                dL/db_o = dL/do(t)
-                dL/db_c = dL/dg(t)
-                Update the weights and biases using the gradients and a suitable optimization algorithm, such as stochastic gradient descent (SGD) or Adam.
-
-                Propagate the derivative of the loss function with respect to the hidden state h(t-1) and cell state c(t-1) to the previous time step, and repeat steps 1-8 for the previous time step, until you reach the first time step in the sequence.
-                */
                 break;
             case recurrent_layer:
                 // TODO
@@ -293,6 +331,47 @@ void NeuralNet::backpropagate(){
                 break;
             case lstm_layer:
                 // TODO
+                /* STEPS:
+                Iterate over the timesteps from last (current) to oldest (first); for each timestep:
+
+                Compute the derivative of the loss function with respect to the output at the current time step:
+
+                dL/dy(t) = the derivative of the loss function with respect to the output y(t) at time step t. This will depend on the specific loss function you are using.
+                Compute the derivative of the loss function with respect to the LSTM output gate activation at the current time step:
+
+                dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_prime(o(t))
+                where sigmoid_prime(o(t)) is the derivative of the sigmoid activation function applied to the output gate activation o(t)
+                Compute the derivative of the loss function with respect to the LSTM cell state at the current time step:
+
+                dL/dc(t) = dL/dy(t) * o(t) * tanh_prime(c(t)) + dL/dc(t+1) * f(t+1)
+                where tanh_prime(c(t)) is the derivative of the hyperbolic tangent activation function applied to the cell state c(t), and f(t+1) is the forget gate activation at the next time step
+                Compute the derivative of the loss function with respect to the LSTM forget gate activation at the current time step:
+
+                dL/df(t) = dL/dc(t) * c(t-1) * sigmoid_prime(f(t))
+                Compute the derivative of the loss function with respect to the LSTM input gate activation at the current time step:
+
+                dL/di(t) = dL/dc(t) * g(t) * sigmoid_prime(i(t))
+                Compute the derivative of the loss function with respect to the LSTM candidate activation at the current time step:
+
+                dL/dg(t) = dL/dc(t) * i(t) * tanh_prime(g(t))
+                Compute the gradients of the weight matrices and bias vectors for the current time step:
+
+                dL/dW_i = dL/di(t) * x(t)^T
+                dL/dW_f = dL/df(t) * x(t)^T
+                dL/dW_o = dL/do(t) * x(t)^T
+                dL/dW_c = dL/dg(t) * x(t)^T
+                dL/dU_i = dL/di(t) * h(t-1)^T
+                dL/dU_f = dL/df(t) * h(t-1)^T
+                dL/dU_o = dL/do(t) * h(t-1)^T
+                dL/dU_c = dL/dg(t) * h(t-1)^T
+                dL/db_i = dL/di(t)
+                dL/db_f = dL/df(t)
+                dL/db_o = dL/do(t)
+                dL/db_c = dL/dg(t)
+                Update the weights and biases using the gradients and a suitable optimization algorithm, such as stochastic gradient descent (SGD) or Adam.
+
+                Propagate the derivative of the loss function with respect to the hidden state h(t-1) and cell state c(t-1) to the previous time step, and repeat steps 1-8 for the previous time step, until you reach the first time step in the sequence.
+                */                
                 break;
             case recurrent_layer:
                 // TODO
@@ -462,20 +541,20 @@ void AddLayer::lstm(std::initializer_list<int> shape, const int timesteps){
         network->layer[l].c_t.data[j] = Vector<double>(timesteps); network->layer[l].c_t.fill.zeros();
         network->layer[l].h_t.data[j] = Vector<double>(timesteps); network->layer[l].h_t.fill.zeros();
         // initialize weight matrices
-        network->layer[l].U_f.data[j] = Array<double>(shape); network->layer[l].U_f.fill.He_ReLU(layer[l].h.get_elements());
-        network->layer[l].U_i.data[j] = Array<double>(shape); network->layer[l].U_i.fill.He_ReLU(layer[l].h.get_elements());
-        network->layer[l].U_o.data[j] = Array<double>(shape); network->layer[l].U_o.fill.He_ReLU(layer[l].h.get_elements());
-        network->layer[l].U_c.data[j] = Array<double>(shape); network->layer[l].U_c.fill.He_ReLU(layer[l].h.get_elements());
-        network->layer[l].W_f.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_f.fill.He_ReLU(layer[l-1].h.get_elements());
-        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_i.fill.He_ReLU(layer[l-1].h.get_elements());
-        network->layer[l].W_o.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_o.fill.He_ReLU(layer[l-1].h.get_elements());
-        network->layer[l].W_c.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_c.fill.He_ReLU(layer[l-1].h.get_elements());    
+        network->layer[l].U_f.data[j] = Array<double>(shape); network->layer[l].U_f.fill.He_ReLU(network->layer[l].h.get_elements());
+        network->layer[l].U_i.data[j] = Array<double>(shape); network->layer[l].U_i.fill.He_ReLU(network->layer[l].h.get_elements());
+        network->layer[l].U_o.data[j] = Array<double>(shape); network->layer[l].U_o.fill.He_ReLU(network->layer[l].h.get_elements());
+        network->layer[l].U_c.data[j] = Array<double>(shape); network->layer[l].U_c.fill.He_ReLU(network->layer[l].h.get_elements());
+        network->layer[l].W_f.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_f.fill.He_ReLU(network->layer[l-1].h.get_elements());
+        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_i.fill.He_ReLU(network->layer[l-1].h.get_elements());
+        network->layer[l].W_o.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_o.fill.He_ReLU(network->layer[l-1].h.get_elements());
+        network->layer[l].W_c.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_c.fill.He_ReLU(network->layer[l-1].h.get_elements());    
     }
     // initialize biases
-    network->layer[l].b_f = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(layer[l].h.get_elements());
-    network->layer[l].b_i = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(layer[l].h.get_elements());
-    network->layer[l].b_o = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(layer[l].h.get_elements());
-    network->layer[l].b_c = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(layer[l].h.get_elements());   
+    network->layer[l].b_f = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());
+    network->layer[l].b_i = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());
+    network->layer[l].b_o = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());
+    network->layer[l].b_c = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());   
     make_dense_connections();
     // TODO
 }

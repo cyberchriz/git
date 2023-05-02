@@ -53,6 +53,13 @@ enum LayerType{
     LAYER_TYPE_COUNT // used to verify valid enum argument          
 };
 
+enum ScalingMethod{
+    standardized,
+    min_max_normalized,
+    mean_normalized,
+    none
+};
+
 struct Layer{
     public:
         // public member objects
@@ -178,10 +185,11 @@ class NeuralNet{
         // public methods
         void fit(const Vector<Array<double>>& features, const Vector<Array<double>>& labels, const int batch_size, const int epochs); // for batch training
         void fit(const Array<double>& features, const Array<double>& labels); // for online training
-        void predict(const Array<double>& features); // predict output from new feature input
+        Array<double> predict(const Array<double>& features, bool rescale=true); // predict output from new feature input
         void save(); // save model to file
         void load(); // load model from file
-        void summary(); // prints a summary of the model architecture        
+        void summary(); // prints a summary of the model architecture     
+        void set_scaling_method(ScalingMethod method){scaling_method = method;}  
         AddLayer add_layer;
         // constructor(s)
         NeuralNet():
@@ -207,5 +215,15 @@ class NeuralNet{
         // private methods
         void backpropagate();
         void calculate_loss();
+        // private members
         Log logger;
+        Array<double> features_mean;
+        Array<double> features_stddev;
+        Array<double> features_min;
+        Array<double> features_max;
+        Array<double> labels_mean;
+        Array<double> labels_stddev;
+        Array<double> labels_min;
+        Array<double> labels_max;        
+        ScalingMethod scaling_method = standardized;
 };
