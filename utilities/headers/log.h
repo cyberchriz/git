@@ -54,7 +54,7 @@ public:
             };
             std::stringstream stream;
             (stream << ... << std::forward<Args>(args));
-            std::string logMessage = "[" + std::string(levelStrings[level]) + "]: " + stream.str();
+            std::string logMessage = "[" + std::string(levelStrings[level]) + "]: " + stream.str() + "\n";
 
             if (logToConsole_) {
                 std::cout << logMessage << std::endl;

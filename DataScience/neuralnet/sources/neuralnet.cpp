@@ -23,7 +23,7 @@ void NeuralNet::fit(const Vector<Array<double>>& features, const Vector<Array<do
         int batch = 0;
         // iterate over samples
         for (int sample = 0; sample < total_samples; sample++){
-            // process sample within its batch
+            // process samples for current batch batch
             if (batch_counter < batch_size){
 
                 // scale features and run prediction
@@ -68,6 +68,7 @@ void NeuralNet::fit(const Vector<Array<double>>& features, const Vector<Array<do
 // note: always perform batch training first,
 // otherwise proper scaling isn't possible
 void NeuralNet::fit(const Array<double>& features, const Array<double>& labels){
+    if (backprop_iterations==0){return;}
 
         // scale features and run prediction
     if (scaling_method==ScalingMethod::min_max_normalized){
@@ -103,77 +104,60 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
         switch (layer[l].type){
 
             case max_pooling_layer: {
-                // create a sliding box for pooling
-                Array<double> slider = Array<double>(layer[l].pooling_slider_shape);
-                // iterate over target
-                for (int j=0;j<layer[l].h.get_elements();j++){
-                    // get associated index
-                    std::vector<int> index_j = layer[l].h.get_index(j);
-                    // get corresponding source index
-                    Vector<int> index_i;
-                    for (int d=0;d<layer[l].dimensions;d++){
-                        index_i.push_back(index_j[d]*layer[l].pooling_stride_shape[d]);
-                    }
-                    // iterate over elements of the slider
-                    Vector<int> index_slider;
-                    for (int n=0;n<slider.get_elements();n++){
-                        // get multidimensional index of the slider element
-                        index_slider = Vector<int>::asVector(slider.get_index(n));
-                        // assing slider value from the element with the index of the sum of index_i+index_slider
-                        slider.set(n, layer[l-1].h.get((index_i+index_slider).flatten()));
-                    }
-                    layer[l].h.set(j,slider.max()); 
-                }
+                layer[l].h = layer[l-1].h.pool.max(layer[l].pooling_slider_shape, layer[l].pooling_stride_shape);
             } break;
 
             case avg_pooling_layer: {
-                // create a sliding box for pooling
-                Array<double> slider = Array<double>(layer[l].pooling_slider_shape);
-                // iterate over target
-                for (int j=0;j<layer[l].h.get_elements();j++){
-                    // get associated index
-                    std::vector<int> index_j = layer[l].h.get_index(j);
-                    // get corresponding source index
-                    Vector<int> index_i;
-                    for (int d=0;d<layer[l].dimensions;d++){
-                        index_i.push_back(index_j[d]*layer[l].pooling_stride_shape[d]);
-                    }
-                    // iterate over elements of the slider
-                    Vector<int> index_slider;
-                    for (int n=0;n<slider.get_elements();n++){
-                        // get multidimensional index of the slider element
-                        index_slider = Vector<int>::asVector(slider.get_index(n));
-                        // assing slider value from the element with the index of the sum of index_i+index_slider
-                        slider.set(n, layer[l-1].h.get((index_i+index_slider).flatten()));
-                    }
-                    layer[l].h.set(j,slider.mean()); 
-                }                
+                layer[l].h = layer[l-1].h.pool.average(layer[l].pooling_slider_shape, layer[l].pooling_stride_shape);
             } break;
 
-            case output_layer: {
+            
+            case dense_layer: case output_layer: {
                 // iterate over elements
-                for (int j=0;j<layer[l].h.get_elements();j++){
-                    // assign dotproduct of weight matrix * inputs
+                for (int j=0;j<layer[l].neurons;j++){
+                    // assign dotproduct of weight matrix * inputs, plus bias
                     std::vector<int> index = layer[l].h.get_index(j);
-                    layer[l].h.set(j,layer[l-1].h.dotproduct(layer[l].W_i.get(index)));
+                    layer[l].h.set(j,layer[l-1].h.dotproduct(layer[l].W_x.get(index)) + layer[l].b.data[j]);
                 }
             } break;
 
             case lstm_layer: {
-                // TODO
+                int t = layer[l].timesteps-1;
+                // get current inputs x(t)
+                layer[l].x_t.pop_first();
+                layer[l].x_t.push_back(layer[l-1].h);            
+                // shift c_t and h_t by 1 timestep
+                layer[l].c_t.pop_first();
+                layer[l].h_t.pop_first();
+                // calculate gate inputs
+                for (int j=0;j<layer[l].neurons;j++){
+                    layer[l].f_gate.set(j,layer[l].W_f.data[j].dotproduct(layer[l].x_t[t]) + layer[l].U_f.data[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_f.data[j]);
+                    layer[l].i_gate.set(j,layer[l].W_i.data[j].dotproduct(layer[l].x_t[t]) + layer[l].U_i.data[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_i.data[j]);
+                    layer[l].o_gate.set(j,layer[l].W_o.data[j].dotproduct(layer[l].x_t[t]) + layer[l].U_o.data[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_o.data[j]);
+                    layer[l].c_gate.set(j,layer[l].W_c.data[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c.data[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_c.data[j]);
+                }
+                // activate gates
+                layer[l].f_gate = layer[l].f_gate.activation.function(ActFunc::sigmoid);
+                layer[l].f_gate = layer[l].i_gate.activation.function(ActFunc::sigmoid);
+                layer[l].f_gate = layer[l].o_gate.activation.function(ActFunc::sigmoid);
+                layer[l].f_gate = layer[l].c_gate.activation.function(ActFunc::tanh);
+                // add c_t and h_t results for current timestep
+                layer[l].c_t.push_back(layer[l].f_gate.Hadamard_product(layer[l].c_t[t-1]) + layer[l].i_gate.Hadamard_product(layer[l].c_gate));
+                layer[l].h_t.push_back(layer[l].o_gate.Hadamard_product(layer[l].c_t[t].activation.function(ActFunc::tanh)));
+                layer[l].h = layer[l].h_t[t];
                 } break;
 
             case recurrent_layer: {
-                // TODO
-            } break;
-                
-            case dense_layer: {
-                // iterate over elements
-                for (int j=0;j<layer[l].h.get_elements();j++){
-                    // assign dotproduct of weight matrix * inputs
-                    std::vector<int> index = layer[l].h.get_index(j);
-                    layer[l].h.set(j,layer[l-1].h.dotproduct(layer[l].W_i.get(index)));
+                int t = layer[l].timesteps-1;
+                layer[l].x_t.pop_first();
+                layer[l].x_t.push_back(layer[l-1].h);
+                layer[l].h_t.pop_first();
+                layer[l].h_t.grow(1);
+                for (int j=0;j<layer[l].neurons;j++){
+                    // set h(t) = x(t)*W_x + h(t-1)*W_h + bias
+                    layer[l].h_t[t].data[j] = layer[l].x_t[t].dotproduct(layer[l].W_x.data[j] + layer[l].h_t[t-1].data[j] * layer[l].W_h.data[j] + layer[l].b.data[j]);
                 }
+                layer[l].h = layer[l].h_t[t];
             } break;
                 
             case convolutional_layer: {
@@ -238,17 +222,17 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
 
 // save the model to a file
 void NeuralNet::save(){
-
+    // TODO
 }
 
 // load the model from a file
 void NeuralNet::load(){
-
+    // TODO
 }
 
 // prints a summary of the model architecture
 void NeuralNet::summary(){
-
+    // TODO
 }   
 
 // performs a single iteration of backpropagation
@@ -335,27 +319,24 @@ void NeuralNet::backpropagate(){
                 Iterate over the timesteps from last (current) to oldest (first); for each timestep:
 
                 Compute the derivative of the loss function with respect to the output at the current time step:
-
                 dL/dy(t) = the derivative of the loss function with respect to the output y(t) at time step t. This will depend on the specific loss function you are using.
+
                 Compute the derivative of the loss function with respect to the LSTM output gate activation at the current time step:
+                dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_derivative(o(t))
 
-                dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_prime(o(t))
-                where sigmoid_prime(o(t)) is the derivative of the sigmoid activation function applied to the output gate activation o(t)
                 Compute the derivative of the loss function with respect to the LSTM cell state at the current time step:
+                dL/dc(t) = dL/dy(t) * o(t) * tanh_derivative(c(t)) + dL/dc(t+1) * f(t+1)
 
-                dL/dc(t) = dL/dy(t) * o(t) * tanh_prime(c(t)) + dL/dc(t+1) * f(t+1)
-                where tanh_prime(c(t)) is the derivative of the hyperbolic tangent activation function applied to the cell state c(t), and f(t+1) is the forget gate activation at the next time step
                 Compute the derivative of the loss function with respect to the LSTM forget gate activation at the current time step:
+                dL/df(t) = dL/dc(t) * c(t-1) * sigmoid_derivative(f(t))
 
-                dL/df(t) = dL/dc(t) * c(t-1) * sigmoid_prime(f(t))
                 Compute the derivative of the loss function with respect to the LSTM input gate activation at the current time step:
+                dL/di(t) = dL/dc(t) * g(t) * sigmoid_derivative(i(t))
 
-                dL/di(t) = dL/dc(t) * g(t) * sigmoid_prime(i(t))
                 Compute the derivative of the loss function with respect to the LSTM candidate activation at the current time step:
+                dL/dg(t) = dL/dc(t) * i(t) * tanh_derivative(g(t))
 
-                dL/dg(t) = dL/dc(t) * i(t) * tanh_prime(g(t))
                 Compute the gradients of the weight matrices and bias vectors for the current time step:
-
                 dL/dW_i = dL/di(t) * x(t)^T
                 dL/dW_f = dL/df(t) * x(t)^T
                 dL/dW_o = dL/do(t) * x(t)^T
@@ -368,8 +349,9 @@ void NeuralNet::backpropagate(){
                 dL/db_f = dL/df(t)
                 dL/db_o = dL/do(t)
                 dL/db_c = dL/dg(t)
-                Update the weights and biases using the gradients and a suitable optimization algorithm, such as stochastic gradient descent (SGD) or Adam.
 
+                Update the weights and biases using the gradients and a suitable optimization algorithm, such as stochastic gradient descent (SGD) or Adam.
+                
                 Propagate the derivative of the loss function with respect to the hidden state h(t-1) and cell state c(t-1) to the previous time step, and repeat steps 1-8 for the previous time step, until you reach the first time step in the sequence.
                 */                
                 break;
@@ -526,70 +508,64 @@ void AddLayer::output(std::initializer_list<int> shape, LossFunction loss_functi
 void AddLayer::lstm(std::initializer_list<int> shape, const int timesteps){
     init(network, lstm_layer, shape);
     int l = network->layers-1;
-    network->layer[l].c_t = Array<Vector<double>>(shape);
-    network->layer[l].h_t = Array<Vector<double>>(shape);
+    network->layer[l].timesteps = timesteps;
+    network->layer[l].c_t = Vector<Array<double>>(timesteps);
+    network->layer[l].h_t = Vector<Array<double>>(timesteps);
+    network->layer[l].x_t = Vector<Array<double>>(timesteps);
+    for (int t=0;t<timesteps;t++){
+        // initialize vectors of timesteps for the cell state and hidden state
+        network->layer[l].c_t.data[t] = Array<double>(shape); network->layer[l].c_t[t].fill.zeros();
+        network->layer[l].h_t.data[t] = Array<double>(shape); network->layer[l].h_t[t].fill.zeros();
+        network->layer[l].x_t.data[t] = Array<double>(shape); network->layer[l].h_t[t].fill.zeros();
+    }
+    // initialize gate value arrays
+    network->layer[l].f_gate = Array<double>(network->layer[l].shape);
+    network->layer[l].i_gate = Array<double>(network->layer[l].shape);
+    network->layer[l].o_gate = Array<double>(network->layer[l].shape);
+    network->layer[l].c_gate = Array<double>(network->layer[l].shape);    
+    // initialize gate weights to h(t-1)
     network->layer[l].U_f = Array<Array<double>>(shape);
     network->layer[l].U_i = Array<Array<double>>(shape);
     network->layer[l].U_o = Array<Array<double>>(shape);
     network->layer[l].U_c = Array<Array<double>>(shape);
+    // initialize gate weights to x(t)
     network->layer[l].W_f = Array<Array<double>>(network->layer[l-1].h.get_shape());
     network->layer[l].W_i = Array<Array<double>>(network->layer[l-1].h.get_shape());
     network->layer[l].W_o = Array<Array<double>>(network->layer[l-1].h.get_shape());
     network->layer[l].W_c = Array<Array<double>>(network->layer[l-1].h.get_shape());     
     for (int j=0;j<network->layer[l].c_t.get_elements();j++){
-        // initialize vectors of timesteps for the cell state and hidden state
-        network->layer[l].c_t.data[j] = Vector<double>(timesteps); network->layer[l].c_t.fill.zeros();
-        network->layer[l].h_t.data[j] = Vector<double>(timesteps); network->layer[l].h_t.fill.zeros();
         // initialize weight matrices
-        network->layer[l].U_f.data[j] = Array<double>(shape); network->layer[l].U_f.fill.He_ReLU(network->layer[l].h.get_elements());
-        network->layer[l].U_i.data[j] = Array<double>(shape); network->layer[l].U_i.fill.He_ReLU(network->layer[l].h.get_elements());
-        network->layer[l].U_o.data[j] = Array<double>(shape); network->layer[l].U_o.fill.He_ReLU(network->layer[l].h.get_elements());
-        network->layer[l].U_c.data[j] = Array<double>(shape); network->layer[l].U_c.fill.He_ReLU(network->layer[l].h.get_elements());
-        network->layer[l].W_f.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_f.fill.He_ReLU(network->layer[l-1].h.get_elements());
-        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_i.fill.He_ReLU(network->layer[l-1].h.get_elements());
-        network->layer[l].W_o.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_o.fill.He_ReLU(network->layer[l-1].h.get_elements());
-        network->layer[l].W_c.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_c.fill.He_ReLU(network->layer[l-1].h.get_elements());    
+        network->layer[l].U_f.data[j] = Array<double>(shape); network->layer[l].U_f.fill.He_ReLU(network->layer[l].neurons);
+        network->layer[l].U_i.data[j] = Array<double>(shape); network->layer[l].U_i.fill.He_ReLU(network->layer[l].neurons);
+        network->layer[l].U_o.data[j] = Array<double>(shape); network->layer[l].U_o.fill.He_ReLU(network->layer[l].neurons);
+        network->layer[l].U_c.data[j] = Array<double>(shape); network->layer[l].U_c.fill.He_ReLU(network->layer[l].neurons);
+        network->layer[l].W_f.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_f.fill.He_ReLU(network->layer[l-1].neurons);
+        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_i.fill.He_ReLU(network->layer[l-1].neurons);
+        network->layer[l].W_o.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_o.fill.He_ReLU(network->layer[l-1].neurons);
+        network->layer[l].W_c.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_c.fill.He_ReLU(network->layer[l-1].neurons);    
     }
     // initialize biases
-    network->layer[l].b_f = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());
-    network->layer[l].b_i = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());
-    network->layer[l].b_o = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());
-    network->layer[l].b_c = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].h.get_elements());   
+    network->layer[l].b_f = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);
+    network->layer[l].b_i = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);
+    network->layer[l].b_o = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);
+    network->layer[l].b_c = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);   
     make_dense_connections();
-    // TODO
-}
-
-// creates an LSTM layer of the same shape as the preceding layer
-void AddLayer::lstm(const int timesteps){
-    std::initializer_list<int> shape = network->layer[network->layers-1].shape;
-    lstm(shape,timesteps);
-    // TODO
 }
 
 // creates a recurrent layer of the specified shape
-void AddLayer::recurrent(std::initializer_list<int> shape){
+void AddLayer::recurrent(std::initializer_list<int> shape, int timesteps){
     init(network, recurrent_layer, shape);
     int l = network->layers-1;
-    make_dense_connections();  
-    // TODO  
-}
-
-// creates a recurrent layer of the same shape as the preceding layer
-void AddLayer::recurrent(){
-    std::initializer_list<int> shape = network->layer[network->layers-1].shape;
-    recurrent(shape);
+    network->layer[l].timesteps = timesteps;
+    network->layer[l].x_t = Vector<Array<double>>(timesteps);
+    network->layer[l].h_t = Vector<Array<double>>(timesteps);
+    make_dense_connections();
 }
 
 // creates a fully connected layer
 void AddLayer::dense(std::initializer_list<int> shape){
     init(network, dense_layer, shape);
     make_dense_connections();
-}
-
-// creates a fully connected layer of the same shape as the preceding layer
-void AddLayer::dense(){
-    std::initializer_list<int> shape = network->layer[network->layers-1].shape;
-    dense(shape);
 }
 
 // creates a convolutional layer
@@ -602,12 +578,6 @@ void AddLayer::GRU(std::initializer_list<int> shape){
     init(network, GRU_layer, shape);
     make_dense_connections();    
     // TODO
-}
-
-// creates a GRU layer of the same shape as the preceding layer
-void AddLayer::GRU(){
-    std::initializer_list<int> shape = network->layer[network->layers-1].shape;
-    GRU(shape);    
 }
 
 // creates a dropout layer
@@ -648,29 +618,16 @@ void AddLayer::flatten(){
     init(network, flatten_layer, shape);
 }
 
-void AddLayer::Pooling::avg(std::vector<int> slider_shape, std::vector<int> stride_shape){
+void AddLayer::Pooling::avg(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
     int l = network->layers - 1;
-    // confirm valid slider shape
-    if (slider_shape.size() != network->layer[l-1].dimensions){
-        throw std::invalid_argument("slider shape for avg pooling must have same number of dimensions as the layer it is acting upon");
-    }
-    // confirm valid stride shape
-    if (stride_shape.size() != network->layer[l-1].dimensions){
-        throw std::invalid_argument("stride shape for avg pooling must have same number of dimensions as the layer it is acting upon");
-    }    
-    // get layer shape: temporarily store as std::vector
-    std::vector<int> shape;
-    auto iterator = network->layer[l-1].shape.begin();
-    int d=0;
-    for (;d<network->layer[l-1].dimensions;d++, iterator++){
-        shape.emplace_back((*iterator - slider_shape[d])/stride_shape[d]);
-    }
-    // convert to std::initializer_list
-    std::initializer_list<int> init_list;
-    for (auto& elem : shape) {
-        init_list = {std::initializer_list<int>{elem}};
-    }
-    init(network, avg_pooling_layer, init_list);
+    init(network, avg_pooling_layer, {});
+    network->layer[l].h = network->layer[l-1].h.pool.average(slider_shape,stride_shape);
+}
+
+void AddLayer::Pooling::max(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
+    int l = network->layers - 1;
+    init(network, avg_pooling_layer, {});
+    network->layer[l].h = network->layer[l-1].h.pool.max(slider_shape, stride_shape);
 }
 
 // helper method to convert a std::vector<int> to std::initializer_list<int>
@@ -681,21 +638,18 @@ std::initializer_list<int> AddLayer::vector_to_initlist(const std::vector<int>& 
     }
 }
 
-void AddLayer::Pooling::max(std::vector<int> slider_shape, std::vector<int> stride_shape){
-
-}
-
 // helper method to make dense connections from
 // preceding layer (l-1) to current layer (l)
+// and initialize dense connection weights and biases
 void AddLayer::make_dense_connections(){
     int l = network->layers-1;
     // create incoming weights
-    network->layer[l].W_i = Array<Array<double>>(network->layer[l].shape);
+    network->layer[l].W_x = Array<Array<double>>(network->layer[l].shape);
     int neurons_i = network->layer[l-1].neurons;
     int neurons_j = network->layer[l].neurons;
     for (int j=0;j<neurons_j;j++){
-        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].shape);
-        network->layer[l].W_i.data[j].fill.He_ReLU(neurons_i);
+        network->layer[l].W_x.data[j] = Array<double>(network->layer[l-1].shape);
+        network->layer[l].W_x.data[j].fill.He_ReLU(neurons_i);
     }
     // attach outgoing weights of preceding layer
     network->layer[l-1].W_out = Array<Array<int>>(network->layer[l-1].shape);
@@ -703,13 +657,14 @@ void AddLayer::make_dense_connections(){
         network->layer[l-1].W_out.data[i] = Array<int>(network->layer[l].shape);
         for (int j=0;j<neurons_j;j++){
             // store references to associated weights into <double *>
-            network->layer[l-1].W_out.data[i].data[j] = &network->layer[l].W_i.data[j].data[i];
+            network->layer[l-1].W_out.data[i].data[j] = &network->layer[l].W_x.data[j].data[i];
             // example of accessing the 'fan out' of weight values for any given neuron 'i' by dereferencing:
             // Array<double> dereferenced = *network->layer[l-1].W_out.data[i];
         }
     }
     // initialize bias weights
-    network->layer[l-1].b_i.fill.He_ReLU(neurons_i);
+    network->layer[l].b = Array<double>(network->layer[l].shape);
+    network->layer[l].b.fill.He_ReLU(neurons_i);
 }
 
 // basic layer setup

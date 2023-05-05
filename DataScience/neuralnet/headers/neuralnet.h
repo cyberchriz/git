@@ -66,14 +66,16 @@ struct Layer{
         LayerType type;
         int neurons;
         int dimensions;
+        int timesteps;
         std::initializer_list<int> shape;
-        Array<double> h; // internal states
+        Array<double> h; // hidden states
         Array<double> label; // labels for output layer
         Array<double> gradient;
         Array<double> loss;
         Array<double> loss_sum;
-        Array<Vector<double>> h_t; // for each neuron in an array of neurons: vector of timesteps holding the hidden states for LSTMs
-        Array<Vector<double>> c_t; // for each neuron in an array of neurons: vector of timesteps holding the cell states for LSTMs
+        Vector<Array<double>> x_t; // vector of timesteps holding the input states for RNN, LSTM
+        Vector<Array<double>> h_t; // vector of timesteps holding the hidden states for LSTMs
+        Vector<Array<double>> c_t; // vector of timesteps holding the cell states for LSTMs
         Array<Array<double>> U_f; // stores the weights for h(t-1) to calculate the forget gate: f(t) = σ(W_f * x(t) + U_f * h(t-1) + b_f)
         Array<Array<double>> U_i; // stores the weights for h(t-1) to calculate the input gate: i(t) = σ(W_i * x(t) + U_i * h(t-1) + b_i)
         Array<Array<double>> U_o; // stores the weights for h(t-1) to calculate the outout gate: o(t) = σ(W_o * x(t) + U_o * h(t-1) + b_o)
@@ -82,6 +84,13 @@ struct Layer{
         Array<Array<double>> W_i; // input gate weights for x(t)
         Array<Array<double>> W_o; // output gate weights for x(t)
         Array<Array<double>> W_c; // candidate gate weights for x(t)
+        Array<Array<double>> W_x; // stores the weights for dense connections (dense layers, output layers)
+        Array<double> f_gate;
+        Array<double> i_gate;
+        Array<double> o_gate;
+        Array<double> c_gate;
+        Array<double> W_h; // stores the weights for h(t-1) in recurrent neural networks
+        Array<double> b; // stores the bias matrix for the given layer
         Array<double> b_f; // forget gate bias weights;
         Array<double> b_i; // input gate bias weights;
         Array<double> b_o; // output gate bias weights;
@@ -90,8 +99,8 @@ struct Layer{
         Array<Array<double *>> W_out; // pointers to W_i weights of next layer
         double dropout_ratio=0;
         Vector<Array<double>> kernel; // vector of kernels for CNN layers
-        Vector<int> pooling_slider_shape; // vector of pointers to pooling slider shapes
-        Vector<int> pooling_stride_shape; // vector of pointers to pooling stride shapes
+        std::initializer_list<int> pooling_slider_shape; // vector of pointers to pooling slider shapes
+        std::initializer_list<int> pooling_stride_shape; // vector of pointers to pooling stride shapes
 
         // public constructor
         Layer();
@@ -122,13 +131,12 @@ struct AddLayer{
         struct Pooling{
             public:
                 // public methods
-                void max(std::vector<int> slider_shape, std::vector<int> stride_shape);
-                void avg(std::vector<int> slider_shape, std::vector<int> stride_shape);
+                void max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
+                void avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
                 // constructor
                 Pooling(NeuralNet* network) : network(network){};
             private:
                 NeuralNet* network;
-                Log logger;
         };                
 
     public:
@@ -139,17 +147,17 @@ struct AddLayer{
         void output(const int neurons, LossFunction loss_function=MSE){output({neurons},loss_function);}
         void lstm(std::initializer_list<int> shape, const int timesteps);
         void lstm(const int neurons, const int timesteps=10){lstm({neurons},timesteps);}
-        void lstm(const int timesteps=10);
-        void recurrent(std::initializer_list<int> shape);
-        void recurrent(const int neurons){recurrent({neurons});}
-        void recurrent();
+        void lstm(const int timesteps=10){lstm(network->layer[network->layers-1].shape,timesteps);}
+        void recurrent(std::initializer_list<int> shape, const int timesteps=10);
+        void recurrent(const int neurons, const int timesteps=10){recurrent({neurons}, timesteps);}
+        void recurrent(const int timesteps=10){recurrent(network->layer[network->layers-1].shape,timesteps);}
         void dense(std::initializer_list<int> shape);
         void dense(const int neurons){dense({neurons});}
-        void dense();
+        void dense(){dense(network->layer[network->layers-1].shape);}
         void convolutional();
         void GRU(std::initializer_list<int> shape);
         void GRU(const int neurons){GRU({neurons});}
-        void GRU();
+        void GRU(){GRU(network->layer[network->layers-1].shape);}
         void dropout(const double ratio=0.2);
         void flatten();
         Pooling pool;
