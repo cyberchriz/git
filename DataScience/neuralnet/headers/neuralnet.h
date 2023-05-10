@@ -13,8 +13,6 @@
 #include <initializer_list>
 
 // forward declarations
-struct AddLayer;
-struct Layer;
 class NeuralNet;
 
 enum LossFunction{
@@ -116,6 +114,85 @@ struct Layer{
 };
 
 class NeuralNet{
+    // nested struct for adding new layers to an instance of NeuralNet
+    struct AddLayer{
+        private:
+
+            struct ActivationLayer{
+                public:
+                    // public methods
+                    void sigmoid();
+                    void ReLU();
+                    void lReLU();
+                    void ELU();
+                    void tanh();
+
+                    // constructor
+                    ActivationLayer(NeuralNet* network) : network(network){};
+                private:
+                    NeuralNet* network;
+            };
+
+            struct Pooling{
+                public:
+                    // public methods
+                    void max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
+                    void avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
+                    // constructor
+                    Pooling(NeuralNet* network) : network(network){};
+                private:
+                    NeuralNet* network;
+            };                
+
+        public:
+            // public methods
+            void input(std::initializer_list<int> shape);
+            void input(const int neurons){input({neurons});}
+            void output(std::initializer_list<int> shape, LossFunction loss_function=MSE);
+            void output(const int neurons, LossFunction loss_function=MSE){output({neurons},loss_function);}
+            void lstm(std::initializer_list<int> shape, const int timesteps);
+            void lstm(const int neurons, const int timesteps=10){lstm({neurons},timesteps);}
+            void lstm(const int timesteps=10){lstm(network->layer[network->layers-1].shape,timesteps);}
+            void recurrent(std::initializer_list<int> shape, const int timesteps=10);
+            void recurrent(const int neurons, const int timesteps=10){recurrent({neurons}, timesteps);}
+            void recurrent(const int timesteps=10){recurrent(network->layer[network->layers-1].shape,timesteps);}
+            void dense(std::initializer_list<int> shape);
+            void dense(const int neurons){dense({neurons});}
+            void dense(){dense(network->layer[network->layers-1].shape);}
+            void convolutional(const int filter_radius=1, bool padding=false);
+            void GRU(std::initializer_list<int> shape);
+            void GRU(const int neurons){GRU({neurons});}
+            void GRU(){GRU(network->layer[network->layers-1].shape);}
+            void dropout(const double ratio=0.2);
+            void flatten();
+            Pooling pool;
+            ActivationLayer activation;
+
+            // constructor
+            AddLayer(NeuralNet* network) :
+                // member initialization list
+                network(network),
+                activation(network),
+                pool(network) {
+                // constructor definition
+                logger = Log();
+                logger.enable_to_console(true);
+                logger.enable_to_file(false);
+                logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
+            };
+
+            // destructor
+            ~AddLayer(){};
+        protected:
+        private:
+            // private methods
+            static void init(NeuralNet* network, LayerType type, std::initializer_list<int> shape);
+            void make_dense_connections();
+            std::initializer_list<int> vector_to_initlist(const std::vector<int>& vec);
+            // private member objects
+            NeuralNet* network;
+            Log logger;
+    };    
     public:
         // public methods
         void fit(const Vector<Array<double>>& features, const Vector<Array<double>>& labels, const int batch_size, const int epochs); // for batch training
@@ -163,84 +240,4 @@ class NeuralNet{
         Array<double> labels_min;
         Array<double> labels_max;        
         ScalingMethod scaling_method = standardized;
-};
-
-// struct for adding new layers to an instance of NeuralNet
-struct AddLayer{
-    private:
-
-        struct ActivationLayer{
-            public:
-                // public methods
-                void sigmoid();
-                void ReLU();
-                void lReLU();
-                void ELU();
-                void tanh();
-
-                // constructor
-                ActivationLayer(NeuralNet* network) : network(network){};
-            private:
-                NeuralNet* network;
-        };
-
-        struct Pooling{
-            public:
-                // public methods
-                void max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
-                void avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
-                // constructor
-                Pooling(NeuralNet* network) : network(network){};
-            private:
-                NeuralNet* network;
-        };                
-
-    public:
-        // public methods
-        void input(std::initializer_list<int> shape);
-        void input(const int neurons){input({neurons});}
-        void output(std::initializer_list<int> shape, LossFunction loss_function=MSE);
-        void output(const int neurons, LossFunction loss_function=MSE){output({neurons},loss_function);}
-        void lstm(std::initializer_list<int> shape, const int timesteps);
-        void lstm(const int neurons, const int timesteps=10){lstm({neurons},timesteps);}
-        void lstm(const int timesteps=10){lstm(network->layer[network->layers-1].shape,timesteps);}
-        void recurrent(std::initializer_list<int> shape, const int timesteps=10);
-        void recurrent(const int neurons, const int timesteps=10){recurrent({neurons}, timesteps);}
-        void recurrent(const int timesteps=10){recurrent(network->layer[network->layers-1].shape,timesteps);}
-        void dense(std::initializer_list<int> shape);
-        void dense(const int neurons){dense({neurons});}
-        void dense(){dense(network->layer[network->layers-1].shape);}
-        void convolutional(const int filter_radius=1, bool padding=false);
-        void GRU(std::initializer_list<int> shape);
-        void GRU(const int neurons){GRU({neurons});}
-        void GRU(){GRU(network->layer[network->layers-1].shape);}
-        void dropout(const double ratio=0.2);
-        void flatten();
-        Pooling pool;
-        ActivationLayer activation;
-
-        // constructor
-        AddLayer(NeuralNet* network) :
-            // member initialization list
-            network(network),
-            activation(network),
-            pool(network) {
-            // constructor definition
-            logger = Log();
-            logger.enable_to_console(true);
-            logger.enable_to_file(false);
-            logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
-        };
-
-        // destructor
-        ~AddLayer(){};
-    protected:
-    private:
-        // private methods
-        static void init(NeuralNet* network, LayerType type, std::initializer_list<int> shape);
-        void make_dense_connections();
-        std::initializer_list<int> vector_to_initlist(const std::vector<int>& vec);
-        // private member objects
-        NeuralNet* network;
-        Log logger;
 };

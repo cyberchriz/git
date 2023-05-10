@@ -19,6 +19,7 @@
 #include "outliers.h"
 #include "scaling.h"
 #include "../../../utilities/headers/log.h"
+#include "../../../utilities/headers/initlists.h"
 
 // forward declarations
 template<typename T> class Array;

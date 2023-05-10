@@ -488,13 +488,13 @@ void NeuralNet::calculate_loss(){
 
 // creates a new input layer or adds a new parallel input shape
 // to a preexisting input layer
-void AddLayer::input(std::initializer_list<int> shape){
+void NeuralNet::AddLayer::input(std::initializer_list<int> shape){
     init(network, input_layer, shape);  
 }
 
 // creates a new output layer or adds a new parallel output shape
 // to a preexisting output layer
-void AddLayer::output(std::initializer_list<int> shape, LossFunction loss_function){
+void NeuralNet::AddLayer::output(std::initializer_list<int> shape, LossFunction loss_function){
     init(network, output_layer, shape);
     int l = network->layers-1;
     network->layer[l].label = Array<double>(shape);
@@ -505,7 +505,7 @@ void AddLayer::output(std::initializer_list<int> shape, LossFunction loss_functi
 }
 
 // creates an LSTM layer of the specified shape
-void AddLayer::lstm(std::initializer_list<int> shape, const int timesteps){
+void NeuralNet::AddLayer::lstm(std::initializer_list<int> shape, const int timesteps){
     init(network, lstm_layer, shape);
     int l = network->layers-1;
     network->layer[l].timesteps = timesteps;
@@ -553,7 +553,7 @@ void AddLayer::lstm(std::initializer_list<int> shape, const int timesteps){
 }
 
 // creates a recurrent layer of the specified shape
-void AddLayer::recurrent(std::initializer_list<int> shape, int timesteps){
+void NeuralNet::AddLayer::recurrent(std::initializer_list<int> shape, int timesteps){
     init(network, recurrent_layer, shape);
     int l = network->layers-1;
     network->layer[l].timesteps = timesteps;
@@ -563,14 +563,14 @@ void AddLayer::recurrent(std::initializer_list<int> shape, int timesteps){
 }
 
 // creates a fully connected layer
-void AddLayer::dense(std::initializer_list<int> shape){
+void NeuralNet::AddLayer::dense(std::initializer_list<int> shape){
     init(network, dense_layer, shape);
     int l = network->layers-1;
     make_dense_connections();
 }
 
 // creates a convolutional layer
-void AddLayer::convolutional(const int filter_radius, bool padding){
+void NeuralNet::AddLayer::convolutional(const int filter_radius, bool padding){
     // check valid layer type
     if (network->layers==0){
         throw std::invalid_argument("the first layer always has to be of type 'input_layer'");
@@ -623,64 +623,64 @@ void AddLayer::convolutional(const int filter_radius, bool padding){
 }
 
 // creates a GRU layer
-void AddLayer::GRU(std::initializer_list<int> shape){
+void NeuralNet::AddLayer::GRU(std::initializer_list<int> shape){
     init(network, GRU_layer, shape);
     make_dense_connections();    
     // TODO
 }
 
 // creates a dropout layer
-void AddLayer::dropout(const double ratio){
+void NeuralNet::AddLayer::dropout(const double ratio){
     int l = network->layers - 1;
     init(network, dropout_layer, network->layer[l-1].shape);
     network->layer[l].dropout_ratio = ratio;
    
 }
 
-void AddLayer::ActivationLayer::sigmoid(){
+void NeuralNet::AddLayer::ActivationLayer::sigmoid(){
     int l = network->layers - 1;
     init(network, sigmoid_layer, network->layer[l-1].shape);
 }
 
-void AddLayer::ActivationLayer::ReLU(){
+void NeuralNet::AddLayer::ActivationLayer::ReLU(){
     int l = network->layers - 1;
     init(network, ReLU_layer, network->layer[l-1].shape);;   
 }
 
-void AddLayer::ActivationLayer::lReLU(){
+void NeuralNet::AddLayer::ActivationLayer::lReLU(){
     int l = network->layers - 1;
     init(network, lReLU_layer, network->layer[l-1].shape);  
 }
 
-void AddLayer::ActivationLayer::ELU(){
+void NeuralNet::AddLayer::ActivationLayer::ELU(){
     int l = network->layers - 1;
     init(network, ELU_layer, network->layer[l-1].shape);   
 }
 
-void AddLayer::ActivationLayer::tanh(){
+void NeuralNet::AddLayer::ActivationLayer::tanh(){
     int l = network->layers - 1;
     init(network, tanh_layer, network->layer[l-1].shape);   
 }
 
-void AddLayer::flatten(){
+void NeuralNet::AddLayer::flatten(){
     std::initializer_list<int> shape = {network->layer[network->layers-1].neurons};
     init(network, flatten_layer, shape);
 }
 
-void AddLayer::Pooling::avg(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
+void NeuralNet::AddLayer::Pooling::avg(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
     int l = network->layers - 1;
     init(network, avg_pooling_layer, {});
     network->layer[l].h = network->layer[l-1].h.pool_avg(slider_shape,stride_shape);
 }
 
-void AddLayer::Pooling::max(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
+void NeuralNet::AddLayer::Pooling::max(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
     int l = network->layers - 1;
     init(network, avg_pooling_layer, {});
     network->layer[l].h = network->layer[l-1].h.pool_max(slider_shape, stride_shape);
 }
 
 // helper method to convert a std::vector<int> to std::initializer_list<int>
-std::initializer_list<int> AddLayer::vector_to_initlist(const std::vector<int>& vec) {
+std::initializer_list<int> NeuralNet::AddLayer::vector_to_initlist(const std::vector<int>& vec) {
     std::initializer_list<int> init_list;
     for (auto& elem : vec) {
         init_list = {std::initializer_list<int>{elem}};
@@ -690,7 +690,7 @@ std::initializer_list<int> AddLayer::vector_to_initlist(const std::vector<int>& 
 // helper method to make dense connections from
 // preceding layer (l-1) to current layer (l)
 // and initialize dense connection weights and biases
-void AddLayer::make_dense_connections(){
+void NeuralNet::AddLayer::make_dense_connections(){
     int l = network->layers-1;
     // create incoming weights
     network->layer[l].W_x = Array<Array<double>>(network->layer[l].shape);
@@ -717,7 +717,7 @@ void AddLayer::make_dense_connections(){
 }
 
 // basic layer setup
-void AddLayer::init(NeuralNet* network, LayerType type, std::initializer_list<int> shape){
+void NeuralNet::AddLayer::init(NeuralNet* network, LayerType type, std::initializer_list<int> shape){
     // check valid layer type
     if (network->layers==0 && type != input_layer){
         throw std::invalid_argument("the first layer always has to be of type 'input_layer'");

@@ -1953,7 +1953,7 @@ Array<T> Array<T>::padding_post(const int amount, const T value){
     std::vector<int> index;
     for (int i=0; i<this->data_elements; i++){
         index = this->get_index(i);
-        result->set(this->get_index(),this->data[i]);
+        result->set(this->get_index(i),this->data[i]);
     }
     return std::move(*result);
 }
@@ -2000,7 +2000,7 @@ Array<T> Array<T>::pool_max(const std::initializer_list<int> slider_shape, const
         // get associated index
         std::vector<int> index_j = result->get_index(j);
         // get corresponding source index
-        std::vector<int> index_i;
+        Vector<int> index_i;
         for (int d=0;d<result->dimensions;d++){
             index_i.push_back(index_j[d] * stride_shape_vec[d]);
         }
@@ -2043,7 +2043,7 @@ Array<T> Array<T>::pool_avg(const std::initializer_list<int> slider_shape, const
         // get associated index
         std::vector<int> index_j = result->get_index(j);
         // get corresponding source index
-        std::vector<int> index_i;
+        Vector<int> index_i;
         for (int d=0;d<result->dimensions;d++){
             index_i.push_back(index_j[d] * stride_shape_vec[d]);
         }
@@ -2053,11 +2053,11 @@ Array<T> Array<T>::pool_avg(const std::initializer_list<int> slider_shape, const
             // get multidimensional index of the slider element
             index_slider = Vector<int>::asVector(slider.get_index(n));
             // assing slider value from the element with the index of the sum of index_i+index_slider
-            slider.set(n, source->get((index_i+index_slider).flatten()));
+            slider.set(n, this->get((index_i+index_slider).flatten()));
         }
-        target.set(j,slider.mean());
+        result.set(j,slider.mean());
     }
-    return std::move(*target);
+    return std::move(*result);
 }
 
 template<typename T>
