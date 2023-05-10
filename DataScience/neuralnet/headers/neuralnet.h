@@ -8,6 +8,7 @@
 #include "../../datastructures/headers/datastructures.h"
 #include "../../distributions/headers/distributions.h"
 #include "../../../utilities/headers/log.h"
+#include "../../../utilities/headers/initlists.h"
 #include <vector>
 #include <initializer_list>
 
@@ -67,12 +68,18 @@ struct Layer{
         int neurons;
         int dimensions;
         int timesteps;
+        bool stacked=false; // indicates whether this is a stacked layer such as CNN or stacked pooling
+        int filter_radius; // radius for CNN filters (=kernels)
+        Vector<Array<double>> feature_stack;
+        Vector<Array<double>> filter_stack;
+        std::vector<int> filter_shape;
         std::initializer_list<int> shape;
         Array<double> h; // hidden states
         Array<double> label; // labels for output layer
         Array<double> gradient;
         Array<double> loss;
         Array<double> loss_sum;
+        Array<double> filter; // holds a stack of filters for CNNs
         Vector<Array<double>> x_t; // vector of timesteps holding the input states for RNN, LSTM
         Vector<Array<double>> h_t; // vector of timesteps holding the hidden states for LSTMs
         Vector<Array<double>> c_t; // vector of timesteps holding the cell states for LSTMs
@@ -98,7 +105,6 @@ struct Layer{
         // weights for dense connections
         Array<Array<double *>> W_out; // pointers to W_i weights of next layer
         double dropout_ratio=0;
-        Vector<Array<double>> kernel; // vector of kernels for CNN layers
         std::initializer_list<int> pooling_slider_shape; // vector of pointers to pooling slider shapes
         std::initializer_list<int> pooling_stride_shape; // vector of pointers to pooling stride shapes
 
@@ -107,6 +113,56 @@ struct Layer{
 
         // destructor
         ~Layer();
+};
+
+class NeuralNet{
+    public:
+        // public methods
+        void fit(const Vector<Array<double>>& features, const Vector<Array<double>>& labels, const int batch_size, const int epochs); // for batch training
+        void fit(const Array<double>& features, const Array<double>& labels); // for online training
+        Array<double> predict(const Array<double>& features, bool rescale=true); // predict output from new feature input
+        void save(); // save model to file
+        void load(); // load model from file
+        void summary(); // prints a summary of the model architecture     
+        void set_scaling_method(ScalingMethod method){scaling_method = method;}  
+        AddLayer add_layer;
+        // constructor(s)
+        NeuralNet():
+            // member initialization list
+            add_layer(this),
+            layers(0) {
+            // constructor definition
+            logger = Log();
+            logger.enable_to_console(true);
+            logger.enable_to_file(false);
+            logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
+        }
+        // destructor
+        ~NeuralNet();
+        // public member objects
+        std::vector<Layer> layer;
+        int layers;
+        double loss_avg;
+        LossFunction loss_function;
+        int backprop_iterations=0;
+        int batch_counter=0;
+        int loss_counter=0;
+        int feature_maps = 10;
+    private:
+        // private methods
+        void backpropagate();
+        void calculate_loss();
+        // private members
+        Log logger;
+        Array<double> features_mean;
+        Array<double> features_stddev;
+        Array<double> features_min;
+        Array<double> features_max;
+        Array<double> labels_mean;
+        Array<double> labels_stddev;
+        Array<double> labels_min;
+        Array<double> labels_max;        
+        ScalingMethod scaling_method = standardized;
 };
 
 // struct for adding new layers to an instance of NeuralNet
@@ -154,7 +210,7 @@ struct AddLayer{
         void dense(std::initializer_list<int> shape);
         void dense(const int neurons){dense({neurons});}
         void dense(){dense(network->layer[network->layers-1].shape);}
-        void convolutional();
+        void convolutional(const int filter_radius=1, bool padding=false);
         void GRU(std::initializer_list<int> shape);
         void GRU(const int neurons){GRU({neurons});}
         void GRU(){GRU(network->layer[network->layers-1].shape);}
@@ -170,9 +226,10 @@ struct AddLayer{
             activation(network),
             pool(network) {
             // constructor definition
+            logger = Log();
             logger.enable_to_console(true);
             logger.enable_to_file(false);
-            logger.set_level(LOG_LEVEL_DEBUG);
+            logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
         };
 
         // destructor
@@ -186,52 +243,4 @@ struct AddLayer{
         // private member objects
         NeuralNet* network;
         Log logger;
-};
-
-class NeuralNet{
-    public:
-        // public methods
-        void fit(const Vector<Array<double>>& features, const Vector<Array<double>>& labels, const int batch_size, const int epochs); // for batch training
-        void fit(const Array<double>& features, const Array<double>& labels); // for online training
-        Array<double> predict(const Array<double>& features, bool rescale=true); // predict output from new feature input
-        void save(); // save model to file
-        void load(); // load model from file
-        void summary(); // prints a summary of the model architecture     
-        void set_scaling_method(ScalingMethod method){scaling_method = method;}  
-        AddLayer add_layer;
-        // constructor(s)
-        NeuralNet():
-            // member initialization list
-            add_layer(this),
-            layers(0) {
-            // constructor definition
-            logger.enable_to_console(true);
-            logger.enable_to_file(false);
-            logger.set_level(LOG_LEVEL_DEBUG);
-        }
-        // destructor
-        ~NeuralNet();
-        // public member objects
-        std::vector<Layer> layer;
-        int layers;
-        double loss_avg;
-        LossFunction loss_function;
-        int backprop_iterations=0;
-        int batch_counter=0;
-        int loss_counter=0;
-    private:
-        // private methods
-        void backpropagate();
-        void calculate_loss();
-        // private members
-        Log logger;
-        Array<double> features_mean;
-        Array<double> features_stddev;
-        Array<double> features_min;
-        Array<double> features_max;
-        Array<double> labels_mean;
-        Array<double> labels_stddev;
-        Array<double> labels_min;
-        Array<double> labels_max;        
-        ScalingMethod scaling_method = standardized;
 };

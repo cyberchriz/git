@@ -49,11 +49,11 @@ void NeuralNet::fit(const Vector<Array<double>>& features, const Vector<Array<do
                 }                                
 
                 calculate_loss();
-                logger.log(LOG_LEVEL_DEBUG, "epoch ", epoch, ", batch ", batch, ", sample ", batch_counter, "/", batch_size, ", average loss across all outputs ", loss_avg);
+                Log::log(LOG_LEVEL_DEBUG, "epoch ", epoch, ", batch ", batch, ", sample ", batch_counter, "/", batch_size, ", average loss across all outputs ", loss_avg);
             }
             // finalize batch
             else {
-                logger.log(LOG_LEVEL_INFO, "epoch ", epoch, ", batch ", batch, "FINISHED, average loss (across all outputs) = ", loss_avg, "starting backprop (iteration ", backprop_iterations, ")");
+                Log::log(LOG_LEVEL_INFO, "epoch ", epoch, ", batch ", batch, "FINISHED, average loss (across all outputs) = ", loss_avg, "starting backprop (iteration ", backprop_iterations, ")");
                 backpropagate();
                 // reset loss_counter and loss_sum at end of mini-batch
                 loss_counter = 0;
@@ -93,7 +93,7 @@ void NeuralNet::fit(const Array<double>& features, const Array<double>& labels){
     }
 
     calculate_loss();
-    logger.log(LOG_LEVEL_DEBUG, "average loss (across all output neurons): ", loss_avg, "; starting backprop (iteration ", backprop_iterations, ")");
+    Log::log(LOG_LEVEL_DEBUG, "average loss (across all output neurons): ", loss_avg, "; starting backprop (iteration ", backprop_iterations, ")");
     backpropagate();
 }
 
@@ -104,11 +104,11 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
         switch (layer[l].type){
 
             case max_pooling_layer: {
-                layer[l].h = layer[l-1].h.pool.max(layer[l].pooling_slider_shape, layer[l].pooling_stride_shape);
+                layer[l].h = layer[l-1].h.pool_max(layer[l].pooling_slider_shape, layer[l].pooling_stride_shape);
             } break;
 
             case avg_pooling_layer: {
-                layer[l].h = layer[l-1].h.pool.average(layer[l].pooling_slider_shape, layer[l].pooling_stride_shape);
+                layer[l].h = layer[l-1].h.pool_avg(layer[l].pooling_slider_shape, layer[l].pooling_stride_shape);
             } break;
 
             
@@ -137,13 +137,13 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
                     layer[l].c_gate.set(j,layer[l].W_c.data[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c.data[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_c.data[j]);
                 }
                 // activate gates
-                layer[l].f_gate = layer[l].f_gate.activation.function(ActFunc::sigmoid);
-                layer[l].f_gate = layer[l].i_gate.activation.function(ActFunc::sigmoid);
-                layer[l].f_gate = layer[l].o_gate.activation.function(ActFunc::sigmoid);
-                layer[l].f_gate = layer[l].c_gate.activation.function(ActFunc::tanh);
+                layer[l].f_gate = layer[l].f_gate.activation.function(ActFunc::SIGMOID);
+                layer[l].f_gate = layer[l].i_gate.activation.function(ActFunc::SIGMOID);
+                layer[l].f_gate = layer[l].o_gate.activation.function(ActFunc::SIGMOID);
+                layer[l].f_gate = layer[l].c_gate.activation.function(ActFunc::TANH);
                 // add c_t and h_t results for current timestep
                 layer[l].c_t.push_back(layer[l].f_gate.Hadamard_product(layer[l].c_t[t-1]) + layer[l].i_gate.Hadamard_product(layer[l].c_gate));
-                layer[l].h_t.push_back(layer[l].o_gate.Hadamard_product(layer[l].c_t[t].activation.function(ActFunc::tanh)));
+                layer[l].h_t.push_back(layer[l].o_gate.Hadamard_product(layer[l].c_t[t].activation.function(ActFunc::TANH)));
                 layer[l].h = layer[l].h_t[t];
                 } break;
 
@@ -174,11 +174,11 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
             } break;
                 
             case ReLU_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::ReLU);
+                layer[l].h = layer[l-1].h.activation.function(ActFunc::RELU);
             } break;
                 
             case lReLU_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::lReLU);
+                layer[l].h = layer[l-1].h.activation.function(ActFunc::LRELU);
             } break;
                 
             case ELU_layer: {
@@ -186,11 +186,11 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
             } break;
                 
             case sigmoid_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::sigmoid);
+                layer[l].h = layer[l-1].h.activation.function(ActFunc::SIGMOID);
             } break;
                 
             case tanh_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::tanh);
+                layer[l].h = layer[l-1].h.activation.function(ActFunc::TANH);
             } break;
                 
             case flatten_layer: {
@@ -565,11 +565,60 @@ void AddLayer::recurrent(std::initializer_list<int> shape, int timesteps){
 // creates a fully connected layer
 void AddLayer::dense(std::initializer_list<int> shape){
     init(network, dense_layer, shape);
+    int l = network->layers-1;
     make_dense_connections();
 }
 
 // creates a convolutional layer
-void AddLayer::convolutional(){
+void AddLayer::convolutional(const int filter_radius, bool padding){
+    // check valid layer type
+    if (network->layers==0){
+        throw std::invalid_argument("the first layer always has to be of type 'input_layer'");
+    }
+    // create new layer
+    network->layer.emplace_back(Layer());
+    network->layers++;
+    int l = network->layers - 1;
+    network->layer[l].type = LayerType::convolutional_layer;
+    network->layer[l].dimensions = network->layer[l-1].dimensions+1;
+    network->layer[l].stacked = true;
+    // initialize filters
+    if (filter_radius<1){
+        Log::log(LogLevel::LOG_LEVEL_INFO, "the filter radius for CNN layers should be >=1 but is ", filter_radius, ", -> will be set to 1");
+    }
+    network->layer[l].filter_radius = std::max(1,filter_radius);
+    network->layer[l].filter_shape = std::vector<int>(network->layer[l].dimensions);
+    for (int d=0;d<network->layer[l].dimensions;d++){
+        network->layer[l].filter_shape[d] = std::min(1 + 2*filter_radius, initlist_to_vector(network->layer[l-1].shape)[d]);
+    }
+    // initialize feature maps
+    network->layer[l].feature_stack = Vector<Array<double>>(network->feature_maps);
+    std::vector<int> shape(network->layer[l-1].dimensions);
+    if (padding){
+        for (int i=0;i<network->feature_maps;i++){
+            network->layer[l].feature_stack[i] = Array<double>(network->layer[l-1].shape);
+        }
+    }
+    else {
+        // conv1d if preceding layer is 1-dimensional
+        if (network->layer[l-1].dimensions=1){
+            std::vector<int> shape = {network->layer[l-1].neurons - 2*filter_radius};
+            for (int i=0;i<network->feature_maps;i++){
+                network->layer[l].feature_stack[i] = Array<double>(shape);
+            }            
+        }
+        // conv2d if preceding layer has >=2 dimensions
+        else {
+            std::vector<int> shape = {initlist_to_vector(network->layer[l-1].shape)[0] - 2*filter_radius,
+                                      initlist_to_vector(network->layer[l-1].shape)[1] - 2*filter_radius};
+            for (int i=0;i<network->feature_maps;i++){
+                network->layer[l].feature_stack[i] = Array<double>(shape);
+            }                                       
+        }
+        // stack feature maps to inquire layer shape
+        Array<double> test_stack = network->layer[l].feature_stack.stack();
+    }
+
     // TODO
 }
 
@@ -621,13 +670,13 @@ void AddLayer::flatten(){
 void AddLayer::Pooling::avg(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
     int l = network->layers - 1;
     init(network, avg_pooling_layer, {});
-    network->layer[l].h = network->layer[l-1].h.pool.average(slider_shape,stride_shape);
+    network->layer[l].h = network->layer[l-1].h.pool_avg(slider_shape,stride_shape);
 }
 
 void AddLayer::Pooling::max(std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
     int l = network->layers - 1;
     init(network, avg_pooling_layer, {});
-    network->layer[l].h = network->layer[l-1].h.pool.max(slider_shape, stride_shape);
+    network->layer[l].h = network->layer[l-1].h.pool_max(slider_shape, stride_shape);
 }
 
 // helper method to convert a std::vector<int> to std::initializer_list<int>

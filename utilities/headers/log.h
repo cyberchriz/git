@@ -1,3 +1,7 @@
+// requires C++17 or higher
+
+#pragma once
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -13,65 +17,74 @@ enum LogLevel {
 
 class Log {
 public:
-    void error(const std::string& message) {
+    static void error(const std::string& message) {
         log(LOG_LEVEL_ERROR, message);
     }
 
-    void warning(const std::string& message) {
+    static void warning(const std::string& message) {
         log(LOG_LEVEL_WARNING, message);
     }
 
-    void info(const std::string& message) {
+    static void info(const std::string& message) {
         log(LOG_LEVEL_INFO, message);
     }
 
-    void debug(const std::string& message) {
+    static void debug(const std::string& message) {
         log(LOG_LEVEL_DEBUG, message);
     }
 
-    void set_level(LogLevel level) {
-        logLevel_ = level;
+    static void set_level(LogLevel level) {
+        log_level = level;
     }
 
-    void set_filepath(const std::string& filepath) {
-        logFilepath_ = filepath + "log.txt";
+    static void set_filepath(const std::string& filepath) {
+        log_filepath = filepath;
+        if (!log_filepath.empty() && log_filepath.back() != '/') {
+            log_filepath += '/';
+        }
+        log_filepath += "log.txt";
     }
 
-    void enable_to_console(bool active=true){
-        logToConsole_ = active;
+    static void enable_to_console(bool active=true){
+        log_to_console = active;
     }
 
-    void enable_to_file(bool active=true){
-        logToFile_ = active;
+    static void enable_to_file(bool active=true){
+        log_to_file = active;
     }    
 
     template <typename... Args>
-    void log(int level, Args&&... args) {
+    static void log(int level, Args&&... args) {
         if (level > LogLevel::LOG_LEVEL_NONE &&
-            level <= logLevel_) {
+            level <= log_level) {
             const char* const levelStrings[] = {
                 "ERROR", "WARNING", "INFO", "DEBUG"
             };
             std::stringstream stream;
             (stream << ... << std::forward<Args>(args));
-            std::string logMessage = "[" + std::string(levelStrings[level]) + "]: " + stream.str() + "\n";
+            std::string log_message = "[" + std::string(levelStrings[level]) + "]: " + stream.str() + "\n";
 
-            if (logToConsole_) {
-                std::cout << logMessage << std::endl;
+            if (log_to_console) {
+                std::cout << log_message << std::endl;
             }
 
-            if (logToFile_) {
-                std::ofstream fileStream(logFilepath_, std::ios_base::app);
-                if (fileStream.good()) {
-                    fileStream << logMessage << std::endl;
+            if (log_to_file) {
+                std::ofstream file_stream(log_filepath, std::ios_base::app);
+                if (file_stream.good()) {
+                    file_stream << log_message << std::endl;
                 }
             }
         }
     }
 
 private:
-    LogLevel logLevel_ = LOG_LEVEL_NONE;
-    bool logToConsole_ = true;
-    bool logToFile_ = false;
-    std::string logFilepath_ = "log.txt";
+    static LogLevel log_level;
+    static bool log_to_console;
+    static bool log_to_file;
+    static std::string log_filepath;
 };
+
+LogLevel Log::log_level = LOG_LEVEL_NONE;
+bool Log::log_to_console = true;
+bool Log::log_to_file = false;
+std::string Log::log_filepath = "log.txt";

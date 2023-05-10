@@ -7,13 +7,13 @@
 template<typename T> class Array;
 
 enum ActFunc {
-    ReLU,       // rectified linear unit (ReLU)
-    lReLU,      // leaky rectified linear unit (LReLU)
+    RELU,       // rectified linear unit (ReLU)
+    LRELU,      // leaky rectified linear unit (LReLU)
     ELU,        // exponential linar unit (ELU)
-    sigmoid,    // sigmoid (=logistic)
-    tanh,       // hyperbolic tangent (tanh)
-    softmax,    // softmax (=normalized exponential)
-    ident       // identity function
+    SIGMOID,    // sigmoid (=logistic)
+    TANH,       // hyperbolic tangent (tanh)
+    SOFTMAX,    // softmax (=normalized exponential)
+    IDENT       // identity function
 };
 // class declaration
 template<typename T>
@@ -97,26 +97,26 @@ class Activation {
     public:
         Array<T> function(ActFunc method){
             switch (method){
-                case ReLU: Function::ReLU(); break;
-                case lReLU: Function::lReLU(); break;
+                case RELU: Function::ReLU(); break;
+                case LRELU: Function::lReLU(); break;
                 case ELU: Function::ELU(); break;
-                case sigmoid: Function::sigmoid(); break;   
-                case tanh: Function::tanh(); break;
-                case softmax: Function::softmax(); break;
-                case ident: Function::ident(); break;
+                case SIGMOID: Function::sigmoid(); break;   
+                case TANH: Function::tanh(); break;
+                case SOFTMAX: Function::softmax(); break;
+                case IDENT: Function::ident(); break;
                 default: /* do nothing */ break;
             }
             return std::move(*result);
         }
         Array<T> derivative(ActFunc method){
             switch (method){
-                case ReLU: Derivative::ReLU(); break;
-                case lReLU: Derivative::lReLU(); break;
+                case RELU: Derivative::ReLU(); break;
+                case LRELU: Derivative::lReLU(); break;
                 case ELU: Derivative::ELU(); break;
-                case sigmoid: Derivative::sigmoid(); break;   
-                case tanh: Derivative::tanh(); break;
-                case softmax: Derivative::softmax(); break;
-                case ident: Derivative::ident(); break;
+                case SIGMOID: Derivative::sigmoid(); break;   
+                case TANH: Derivative::tanh(); break;
+                case SOFTMAX: Derivative::softmax(); break;
+                case IDENT: Derivative::ident(); break;
                 default: /* do nothing */ break;
             }
             return std::move(*result);
@@ -127,6 +127,6 @@ class Activation {
         Activation() :
             arr(nullptr){} 
         Activation(Array<T>* arr) : arr(arr){
-            result = std::make_unique<Array<T>>(arr.get_shape());
+            result = std::make_unique<Array<T>>(arr->get_shape());
         } 
 };

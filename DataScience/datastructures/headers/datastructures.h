@@ -17,8 +17,8 @@
 #include "histogram.h"
 #include "regression.h"
 #include "outliers.h"
-#include "pooling.h"
 #include "scaling.h"
+#include "../../../utilities/headers/log.h"
 
 // forward declarations
 template<typename T> class Array;
@@ -48,7 +48,8 @@ class Array{
         T get(const Vector<int>& index) const;
         int get_dimensions() const;
         int get_size(int dimension) const;
-        std::vector<int> get_shape() const {return dim_size};
+        std::vector<int> get_shape() const {return dim_size;};
+        std::string get_shapestring() const;
         int get_elements() const;
         int get_subspace(int dimension) const;    
         int get_element(const std::initializer_list<int>& index) const;
@@ -71,7 +72,6 @@ class Array{
         Array<double> nested_stddev() const;        
         double skewness() const;
         double kurtosis() const;
-
 
         // addition
         T sum() const;
@@ -194,6 +194,14 @@ class Array{
         virtual void reshape(std::vector<int> shape);
         virtual void reshape(std::initializer_list<int> shape);
         virtual Array<T> concatenate(const Array<T>& other, const int axis=0);
+        Array<T> add_dimension(int size, T init_value=0);
+        virtual Array<T> padding(const int amount, const T value=0);
+        virtual Array<T> padding_pre(const int amount, const T value=0);
+        virtual Array<T> padding_post(const int amount, const T value=0);
+        Vector<Array<T>> dissect(int axis);
+        Array<T> pool_max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);     
+        Array<T> pool_avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape); 
+        Array<T> convolution(const Array<T>& filter);    
 
         // output
         void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false) const;
@@ -219,7 +227,6 @@ class Array{
         Activation<T> activation;
         Scaling<T> scale;
         Outliers<T> outliers;
-        Pooling<T> pool;
 
         // constructor & destructor declarations
         Array(){};
@@ -312,6 +319,7 @@ class Vector : public Array<T>{
         Matrix<T> transpose() const;
         Vector<T> reverse() const;
         Vector<T> concatenate(const Vector<T>& other);
+        Array<T> stack();
 
         // outsourced classes
         Regression<T> regression;
@@ -326,7 +334,6 @@ class Vector : public Array<T>{
         const float _reserve = 0.5;
         int capacity;
 };
-
 
 
 // the corresponding file with the definitions must be included
