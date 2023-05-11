@@ -9,15 +9,9 @@
 #include <unordered_map>
 #include <typeinfo>
 #include "../../distributions/headers/random_distributions.h"
+#include "../../distributions/headers/cumulative_distribution_functions.h"
 //#define MEMLOG
 #include "../../../utilities/headers/memlog.h"
-#include "activation.h"
-#include "correlation.h"
-#include "fill.h"
-#include "histogram.h"
-#include "regression.h"
-#include "outliers.h"
-#include "scaling.h"
 #include "../../../utilities/headers/log.h"
 #include "../../../utilities/headers/initlists.h"
 
@@ -33,6 +27,141 @@ enum DIFFERENCING{
    fractional=3,
    deltamean=4,
    original=5
+};
+
+// list of available activation functions
+enum ActFunc {
+    RELU,       // rectified linear unit (ReLU)
+    LRELU,      // leaky rectified linear unit (LReLU)
+    ELU,        // exponential linar unit (ELU)
+    SIGMOID,    // sigmoid (=logistic)
+    TANH,       // hyperbolic tangent (tanh)
+    SOFTMAX,    // softmax (=normalized exponential)
+    IDENT       // identity function
+};
+
+// return struct for correlation results
+// (Pearson, Spearman, ANOVA, covariance)
+template<typename T>
+struct CorrelationResult{ 
+    double x_mean, y_mean;  
+    double x_stddev, y_stddev;     
+    double y_intercept, slope;
+    double covariance;
+    double Pearson_R, Spearman_Rho;   
+    double r_squared;    
+    double RSS, SST, SSE, SSR, MSE, MSR = 0; 
+    double ANOVA_F, ANOVA_p=0;
+    double z_score, t_score;          
+    Vector<T> y_predict;
+    void print(){
+        std::cout // print to console
+        << "=========================================================================="
+        << "\nCorrelation Results (this=x vs. other=y):"
+        << "\n   - mean value of x = " << x_mean
+        << "\n   - mean value of y = " << y_mean
+        << "\n   - standard deviation of x = " << x_stddev
+        << "\n   - standard deviation of y = " << y_stddev
+        << "\n   - regression line y-intercept = " << y_intercept
+        << "\n   - regression line slope = " << slope
+        << "\n   - covariance between x & y = " << covariance
+        << "\n   - Pearson correlation coefficient R = " << Pearson_R
+        << "\n   - Spearman correlation coefficient Rho = " << Spearman_Rho
+        << "\n   - coefficient of determination (r-squared) = " << r_squared
+        << "\n   - residual sum of squares (RSS) = " << RSS
+        << "\n   - total sum of squares (SST) = " << SST
+        << "\n   - explained sum of squares (SSE) = " << SSE
+        << "\n   - regression sum of squares (SSR) = " << SSR
+        << "\n   - mean squared error (MSE) = " << MSE
+        << "\nANOVA:"
+        << "\n   - ANOVA F-statistic = " << ANOVA_F
+        << "\n   - ANOVA p-value = " << ANOVA_p
+        << "\nHypothesis Testing:"
+        << "\n   - z-score = " << z_score
+        << "\n   - t-score = " << t_score
+        << "\n==========================================================================" << std::endl;
+    }
+
+    // constructor
+    CorrelationResult(int elements){
+        y_predict=Vector<T>(elements);
+    }  
+};
+
+// result struct for histograms
+template<typename T>
+struct HistogramResult{
+    private:
+        struct Histogrambar{
+            T lower_boundary;
+            T upper_boundary;
+            int abs_count=0;
+            double rel_count;
+        };
+    public:    
+        T min, max;
+        T bar_width;
+        T _width;
+        int bars;
+        std::unique_ptr<Histogrambar[]> bar;
+        HistogramResult() : bars(0) {};
+        HistogramResult(int bars) : bars(bars) {
+            bar = std::make_unique<Histogrambar[]>(bars);
+        }
+        ~HistogramResult(){};
+};
+
+// result struct for linear regression
+template<typename T>
+struct LinRegResult{
+    double x_mean, y_mean=0;
+    double y_intercept, _slope;
+    double r_squared;
+    std::unique_ptr<double[]> _y_regression;
+    std::unique_ptr<double[]> _residuals;
+    double SST=0;
+    double SSR=0;
+    T predict(const T x){return y_intercept + _slope * x;}
+    bool is_good_fit(double threshold=0.95){return r_squared>threshold;}
+    // parametric constructor
+    LinRegResult(const int elements){
+        _y_regression = std::make_unique<double[]>(elements);
+        _residuals = std::make_unique<double[]>(elements);
+    }
+    // delete default constructor (because only a constructor that passes data makes sense)
+    LinRegResult() = delete;
+    ~LinRegResult(){};
+};
+
+// nested struct for polynomial regression
+template<typename T>
+struct PolyRegResult{
+    public:
+        double SS_res=0;
+        double SS_tot=0;
+        double RSS=0;
+        double MSE;      
+        double RSE;
+        double y_mean=0;
+        double x_mean=0;
+        double r_squared;
+        std::unique_ptr<double[]> coefficient;  
+        bool _is_good_fit(double threshold=0.95){return r_squared>threshold;}
+        T predict(const T x){
+            double y_pred = 0;
+            for (int p = 0; p<=power;p++) {
+                y_pred += coefficient[p] * std::pow(x, p);
+            }
+            return y_pred;
+        };  
+        // constructor & destructor
+        PolyRegResult() : power(0), coefficient(nullptr) {}; 
+        PolyRegResult(const int elements, const int power) : power(power) {
+            coefficient = std::make_unique<double[]>(power+1);
+        };
+        ~PolyRegResult(){}
+    private:
+        int power;
 };
 
 // class for multidimensional arrays
@@ -57,6 +186,21 @@ class Array{
         int get_element(const std::vector<int>& index) const;
         std::vector<int> get_index(int flattened_index) const;    
         std::type_info const& get_type(){return typeid(T);}
+
+        // fill, initialize
+        void fill_values(const T value);
+        void fill_zeros();
+        void fill_identity();
+        void fill_random_gaussian(const T mu=0, const T sigma=1);
+        void fill_random_uniform(const T min=0, const T max=1.0);
+        void fill_range(const T start=0, const T step=1);
+        void fill_dropout(double ratio=0.2);
+        void fill_binary(double ratio=0.5);
+        void fill_Xavier_normal(int fan_in, int fan_out);
+        void fill_Xavier_uniform(int fan_in, int fan_out);
+        void fill_Xavier_sigmoid(int fan_in, int fan_out);
+        void fill_He_ReLU(int fan_in);
+        void fill_He_ELU(int fan_in);
 
         // basic distribution properties
         T min() const;
@@ -105,7 +249,6 @@ class Array{
         void operator/=(const T quotient);
         Array<T> Hadamard_division(const Array<T>& other) const;
 
-
         // modulo
         void operator%=(const double num);
         Array<double> operator%(const double num) const;
@@ -150,8 +293,19 @@ class Array{
         int find(const T value) const;
         Array<char> sign();
 
+        // activation functions
+        Array<T> activation(ActFunc activation_function);
+        Array<T> derivative(ActFunc activation_function);
+
         // custom functions
         Array<T> function(const T (*pointer_to_function)(T));
+
+        // outlier treatment
+        void outliers_truncate(double z_score=3);
+        void outliers_winsoring(double z_score=3);
+        void outliers_mean_imputation(double z_score=3);
+        void outliers_median_imputation(double z_score=3);
+        void outliers_value_imputation(T value=0, double z_score=3);        
 
         // assignment
         virtual Array<T>& operator=(const Array<T>& other);
@@ -222,12 +376,6 @@ class Array{
     public:
         // main data buffer
         std::unique_ptr<T[]> data = nullptr; // 1dimensional array of source data
-
-        // outsourced classes
-        Fill<T> fill;
-        Activation<T> activation;
-        Scaling<T> scale;
-        Outliers<T> outliers;
 
         // constructor & destructor declarations
         Array(){};
@@ -322,9 +470,11 @@ class Vector : public Array<T>{
         Vector<T> concatenate(const Vector<T>& other);
         Array<T> stack();
 
-        // outsourced classes
-        Regression<T> regression;
-        Histogram<T> histogram;
+        // statistics
+        CorrelationResult<T> correlation(const Vector<T>& other) const;
+        LinRegResult<T> regression_linear(const Vector<T>& other) const;
+        PolyRegResult<T> regression_polynomial(const Vector<T>& other, const int power) const;
+        HistogramResult<T> histogram(int bars) const;
 
         // constructor & destructor declarations
         Vector();

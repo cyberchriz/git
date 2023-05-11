@@ -57,7 +57,7 @@ void NeuralNet::fit(const Vector<Array<double>>& features, const Vector<Array<do
                 backpropagate();
                 // reset loss_counter and loss_sum at end of mini-batch
                 loss_counter = 0;
-                layer[layers-1].loss_sum.fill.zeros();
+                layer[layers-1].loss_sum.fill_zeros();
                 batch++;
             }
         }
@@ -137,13 +137,13 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
                     layer[l].c_gate.set(j,layer[l].W_c.data[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c.data[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_c.data[j]);
                 }
                 // activate gates
-                layer[l].f_gate = layer[l].f_gate.activation.function(ActFunc::SIGMOID);
-                layer[l].f_gate = layer[l].i_gate.activation.function(ActFunc::SIGMOID);
-                layer[l].f_gate = layer[l].o_gate.activation.function(ActFunc::SIGMOID);
-                layer[l].f_gate = layer[l].c_gate.activation.function(ActFunc::TANH);
+                layer[l].f_gate = layer[l].f_gate.activation(ActFunc::SIGMOID);
+                layer[l].f_gate = layer[l].i_gate.activation(ActFunc::SIGMOID);
+                layer[l].f_gate = layer[l].o_gate.activation(ActFunc::SIGMOID);
+                layer[l].f_gate = layer[l].c_gate.activation(ActFunc::TANH);
                 // add c_t and h_t results for current timestep
                 layer[l].c_t.push_back(layer[l].f_gate.Hadamard_product(layer[l].c_t[t-1]) + layer[l].i_gate.Hadamard_product(layer[l].c_gate));
-                layer[l].h_t.push_back(layer[l].o_gate.Hadamard_product(layer[l].c_t[t].activation.function(ActFunc::TANH)));
+                layer[l].h_t.push_back(layer[l].o_gate.Hadamard_product(layer[l].c_t[t].activation(ActFunc::TANH)));
                 layer[l].h = layer[l].h_t[t];
                 } break;
 
@@ -170,27 +170,27 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
                 
             case dropout_layer: {
                 layer[l].h = layer[l-1].h;
-                layer[l].h.fill.dropout(layer[l].dropout_ratio);
+                layer[l].h.fill_dropout(layer[l].dropout_ratio);
             } break;
                 
             case ReLU_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::RELU);
+                layer[l].h = layer[l-1].h.activation(ActFunc::RELU);
             } break;
                 
             case lReLU_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::LRELU);
+                layer[l].h = layer[l-1].h.activation(ActFunc::LRELU);
             } break;
                 
             case ELU_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::ELU);
+                layer[l].h = layer[l-1].h.activation(ActFunc::ELU);
             } break;
                 
             case sigmoid_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::SIGMOID);
+                layer[l].h = layer[l-1].h.activation(ActFunc::SIGMOID);
             } break;
                 
             case tanh_layer: {
-                layer[l].h = layer[l-1].h.activation.function(ActFunc::TANH);
+                layer[l].h = layer[l-1].h.activation(ActFunc::TANH);
             } break;
                 
             case flatten_layer: {
@@ -394,7 +394,7 @@ void NeuralNet::backpropagate(){
         }   
     }
     // reset gradients
-    layer[layers-1].gradient.fill.zeros();
+    layer[layers-1].gradient.fill_zeros();
 }
 
 // calculates the loss according to the specified loss function;
@@ -514,9 +514,9 @@ void NeuralNet::AddLayer::lstm(std::initializer_list<int> shape, const int times
     network->layer[l].x_t = Vector<Array<double>>(timesteps);
     for (int t=0;t<timesteps;t++){
         // initialize vectors of timesteps for the cell state and hidden state
-        network->layer[l].c_t.data[t] = Array<double>(shape); network->layer[l].c_t[t].fill.zeros();
-        network->layer[l].h_t.data[t] = Array<double>(shape); network->layer[l].h_t[t].fill.zeros();
-        network->layer[l].x_t.data[t] = Array<double>(shape); network->layer[l].h_t[t].fill.zeros();
+        network->layer[l].c_t.data[t] = Array<double>(shape); network->layer[l].c_t[t].fill_zeros();
+        network->layer[l].h_t.data[t] = Array<double>(shape); network->layer[l].h_t[t].fill_zeros();
+        network->layer[l].x_t.data[t] = Array<double>(shape); network->layer[l].h_t[t].fill_zeros();
     }
     // initialize gate value arrays
     network->layer[l].f_gate = Array<double>(network->layer[l].shape);
@@ -535,20 +535,20 @@ void NeuralNet::AddLayer::lstm(std::initializer_list<int> shape, const int times
     network->layer[l].W_c = Array<Array<double>>(network->layer[l-1].h.get_shape());     
     for (int j=0;j<network->layer[l].c_t.get_elements();j++){
         // initialize weight matrices
-        network->layer[l].U_f.data[j] = Array<double>(shape); network->layer[l].U_f.fill.He_ReLU(network->layer[l].neurons);
-        network->layer[l].U_i.data[j] = Array<double>(shape); network->layer[l].U_i.fill.He_ReLU(network->layer[l].neurons);
-        network->layer[l].U_o.data[j] = Array<double>(shape); network->layer[l].U_o.fill.He_ReLU(network->layer[l].neurons);
-        network->layer[l].U_c.data[j] = Array<double>(shape); network->layer[l].U_c.fill.He_ReLU(network->layer[l].neurons);
-        network->layer[l].W_f.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_f.fill.He_ReLU(network->layer[l-1].neurons);
-        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_i.fill.He_ReLU(network->layer[l-1].neurons);
-        network->layer[l].W_o.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_o.fill.He_ReLU(network->layer[l-1].neurons);
-        network->layer[l].W_c.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_c.fill.He_ReLU(network->layer[l-1].neurons);    
+        network->layer[l].U_f.data[j] = Array<double>(shape); network->layer[l].U_f.fill_He_ReLU(network->layer[l].neurons);
+        network->layer[l].U_i.data[j] = Array<double>(shape); network->layer[l].U_i.fill_He_ReLU(network->layer[l].neurons);
+        network->layer[l].U_o.data[j] = Array<double>(shape); network->layer[l].U_o.fill_He_ReLU(network->layer[l].neurons);
+        network->layer[l].U_c.data[j] = Array<double>(shape); network->layer[l].U_c.fill_He_ReLU(network->layer[l].neurons);
+        network->layer[l].W_f.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_f.fill_He_ReLU(network->layer[l-1].neurons);
+        network->layer[l].W_i.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_i.fill_He_ReLU(network->layer[l-1].neurons);
+        network->layer[l].W_o.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_o.fill_He_ReLU(network->layer[l-1].neurons);
+        network->layer[l].W_c.data[j] = Array<double>(network->layer[l-1].h.get_shape()); network->layer[l].U_c.fill_He_ReLU(network->layer[l-1].neurons);    
     }
     // initialize biases
-    network->layer[l].b_f = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);
-    network->layer[l].b_i = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);
-    network->layer[l].b_o = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);
-    network->layer[l].b_c = Array<double>(shape); network->layer[l].b_f.fill.He_ReLU(network->layer[l].neurons);   
+    network->layer[l].b_f = Array<double>(shape); network->layer[l].b_f.fill_He_ReLU(network->layer[l].neurons);
+    network->layer[l].b_i = Array<double>(shape); network->layer[l].b_f.fill_He_ReLU(network->layer[l].neurons);
+    network->layer[l].b_o = Array<double>(shape); network->layer[l].b_f.fill_He_ReLU(network->layer[l].neurons);
+    network->layer[l].b_c = Array<double>(shape); network->layer[l].b_f.fill_He_ReLU(network->layer[l].neurons);   
     make_dense_connections();
 }
 
@@ -698,7 +698,7 @@ void NeuralNet::AddLayer::make_dense_connections(){
     int neurons_j = network->layer[l].neurons;
     for (int j=0;j<neurons_j;j++){
         network->layer[l].W_x.data[j] = Array<double>(network->layer[l-1].shape);
-        network->layer[l].W_x.data[j].fill.He_ReLU(neurons_i);
+        network->layer[l].W_x.data[j].fill_He_ReLU(neurons_i);
     }
     // attach outgoing weights of preceding layer
     network->layer[l-1].W_out = Array<Array<int>>(network->layer[l-1].shape);
@@ -713,7 +713,7 @@ void NeuralNet::AddLayer::make_dense_connections(){
     }
     // initialize bias weights
     network->layer[l].b = Array<double>(network->layer[l].shape);
-    network->layer[l].b.fill.He_ReLU(neurons_i);
+    network->layer[l].b.fill_He_ReLU(neurons_i);
 }
 
 // basic layer setup
@@ -740,7 +740,7 @@ void NeuralNet::AddLayer::init(NeuralNet* network, LayerType type, std::initiali
     network->layer[l].shape = shape;
     network->layer[l].h = Array<double>(shape);
     network->layer[l].gradient = Array<double>(shape);
-    network->layer[l].gradient.fill.zeros();
+    network->layer[l].gradient.fill_zeros();
     network->layer[l].dimensions = shape.size();
     network->layer[l].neurons = network->layer[l].h.get_elements();    
 }

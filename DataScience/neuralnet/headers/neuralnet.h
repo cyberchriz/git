@@ -215,7 +215,7 @@ class NeuralNet{
             logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
         }
         // destructor
-        ~NeuralNet();
+        ~NeuralNet(){};
         // public member objects
         std::vector<Layer> layer;
         int layers;

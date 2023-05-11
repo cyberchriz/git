@@ -1,5 +1,3 @@
-#ifndef DATASTRUCTURES_CPP
-#define DATASTRUCTURES_CPP
 #include "../headers/datastructures.h"
 
 // +=================================+   
@@ -204,6 +202,150 @@ int Array<T>::get_subspace(int dimension) const {
 }
 
 // +=================================+   
+// | Fill, Initialize                |
+// +=================================+
+
+// fill entire array with given value
+template<typename T>
+void Array<T>::fill_values(const T value){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i]=value;
+    }
+}
+
+// initialize all values of the array with zeros
+template<typename T>
+void Array<T>::fill_zeros(){
+    this->fill_values(0);
+}
+
+// fill with identity matrix
+template<typename T>
+void Array<T>::fill_identity(){
+    // initialize with zeros
+    this->fill_values(0);
+    // get size of smallest dimension
+    int max_index=this->get_size(0);
+    for (int i=1; i<dimensions; i++){
+        max_index=std::min(max_index,this->get_size(i));
+    }
+    std::vector<int> index(dimensions);
+    // add 'ones' of identity matrix
+    for (int i=0;i<max_index;i++){
+        for (int d=0;d<dimensions;d++){
+            index[d]=i;
+        }
+        this->set(index,1);
+    }
+}
+
+// fill with values from a random normal distribution
+template<typename T>
+void Array<T>::fill_random_gaussian(const T mu, const T sigma){
+    for (int i=0; i<this->data_elements; i++){
+        this->data[i] = Random<T>::gaussian(mu,sigma);
+    }           
+}
+
+// fill with values from a random uniform distribution
+template<typename T>
+void Array<T>::fill_random_uniform(const T min, const T max){
+    for (int i=0; i<this->data_elements;i++){
+        this->data[i] = Random<T>::uniform(min,max);
+    }
+}
+// fills the array with a continuous
+// range of numbers (with specified start parameter
+// referring to the zero position and a step parameter)
+// in all dimensions
+template<typename T>
+void Array<T>::fill_range(const T start, const T step){
+    if (dimensions==1){
+        for (int i=0;i<this->data_elements;i++){
+            this->data[i]=start+i*step;
+        }
+    }
+    else {
+        std::vector<int> index(dimensions);
+        std::fill(index.begin(),index.end(),0);
+        for (int d=0;d<dimensions;d++){
+            for (int i=0;i<this->get_size(d);i++){
+                index[d]=i;
+                this->set(index,start+i*step);
+            }
+        }
+    }
+}
+
+// randomly sets a specified fraction of the values to zero
+// and retains the rest
+template<typename T>
+void Array<T>::fill_dropout(double ratio){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] *= Random<double>::uniform() > ratio;
+    }
+}
+
+// randomly sets the specified fraction of the values to zero
+// and the rest to 1 (default: 0.5, i.e. 50%)
+template<typename T>
+void Array<T>::fill_binary(double ratio){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::uniform() > ratio;
+    }
+}
+
+// fill with normal "Xavier" weight initialization
+// (by Xavier Glorot & Bengio) for tanh activation
+template<typename T>
+void Array<T>::fill_Xavier_normal(int fan_in, int fan_out){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::gaussian(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
+        this->data[i] *= sqrt(6/sqrt(double(fan_in+fan_out)));
+    }
+}
+
+// fill with uniform "Xavier" weight initializiation
+// (by Xavier Glorot & Bengio) for tanh activation
+template<typename T>
+void Array<T>::fill_Xavier_uniform(int fan_in, int fan_out){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::uniform(0.0,1.0);
+        this->data[i] *= sqrt(2/sqrt(double(fan_in+fan_out)));
+    }
+}
+
+// fill with uniform "Xavier" weight initialization
+// for sigmoid activation
+template<typename T>
+void Array<T>::fill_Xavier_sigmoid(int fan_in, int fan_out){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::uniform(0.0,1.0);
+        this->data[i] *= 4*sqrt(6/(double(fan_in+fan_out)));
+    }
+}
+
+// fill with "Kaiming He" normal weight initialization,
+// used for ReLU activation
+template<typename T>
+void Array<T>::fill_He_ReLU(int fan_in){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::gaussian(0.0,1.0); // get a random number from a normal distribution with zero mean and variance one
+        this->data[i] *= sqrt(2/((double)(fan_in)));
+    }
+}
+
+// fill with modified "Kaiming He" nornal weight initialization,
+// used for ELU activation
+template<typename T>
+void Array<T>::fill_He_ELU(int fan_in){
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::gaussian(0.0,1.0);
+        this->data[i] *= sqrt(1.55/(double(fan_in)));
+    }
+}
+
+// +=================================+   
 // | Distribution Properties         |
 // +=================================+
 
@@ -227,7 +369,7 @@ Array<T> Array<T>::nested_min() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data[0].get_shape());
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING, "improper use of method Array<T>::min(): not defined for empty array -> will return T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     result = this->data[0];
@@ -259,7 +401,7 @@ Array<T> Array<T>::nested_max() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data[0].get_shape());
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING, "improper use of method Array<T>::max(): not defined for empty array -> will return T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     result = this->data[0];
@@ -361,7 +503,7 @@ template<typename T>
 Array<double> Array<T>::nested_variance() const {
     Array<T> mean = this->mean();
     std::unique_ptr<Array<double>> sum_of_squares = std::make_unique<Array<double>>(this->data[0].get_shape());
-    sum_of_squares->fill.zeros();
+    sum_of_squares->fill_zeros();
     for (int i = 0; i < this->data_elements; i++) {
         sum_of_squares += (this->data[i] - mean).pow(2);
     }
@@ -435,7 +577,7 @@ template<typename T>
 Array<T> Array<T>::operator+(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -490,7 +632,7 @@ template<typename T>
 void Array<T>::operator+=(const Array<T>& other){
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator+= with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be a T(NAN) array");
-        this->fill.values(T(NAN));
+        this->fill_values(T(NAN));
         return;
     }
     for (int i=0; i<this->data_elements; i++){
@@ -520,7 +662,7 @@ Array<T> Array<T>::operator-(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator- with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be a T(NAN) array");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -575,7 +717,7 @@ template<typename T>
 void Array<T>::operator-=(const Array<T>& other){
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator-= with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be a T(NAN) array");
-        this->fill.values(T(NAN));
+        this->fill_values(T(NAN));
         return;
     }
     for (int i=0; i<this->data_elements; i++){
@@ -630,7 +772,7 @@ Array<T> Array<T>::Hadamard_product(const Array<T>& other)  const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if(!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling Hadamard product with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be a T(NAN) array");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -755,7 +897,7 @@ Matrix<T> Matrix<T>::tensordot(const Matrix<T>& other) const {
     // Check if the matrices can be multiplied
     if (this->size[1] != other.size[0]){
         Log::log(LOG_LEVEL_WARNING, "calling matrix tensordot with matrix shapes that can't be multiplied: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be a matrix of T(NAN)");        
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
         return result;
     }
     // Compute the dot product
@@ -809,7 +951,7 @@ Array<T> Array<T>::Hadamard_division(const Array<T>& other)  const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if(!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling Hadamard division with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -868,7 +1010,7 @@ Array<T> Array<T>::pow(const Array<T>& other){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling pow() method with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     else {
@@ -986,7 +1128,7 @@ Array<T> Array<T>::min(const Array<T>& other){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling min() method with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
         return std::move(*result);
     }    
     for (int i=0;i<this->data_elements;i++){
@@ -1000,7 +1142,7 @@ Array<T> Array<T>::max(const Array<T>& other){
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling max() method with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
         return std::move(*result);
     }       
     for (int i=0;i<this->data_elements;i++){
@@ -1172,6 +1314,94 @@ Array<char> Array<T>::sign(){
 }
 
 // +=================================+   
+// | Activation Functions            |
+// +=================================+
+
+// neural network activation functions
+template<typename T>
+Array<T> Array<T>::activation(ActFunc activation_function){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
+    double alpha = 0.01;
+    switch (activation_function){
+        case RELU: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = this->data[i] * this->data[i]>0;
+            } 
+        } break;
+        case LRELU: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = this->data[i]>0 ? this->data[i] : this->data[i]*alpha;
+            }
+        } break;
+        case ELU: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = this->data[i]>0 ? this->data[i] : alpha*(std::exp(this->data[i])-1); 
+            } 
+        } break;
+        case SIGMOID: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = 1/(1+std::exp(-this->data[i])); 
+            } 
+        } break;   
+        case TANH: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = std::tanh(this->data[i]);
+            } 
+        } break;
+        case SOFTMAX: {
+            // TODO
+        } break;
+        case IDENT: {
+            // do nothing   
+        } break;
+        default: /* do nothing */ break;
+    }
+    return std::move(*result);
+}
+
+// derivatives of neural network activation functions
+template<typename T>
+Array<T> Array<T>::derivative(ActFunc activation_function){
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
+    double alpha = 0.01;
+    switch (activation_function){
+        case RELU: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = this->data[i]>0 ? 1 : 0;
+            } 
+        } break;
+        case LRELU: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = this->data[i]>0 ? 1 : alpha;
+            }
+        } break;
+        case ELU: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = this->data[i]>0 ? 1 : alpha*std::exp(this->data[i]);
+            } 
+        } break;
+        case SIGMOID: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = std::exp(this->data[i])/std::pow(std::exp(this->data[i])+1,2); 
+            } 
+        } break;   
+        case TANH: {
+            for (int i=0;i<this->data_elements;i++){
+                result->data[i] = 1-std::pow(std::tanh(this->data[i]),2);
+            } 
+        } break;
+        case SOFTMAX: {
+            // TODO
+        } break;
+        case IDENT: {
+            result->fill_values(1);  
+        } break;
+        default: /* do nothing */ break;
+    }
+    return std::move(*result);
+}
+
+// +=================================+   
 // | Custom Functions                |
 // +=================================+
 
@@ -1185,6 +1415,90 @@ Array<T> Array<T>::function(const T (*pointer_to_function)(T)){
         result->data[i] = pointer_to_function(this->data[i]);
     }
     return std::move(*result);
+}
+
+// +=================================+   
+// | Outliers Treatment              |
+// +=================================+
+
+template<typename T>
+void Array<T>::outliers_truncate(double z_score){
+    double mean = this->mean();
+    double stddev = this->stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<this->_elements;i++){
+        if (this->_data[i] > upper_margin){
+            this->_data[i] = upper_margin;
+        }
+        if (this->_data[i] < lower_margin){
+            this->data[i] = lower_margin;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::outliers_winsoring(double z_score){
+    double mean = this->mean();
+    double stddev = this->stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    T highest_valid = mean;
+    T lowest_valid = mean;
+    for (int i=0;i<this->_elements;i++){
+        if (this->_data[i] < upper_margin && this->_data[i] > lower_margin){
+            highest_valid = std::fmax(highest_valid, this->_data[i]);
+            lowest_valid = std::fmin(lowest_valid, this->_data[i]);
+        }
+    }    
+    for (int i=0;i<this->_elements;i++){
+        if (this->_data[i] > upper_margin){
+            this->data[i] = highest_valid;
+        }
+        else if (this->_data[i] < lower_margin){
+            this->data[i] = lowest_valid;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::outliers_mean_imputation(double z_score){
+    double mean = this->mean();
+    double stddev = this->stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<this->_elements;i++){
+        if (this->_data[i] > upper_margin || this->_data[i] < lower_margin){
+            this->_data[i] = mean;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::outliers_median_imputation(double z_score){
+    double median = this->median();
+    double mean = this->mean();
+    double stddev = this->stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<this->_elements;i++){
+        if (this->_data[i] > upper_margin || this->_data[i] < lower_margin){
+            this->_data[i] = median;
+        }
+    }
+}
+
+template<typename T>
+void Array<T>::outliers_value_imputation(T value, double z_score){
+    double mean = this->mean();
+    double stddev = this->stddev();
+    double lower_margin = mean - z_score*stddev;
+    double upper_margin = mean + z_score*stddev;
+    for (int i=0;i<this->_elements;i++){
+        if (this->_data[i] > upper_margin || this->_data[i] < lower_margin){
+            this->_data[i] = value;
+        }
+    }
 }
 
 // +=================================+   
@@ -1430,7 +1744,7 @@ Array<bool> Array<T>::operator>(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator> comparison with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1452,7 +1766,7 @@ Array<bool> Array<T>::operator>=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator>= comparison with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1474,7 +1788,7 @@ Array<bool> Array<T>::operator==(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator== comparison with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1496,7 +1810,7 @@ Array<bool> Array<T>::operator!=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator!= comparison with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1518,7 +1832,7 @@ Array<bool> Array<T>::operator<(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator< comparison with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1540,7 +1854,7 @@ Array<bool> Array<T>::operator<=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling operator<= comparison with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1599,7 +1913,7 @@ Array<bool> Array<T>::operator&&(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling logical AND (operator&&) with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1620,7 +1934,7 @@ Array<bool> Array<T>::operator||(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING, "calling logical OR (operator||) with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be an array of T(NAN)");
-        result->fill.values(T(NAN));
+        result->fill_values(T(NAN));
     }
     else {
         for (int i=0; i<this->data_elements; i++){
@@ -1690,7 +2004,7 @@ Vector<T> Array<T>::flatten() const {
 template<typename T>
 Matrix<T> Array<T>::asMatrix(const int rows, const int cols, T init_value) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill.values(init_value);
+    result->fill_values(init_value);
     std::vector<int> index(this->dimensions);
     // reset the indices of higher dimensions to all zeros
     for (int d=0;d<this->dimensions;d++){
@@ -1716,7 +2030,7 @@ Matrix<T> Array<T>::asMatrix(const int rows, const int cols, T init_value) const
 template<typename T>
 Matrix<T> Matrix<T>::asMatrix(const int rows, const int cols, T init_value) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill.values(init_value);
+    result->fill_values(init_value);
     for (int r=0;r<std::fmin(rows,this->dim_size[0]);r++){
         for (int c=0;c<std::fmin(cols,this->dim_size[1]);c++){
             result->set(r,c,this->get(r,c));
@@ -1749,7 +2063,7 @@ Vector<T> Vector<T>::asVector(const std::vector<T>& other){
 template<typename T>
 Matrix<T> Vector<T>::asMatrix(const int rows, const int cols, T init_value) const {
     std::unique_ptr<Matrix<T>> result = std::make_unique<Matrix<T>>(rows,cols);
-    result->fill.values(init_value);
+    result->fill_values(init_value);
     for (int i=0;i<std::fmin(this->data_elements,cols);i++){
         result->set(0,i, this->data[i]);
     }
@@ -1819,7 +2133,7 @@ Matrix<T> Vector<T>::asMatrix() const {
 template<typename T>
 Array<T> Array<T>::asArray(const std::initializer_list<int>& init_list, T init_value) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(init_list);
-    result->fill.values(init_value);
+    result->fill_values(init_value);
     // reset result index to all zeros
     std::vector<int> result_index(result->get_dimensions());
     std::fill(result_index.begin(),result_index.end(),0);
@@ -1888,13 +2202,14 @@ Array<T> Array<T>::add_dimension(int size, T init_value){
     std::vector<int> new_shape = this->dim_size;
     new_shape.push_back(size);
     std::unique_ptr<Array<T>> result = Array<T>(new_shape);
-    result->fill.values(init_value);
+    result->fill_values(init_value);
     for (int i=0;i<this->data_elements;i++){
         result->data[i] = this->data[i];
     }
     return std::move(*result);
 }
 
+// stacks a vector of arrays into a single array
 template<typename T>
 Array<T> Vector<T>::stack() {
     Array<T> result = this->data[0].add_dimension(1);
@@ -1904,6 +2219,202 @@ Array<T> Vector<T>::stack() {
     return result;
 }
 
+// calculates correlation metrics (Pearson, Spearman, ANOVA)
+// of 'this' as x_data and 'other' as y_data
+template<typename T>
+CorrelationResult<T> Vector<T>::correlation(const Vector<T>& other) const {
+    if (this->data_elements != other.data_elements) {
+        Log::log(LOG_LEVEL_WARNING, "Invalid use of method Vector<T>::correlation(); both vectors should have the same number of elements");
+    }
+    int elements=std::min(this->data_elements, other.data_elements);    
+    std::unique_ptr<CorrelationResult<T>> result = std::make_unique<CorrelationResult<T>>(elements);
+
+    // get empirical vector autocorrelation (Pearson coefficient R), assumimg linear dependence
+    result->x_mean=this->mean();
+    result->y_mean=other.mean();
+    result->covariance=0;
+    for (int i=0;i<elements;i++){
+        result->covariance+=(this->_data[i] - result->x_mean) * (other._data[i] - result->y_mean);
+    }
+    result->x_stddev=this->stddev();
+    result->y_stddev=other.stddev();
+    result->Pearson_R = result->covariance / (result->x_stddev * result->y_stddev);   
+
+    // get r_squared (coefficient of determination) assuming linear dependence
+    double x_mdev2_sum=0,y_mdev2_sum=0,slope_numerator=0;
+    for (int i=0;i<elements;i++){
+        x_mdev2_sum += std::pow(this->_data[i] - result->x_mean, 2); //=slope denominator
+        y_mdev2_sum += std::pow(other._data[i] - result->y_mean, 2); //=SST
+        slope_numerator += (this->_data[i] - result->x_mean) * (other._data[i] - result->y_mean);
+    }
+    result->SST = y_mdev2_sum;
+    result->slope = slope_numerator / x_mdev2_sum;
+    result->y_intercept = result->y_mean - result->slope * result->x_mean;
+
+    // get regression line values
+    for (int i=0; i<elements; i++){
+        result->y_predict[i] = result->y_intercept + result->slope * this->_data[i];
+        // get sum of squared (y-^y) //=SSE   
+        result->SSE += std::pow(result->y_predict[i] - result->y_mean, 2);
+        result->SSR += std::pow(other._data[i] - result->y_predict[i], 2);
+    };
+    result->r_squared = result->SSE/(std::fmax(y_mdev2_sum,__DBL_MIN__)); //=SSE/SST, equal to 1-SSR/SST
+    
+    // ANOVA
+    double df_error = elements - 2;
+    result->MSE = result->SSE / df_error;
+    double df_regression = 1;
+    result->MSR = result->SSR / df_regression;
+    result->ANOVA_F = result->MSR / result->MSE;
+    result->ANOVA_p = 1 - cdf<double>::F_distribution(result->ANOVA_F, df_regression, df_error);
+
+    // Spearman correlation, assuming non-linear monotonic dependence
+    auto rank_x = this->ranking();
+    auto rank_y = other.ranking();
+    double numerator=0;
+    for (int i=0;i<elements;i++){
+        numerator+=6*std::pow(rank_x._data[i] - rank_y._data[i],2);
+    }
+    result->Spearman_Rho=1-numerator/(elements*(std::pow(elements,2)-1));
+    // test significance against null hypothesis
+    double fisher_transform=0.5*std::log( (1 + result->Spearman_Rho) / (1 - result->Spearman_Rho) );
+    result->z_score = sqrt((elements-3)/1.06)*fisher_transform;
+    result->t_score = result->Spearman_Rho * std::sqrt((elements-2)/(1-std::pow(result->Spearman_Rho,2)));
+    
+    return std::move(*result);    
+}
+
+// performs linear regression with the source vector as
+// x_data and a second vector as corresponding the y_data;
+// the results will be stored in a struct;
+// make sure that both vectors have the same number of
+// elements (otherwise the surplus elements of the
+// larger vector will be discarded)
+template<typename T>
+LinRegResult<T> Vector<T>::regression_linear(const Vector<T>& other) const {
+    // create result struct
+    int elements = std::min(this->_elements, other.get_elements());
+    std::unique_ptr<LinRegResult<T>> result = std::make_unique<LinRegResult<T>>(elements);
+    // get mean for x and y values
+    for (int i = 0; i < elements; i++){
+        result->x_mean += this->_data[i];
+        result->y_mean += other._data[i];
+    }
+    result->x_mean /= elements;
+    result->y_mean /= elements;
+    // get sum of squared mean deviations
+    double x_mdev2_sum = 0, y_mdev2_sum = 0, slope_num = 0;
+    for (int n = 0; n < elements; n++){
+        double x_mdev = this->_data[n] - result->x_mean;
+        double y_mdev = other._data[n] - result->y_mean;
+        x_mdev2_sum += x_mdev * x_mdev;
+        y_mdev2_sum += y_mdev * y_mdev;
+        slope_num += x_mdev * y_mdev;
+        result->_y_regression[n] = result->y_intercept + result->_slope * this->_data[n];
+        result->_residuals[n] = other._data[n] - result->_y_regression[n];
+        result->SSR += result->_residuals[n] * result->_residuals[n];
+    }
+    // get slope
+    result->_slope = slope_num / (x_mdev2_sum + std::numeric_limits<T>::min());
+    // get y intercept
+    result->y_intercept = result->y_mean - result->_slope * result->x_mean;
+    // get r_squared
+    result->SST = y_mdev2_sum;
+    result->r_squared = 1 - result->SSR / (result->SST + std::numeric_limits<T>::min());
+
+    return std::move(*result);
+}
+
+
+// performs polynomial regression (to the specified power)
+// with the source vector as the x data and a second vector
+// as the corresponding y data;
+// make sure that both vectors have the same number of
+// elements (y_datawise the surplus elements of the
+// larger vector will be discarded)
+template<typename T>
+PolyRegResult<T> Vector<T>::regression_polynomial(const Vector<T>& other, const int power) const {
+    // create result struct
+    int elements=std::min(this->get_elements(), other.get_elements());
+    std::unique_ptr<PolyRegResult<T>> result = std::make_unique<PolyRegResult<T>>(elements, power);
+
+    // Create matrix of x values raised to different powers
+    auto X = std::make_unique<Matrix<T>>(elements, power + 1);
+    for (int i = 0; i < elements; i++) {
+        for (int p = 1; p <= power; p++) {
+            X->set(i,p,std::pow(this->_data[i],p));
+        }
+    }
+
+    // Perform normal equation
+    for (int i = 0; i <= power; i++) {
+        for (int j = 0; j <= power; j++) {
+            T sum = 0;
+            for (int k = 0; k < elements; k++) {
+                sum += X->get(k,i) * X->get(k,j);
+            }
+            X->set(i,j,sum);
+        }
+        result->coefficient[i] = 0;
+        for (int k = 0; k < elements; k++) {
+            result->coefficient[i] += other._data[k] * X->get(k,i);
+        }
+    }
+    // Get R-squared value and other statistics
+    result->y_mean = std::accumulate(other._data.begin(), other._data.end(), 0.0) / elements;
+    result->x_mean = std::accumulate(this->_data.begin(), this->_data.end(), 0.0) / elements;
+    for (int i = 0; i < elements; i++) {
+        double y_pred = 0;
+        for (int j = 0; j <= power; j++) {
+            y_pred += result->coefficient[j] * pow(this->_data[i], j);
+        }
+        result->SS_res += std::pow(other._data[i] - y_pred, 2);
+        result->SS_tot += std::pow(other._data[i] - result->y_mean, 2);
+    }
+    result->r_squared = 1 - result->SS_res / result->SS_tot;
+    result->RSS = std::sqrt(result->SS_res / (elements - power - 1));
+    result->MSE = result->RSS/elements;
+
+    return std::move(*result);
+}
+
+// returns a histogram of the source vector data
+// with the specified number of bars and returns the 
+// result as type struct Histogram<T>'
+template <typename T>
+HistogramResult<T> Vector<T>::histogram(int bars) const {
+    std::unique_ptr<HistogramResult<T>> histogram = std::make_unique<HistogramResult<T>>(bars);
+    // get min and max value from sample
+    histogram->min = this->data[0];
+    histogram->max = this->data[0];
+    for (int i=0;i<this->_elements;i++){
+        histogram->min=std::fmin(histogram->min, this->data[i]);
+        histogram->max=std::fmax(histogram->max, this->data[i]);
+    }
+
+    // get histogram x-axis scaling
+    histogram->_width = histogram->max - histogram->min;
+    histogram->bar_width = histogram->_width / bars;
+    
+    // set histogram x values, initialize count to zero
+    for (int i=0;i<bars;i++){
+        histogram->bar[i].lower_boundary = histogram->min + histogram->bar_width * i;
+        histogram->bar[i].upper_boundary = histogram->min + histogram->bar_width * (i+1);
+        histogram->bar[i].abs_count=0;
+    }
+
+    // count absolute occurences per histogram bar
+    for (int i=0;i<this->_elements;i++){
+        histogram->bar[int((this->data[i]-histogram->min)/histogram->bar_width)].abs_count++;
+    }
+
+    // convert to relative values
+    for (int i=0;i<bars;i++){
+        histogram->bar[i].rel_count=histogram->bar[i].abs_count/this->_elements;
+    }
+    return std::move(*histogram);
+}
+
 template<typename T>
 Array<T> Array<T>::padding(const int amount, const T value){
     std::vector<int> target_shape = this->dim_size;
@@ -1911,7 +2422,7 @@ Array<T> Array<T>::padding(const int amount, const T value){
         target_shape[d] = this->dim_size[d] + 2*amount;
     }
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(target_shape);
-    result->fill.values(value);
+    result->fill_values(value);
     std::vector<int> index;
     for (int i=0; i<this->data_elements; i++){
         index = this->get_index(i);
@@ -1930,7 +2441,7 @@ Array<T> Array<T>::padding_pre(const int amount, const T value){
         target_shape[d] = this->dim_size[d] + amount;
     }
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(target_shape);
-    result->fill.values(value);
+    result->fill_values(value);
     std::vector<int> index;
     for (int i=0; i<this->data_elements; i++){
         index = this->get_index(i);
@@ -1949,7 +2460,7 @@ Array<T> Array<T>::padding_post(const int amount, const T value){
         target_shape[d] = this->dim_size[d] + amount;
     }
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(target_shape);
-    result->fill.values(value);
+    result->fill_values(value);
     std::vector<int> index;
     for (int i=0; i<this->data_elements; i++){
         index = this->get_index(i);
@@ -2081,7 +2592,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
     if (this->dimensions == 1){
         int filter_width = filter.get_size(0);
         result = std::make_unique<Array<T>>({this->data_elements - filter_width});
-        result->fill.zeros();
+        result->fill_zeros();
         for (int i=0; i<this->data_elements-filter_width; i++){
             for (int ii=0; ii<filter_width; ii++){
                 result->data[i] += this->data[i+ii] * filter.data[ii];
@@ -2091,7 +2602,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
     // 2d convolution for matrices
     if (this->dimensions==2 && filter.dimensions==2){
         result = std::make_unique<Array<T>>({this->dim_size[0]-filter.get_size(0), this->dim_size[1]-filter.get_size(1)});
-        result->fill.zeros();
+        result->fill_zeros();
         for (int row=0;row<this->dim_size[0]-filter.get_size(0);row++){
             for (int col=0; col<this->dim_size[1]-filter.get_size(1);col++){
                 for (int filter_row=0;filter_row<filter.get_size(0);filter_row++){
@@ -2105,7 +2616,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
     // 2d convoltion for arrays
     if (this->dimensions==3 && filter.dimensions==3){
         result= std::make_unique<Array<T>>({this->dim_size[0]-filter.get_size(0), this->dim_size[1]-filter.get_size(1)});
-        result->fill.zeros();
+        result->fill_zeros();
         for (int row=0;row<this->dim_size[0]-filter.get_size(0);row++){
             for (int col=0; col<this->dim_size[1]-filter.get_size(1);col++){
                 for (int filter_row=0;filter_row<filter.get_size(0);filter_row++){
@@ -2214,12 +2725,7 @@ Vector<T> Vector<T>::concatenate(const Vector<T>& other){
 // pass dimension size (elements per dimension)
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
-Array<T>::Array(const std::initializer_list<int>& shape) :
-        // member initialization list
-        scale(this),
-        fill(this),
-        activation(this),
-        outliers(this) {
+Array<T>::Array(const std::initializer_list<int>& shape) {
     // set dimensions + check if init_list empty
     this->dimensions = (int)shape.size();
     if (this->dimensions==0){
@@ -2275,11 +2781,6 @@ Array<T>::Array(const std::vector<int>& shape) {
     }    
     // initialize data buffer
     this->data = std::make_unique<T[]>(this->data_elements);
-    // initialize instances of outsourced classes    
-    this->scale = Scaling<T>(this);
-    this->fill = Fill<T>(this);
-    this->activation = Activation<T>(this);
-    this->outliers = Outliers<T>(this);
 }
 
 // Array move constructor
@@ -2331,12 +2832,7 @@ Vector<T>::Vector() {
     this->capacity = 0;
     this->dimensions = 1;
     // initialize data buffer
-    this->data = std::make_unique<T[]>(0);
-    // initialize instances of outsourced classes    
-    this->scale = Scaling<T>(this);
-    this->fill = Fill<T>(this);
-    this->activation = Activation<T>(this);
-    this->outliers = Outliers<T>(this);      
+    this->data = std::make_unique<T[]>(0);  
 }
 
 // constructor for a one-dimensional vector
@@ -2349,12 +2845,7 @@ Vector<T>::Vector(const int elements) {
     this->capacity = (1.0f+this->_reserve)*elements;
     this->dimensions = 1;
     // initialize data buffer
-    this->data = std::make_unique<T[]>(this->data_elements);
-    // initialize instances of outsourced classes    
-    this->scale = Scaling<T>(this);
-    this->fill = Fill<T>(this);
-    this->activation = Activation<T>(this);
-    this->outliers = Outliers<T>(this);         
+    this->data = std::make_unique<T[]>(this->data_elements);       
 }
 
 // Vector move constructor
@@ -2380,12 +2871,7 @@ Matrix<T>::Matrix(const int rows, const int cols) {
     this->subspace_size[0]=rows;
     this->subspace_size[1]=rows*cols; 
     // initialize data buffer
-    this->data = std::make_unique<T[]>(this->data_elements); 
-    // initialize instances of outsourced classes    
-    this->scale = Scaling<T>(this);
-    this->fill = Fill<T>(this);
-    this->activation = Activation<T>(this);
-    this->outliers = Outliers<T>(this);       
+    this->data = std::make_unique<T[]>(this->data_elements);      
 }
 
 // Matrix move constructor
@@ -2571,7 +3057,7 @@ template<typename T>
 Vector<int> Vector<T>::ranking() const {
     // initialize ranks
     std::unique_ptr<Vector<int>> rank = std::make_unique<Vector<int>>(this->data_elements);
-    rank->fill.range(0,1);
+    rank->fill_range(0,1);
     // ranking loop
     bool ranking_completed=false;
     while (!ranking_completed){
@@ -2866,7 +3352,7 @@ Vector<T> Vector<T>::binning(const int bins){
     }
     // prepare the data structure to put the results
     std::unique_ptr<Vector<T>> result = std::make_unique<Vector<T>>(bins);    
-    result->fill.zeros();
+    result->fill_zeros();
     // get a sorted copy of the original data (ascending order)
     auto sorted = this->sort();
     // calculate bin size
@@ -3021,5 +3507,3 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
         }
     }
 }
-
-#endif

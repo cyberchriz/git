@@ -6,58 +6,7 @@ template<typename T> class Vector;
 template<typename T> class Matrix;
 
 
-// result struct for linear regression
-template<typename T>
-struct LinRegResult{
-    double x_mean, y_mean=0;
-    double y_intercept, _slope;
-    double r_squared;
-    std::unique_ptr<double[]> _y_regression;
-    std::unique_ptr<double[]> _residuals;
-    double SST=0;
-    double SSR=0;
-    T predict(const T x){return y_intercept + _slope * x;}
-    bool is_good_fit(double threshold=0.95){return r_squared>threshold;}
-    // parametric constructor
-    LinRegResult(const int elements){
-        _y_regression = std::make_unique<double[]>(elements);
-        _residuals = std::make_unique<double[]>(elements);
-    }
-    // delete default constructor (because only a constructor that passes data makes sense)
-    LinRegResult() = delete;
-    ~LinRegResult(){};
-};
 
-// nested struct for polynomial regression
-template<typename T>
-struct PolyRegResult{
-    public:
-        double SS_res=0;
-        double SS_tot=0;
-        double RSS=0;
-        double MSE;      
-        double RSE;
-        double y_mean=0;
-        double x_mean=0;
-        double r_squared;
-        std::unique_ptr<double[]> coefficient;  
-        bool _is_good_fit(double threshold=0.95){return r_squared>threshold;}
-        T predict(const T x){
-            double y_pred = 0;
-            for (int p = 0; p<=power;p++) {
-                y_pred += coefficient[p] * std::pow(x, p);
-            }
-            return y_pred;
-        };  
-        // constructor & destructor
-        PolyRegResult() : power(0), coefficient(nullptr) {}; 
-        PolyRegResult(const int elements, const int power) : power(power) {
-            coefficient = std::make_unique<double[]>(power+1);
-        };
-        ~PolyRegResult(){}
-    private:
-        int power;
-};
 
 template<typename T>
 class Regression{
