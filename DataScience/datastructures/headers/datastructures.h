@@ -8,6 +8,7 @@
 #include <numeric>
 #include <unordered_map>
 #include <typeinfo>
+#include <type_traits>
 #include "../../distributions/headers/random_distributions.h"
 #include "../../distributions/headers/cumulative_distribution_functions.h"
 //#define MEMLOG
@@ -17,8 +18,6 @@
 
 // forward declarations
 template<typename T> class Array;
-template<typename T> class Matrix;
-template<typename T> class Vector;
 
 // list of time series differencing methods for stationarity transformation
 enum DIFFERENCING{
@@ -53,7 +52,7 @@ struct CorrelationResult{
     double RSS, SST, SSE, SSR, MSE, MSR = 0; 
     double ANOVA_F, ANOVA_p=0;
     double z_score, t_score;          
-    Vector<T> y_predict;
+    Array<T> y_predict;
     void print(){
         std::cout // print to console
         << "=========================================================================="
@@ -84,7 +83,7 @@ struct CorrelationResult{
 
     // constructor
     CorrelationResult(int elements){
-        y_predict=Vector<T>(elements);
+        y_predict=Array<T>(elements);
     }  
 };
 
@@ -171,21 +170,27 @@ class Array{
         // getters & setters
         void set(const std::initializer_list<int>& index, const T value);
         void set(const std::vector<int>& index, const T value);
-        void set(const Vector<int>& index, const T value);
+        void set(const Array<int>& index, const T value);
+        void set(const int row, const int col, const T value);
         void set(const int index, const T value);
         T get(const std::initializer_list<int>& index) const;
         T get(const std::vector<int>& index) const;
-        T get(const Vector<int>& index) const;
-        int get_dimensions() const;
-        int get_size(int dimension) const;
+        T get(const Array<int>& index) const;
+        T get(const int row, const int col) const;
+        int get_dimensions() const {return this->dimensions;};
+        int get_size(int dimension) const {return this->dim_size[dimensions];};
+        int get_size() const {return this->data_elements;};
+        int get_elements() const {return this->data_elements;};
         std::vector<int> get_shape() const {return dim_size;};
         std::string get_shapestring() const;
-        int get_elements() const;
-        int get_subspace(int dimension) const;    
+        int get_subspace(int dimension) const;
+        std::vector<int> subspace() {return this->subspace_size;};       
+        int get_capacity() const {return this->capacity;};    
         int get_element(const std::initializer_list<int>& index) const;
         int get_element(const std::vector<int>& index) const;
-        std::vector<int> get_index(int flattened_index) const;    
-        std::type_info const& get_type(){return typeid(T);}
+        std::vector<int> get_index(int element) const;    
+        std::type_info const& get_type(){return typeid(T);};
+        const char* get_typename(){return typeid(T).name();};
 
         // fill, initialize
         void fill_values(const T value);
@@ -193,9 +198,9 @@ class Array{
         void fill_identity();
         void fill_random_gaussian(const T mu=0, const T sigma=1);
         void fill_random_uniform(const T min=0, const T max=1.0);
+        void fill_random_binary(double ratio=0.5);
         void fill_range(const T start=0, const T step=1);
         void fill_dropout(double ratio=0.2);
-        void fill_binary(double ratio=0.5);
         void fill_Xavier_normal(int fan_in, int fan_out);
         void fill_Xavier_uniform(int fan_in, int fan_out);
         void fill_Xavier_sigmoid(int fan_in, int fan_out);
@@ -209,11 +214,11 @@ class Array{
         double mean() const;
         double median() const;
         double variance() const;
-        double stddev() const;
-        Array<T> nested_min() const;
-        Array<T> nested_max() const;        
+        double stddev() const;        
+        Array<double> nested_min() const;
+        Array<double> nested_max() const;
         Array<double> nested_mean() const;
-        Array<double> nested_variance() const;
+        Array<double> nested_variance() const;                            
         Array<double> nested_stddev() const;        
         double skewness() const;
         double kurtosis() const;
@@ -237,10 +242,11 @@ class Array{
 
         // multiplication
         T product() const; // product reduction (=multiplying all elements with each other)
-        virtual Array<T> operator*(const T factor) const; // elementwise multiplication
-        virtual Array<T> tensordot(const Array<T>& other, const std::vector<int>& axes) const; //=tensor reduction
-        virtual T dotproduct(const Array<T>& other) const; //=scalar product
-        virtual T operator*(const Array<T>& other) const; //=alias for the dotproduct (=scalar product)
+        Array<T> operator*(const T factor) const; // elementwise multiplication
+        Array<T> tensordot(const Array<T>& other, const std::vector<int>& axes) const; //=tensor reduction
+        Array<T> tensordot(const Array<T>& other) const; //=tensor reduction
+        T dotproduct(const Array<T>& other) const; //=scalar product
+        T operator*(const Array<T>& other) const; //=alias for the dotproduct (=scalar product)
         void operator*=(const T factor);
         Array<T> Hadamard_product(const Array<T>& other) const;
         
@@ -293,6 +299,12 @@ class Array{
         int find(const T value) const;
         Array<char> sign();
 
+        // scale
+        Array<double> scale_minmax(T min=0,T max=1);
+        Array<double> scale_mean();
+        Array<double> scale_standardized();
+        Array<double> scale_unit_length();
+
         // activation functions
         Array<T> activation(ActFunc activation_function);
         Array<T> derivative(ActFunc activation_function);
@@ -301,15 +313,17 @@ class Array{
         Array<T> function(const T (*pointer_to_function)(T));
 
         // outlier treatment
-        void outliers_truncate(double z_score=3);
-        void outliers_winsoring(double z_score=3);
-        void outliers_mean_imputation(double z_score=3);
-        void outliers_median_imputation(double z_score=3);
-        void outliers_value_imputation(T value=0, double z_score=3);        
+        Array<T> outliers_truncate(double z_score=3);
+        Array<T> outliers_winsoring(double z_score=3);
+        Array<T> outliers_mean_imputation(double z_score=3);
+        Array<T> outliers_median_imputation(double z_score=3);
+        Array<T> outliers_value_imputation(T value=0, double z_score=3);        
 
         // assignment
-        virtual Array<T>& operator=(const Array<T>& other);
-        virtual Array<T>& operator=(Array<T>&& other) noexcept; // =move assignment
+        Array<T>& operator=(const Array<T>& other); // =copy assignment
+        Array<T>& operator=(Array<T>&& other) noexcept; // =move assignment
+        Array<T>& operator=(const T (&arr)[]); // =copy assignment
+        Array<T>& operator=(T (&&arr)[]) noexcept; // =move assignment
 
         // elementwise comparison by single value
         Array<bool> operator>(const T value) const;
@@ -342,21 +356,53 @@ class Array{
         Array<T*> operator&(); // 'address-of' operator
         
         // conversion
-        Vector<T> flatten() const;
-        virtual Matrix<T> asMatrix(const int rows, const int cols, T init_value=0) const;
-        virtual Matrix<T> asMatrix() const;
-        Array<T> asArray(const std::initializer_list<int>& initlist, T init_value=0) const;
-        virtual void reshape(std::vector<int> shape);
-        virtual void reshape(std::initializer_list<int> shape);
-        virtual Array<T> concatenate(const Array<T>& other, const int axis=0);
+        Array<T> flatten() const;
+        void reshape(std::vector<int> shape, const T init_value=0);
+        void reshape(std::initializer_list<int> shape, const T init_value=0);
+        void reshape(Array<int> shape, const T init_value=0);
+        Array<T> concatenate(const Array<T>& other, const int axis=0);
         Array<T> add_dimension(int size, T init_value=0);
-        virtual Array<T> padding(const int amount, const T value=0);
-        virtual Array<T> padding_pre(const int amount, const T value=0);
-        virtual Array<T> padding_post(const int amount, const T value=0);
-        Vector<Array<T>> dissect(int axis);
+        Array<T> padding(const int amount, const T value=0);
+        Array<T> padding_pre(const int amount, const T value=0);
+        Array<T> padding_post(const int amount, const T value=0);
+        Array<Array<T>> dissect(int axis);
         Array<T> pool_max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);     
         Array<T> pool_avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape); 
         Array<T> convolution(const Array<T>& filter);    
+        Array<T> transpose() const;    
+        Array<T> reverse() const;
+        Array<T> stack();
+        Array<T> shuffle() const;
+
+        // 1d Array statistics
+        CorrelationResult<T> correlation(const Array<T>& other) const;
+        LinRegResult<T> regression_linear(const Array<T>& other) const;
+        PolyRegResult<T> regression_polynomial(const Array<T>& other, const int power) const;
+        HistogramResult<T> histogram(int bars) const;
+
+        // 1d Array dynamic handling
+        int push_back(T value);
+        T pop_last();
+        T pop_first();
+        T erase(const int index);
+        int grow(const int additional_elements);
+        int shrink(const int remove_amount);       
+        void resize(const int newsize);         
+
+        // 1d Array sample analysis
+        Array<int> ranking() const;
+        Array<T> exponential_smoothing(bool as_series=false) const;
+        double weighted_average(bool as_series=true) const;
+        double Dickey_Fuller(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
+        double Engle_Granger(const Array<T>& other) const;
+        Array<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
+        Array<T> sort(bool ascending=true) const;
+        double covariance(const Array<T>& other) const;
+        Array<T> binning(const int bins);                   
+
+        // indexing
+        T& operator[](const int index) const;
+        T& operator[](const int index);
 
         // output
         void print(std::string comment="", std::string delimiter=", ", std::string line_break="\n", bool with_indices=false) const;
@@ -366,12 +412,9 @@ class Array{
         // protected member variables
         bool equalsize(const Array<T>& other) const;
         int data_elements=0; // total number of data_elements in all _dimensions
-        int dimensions=0;
+        int dimensions;
         std::vector<int> dim_size; // holds the size (number of data_elements) per individual dimension 
-        std::vector<int> subspace_size;
-        
-        // protected methods
-        void resizeArray(std::unique_ptr<T[]>& arr, const int newSize);         
+        std::vector<int> subspace_size;       
 
     public:
         // main data buffer
@@ -387,105 +430,13 @@ class Array{
 
         // copy constructor
         Array(const Array& other);
-        virtual ~Array();   
-};
-
-// derived class from Array<T>, for 2d matrix
-template<typename T>
-class Matrix : public Array<T>{
-    public:
-        // getters & setters
-        void set(const int row, const int col, T value);
-        T get(const int row, const int col) const;
-
-        // special matrix operations
-        T dotproduct(const Matrix<T>& other) const; //=scalar product
-        T operator*(const Matrix<T>& other) const; //=Alias for the dotproduct (=scalar product)
-        Matrix<T> tensordot(const Matrix<T>& other) const; //=tensor reduction, alias for operator*
-        Matrix<T> transpose() const;
-
-        // assignment
-        Matrix<T>& operator=(const Matrix<T>& other);
-        Matrix<T>& operator=(Matrix<T>&& other) noexcept; // =move assignment
-
-        // conversion
-        Matrix<T> asMatrix(const int rows, const int cols, T init_value=0) const override;
-        void reshape(const int rows, const int cols);
-        Matrix<T> concatenate(const Matrix<T>& other, const int axis=0);
-
-
-        // constructor declarations
-        Matrix(){};
-        Matrix(const int rows, const int cols);
-        Matrix(Matrix&& other) noexcept; //=move constructor
-        ~Matrix() override;
-};
-
-// derived class from Array<T>, for 1d vectors
-template<typename T>
-class Vector : public Array<T>{
-    public:
-        // dynamic handling
-        int push_back(T value);
-        T pop_last();
-        T pop_first();
-        T erase(const int index);
-        int grow(const int additional_elements);
-        int shrink(const int remove_amount);       
-        void resize(const int newsize);        
-        int get_capacity() const;
-        int size() const;
-        Vector<T> flatten()=delete;
-
-        // Multiplication
-        T dotproduct(const Vector<T>& other) const; //=scalar product, alias for operator*
-        T operator*(const Vector<T>& other) const; //=scalar product, alias for dotproduct()
-
-        // sample analysis
-        Vector<int> ranking() const;
-        Vector<T> exponential_smoothing(bool as_series=false) const;
-        double weighted_average(bool as_series=true) const;
-        double Dickey_Fuller(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
-        double Engle_Granger(const Vector<T>& other) const;
-        Vector<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
-        Vector<T> sort(bool ascending=true) const;
-        Vector<T> shuffle() const;
-        double covariance(const Vector<T>& other) const;
-        Vector<T> binning(const int bins);
-
-        // assignment
-        Vector<T>& operator=(const Vector<T>& other);
-        Vector<T>& operator=(Vector<T>&& other) noexcept; // =move assignment
-
-        // indexing
-        T& operator[](const int index) const;
-        T& operator[](const int index);
-
-        // conversion
-        static Vector<T> asVector(const std::vector<T>& other);
-        Matrix<T> asMatrix(const int rows, const int cols, T init_value=0)  const override;
-        Matrix<T> asMatrix() const override;
-        Matrix<T> transpose() const;
-        Vector<T> reverse() const;
-        Vector<T> concatenate(const Vector<T>& other);
-        Array<T> stack();
-
-        // statistics
-        CorrelationResult<T> correlation(const Vector<T>& other) const;
-        LinRegResult<T> regression_linear(const Vector<T>& other) const;
-        PolyRegResult<T> regression_polynomial(const Vector<T>& other, const int power) const;
-        HistogramResult<T> histogram(int bars) const;
-
-        // constructor & destructor declarations
-        Vector();
-        Vector(const int elements);
-        ~Vector() override;
-        Vector(Vector&& other) noexcept; //=move constructor
+        ~Array();   
+    
     private:
+        void resize_array(std::unique_ptr<T[]>& arr, const int newSize);
         const float _reserve = 0.5;
-        int capacity;
+        int capacity;        
 };
-
 
 // the corresponding file with the definitions must be included
 // because this is the template class

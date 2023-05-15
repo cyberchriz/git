@@ -71,5 +71,7 @@
         "timer": "cpp",
         "mutex": "cpp"
     },
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "cppStandard": "c++17"
+
 }
