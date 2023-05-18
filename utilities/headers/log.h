@@ -73,6 +73,7 @@ public:
                 std::ofstream file_stream(log_filepath, std::ios_base::app);
                 if (file_stream.good()) {
                     file_stream << log_message << std::endl;
+                    file_stream.close();
                 }
             }
         }
@@ -85,7 +86,8 @@ private:
     static std::string log_filepath;
 };
 
-LogLevel Log::log_level = LOG_LEVEL_NONE;
+// set default values of static members from outside class
+LogLevel Log::log_level = LOG_LEVEL_WARNING;
 bool Log::log_to_console = true;
 bool Log::log_to_file = false;
 std::string Log::log_filepath = "log.txt";

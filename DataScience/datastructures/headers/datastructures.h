@@ -182,6 +182,9 @@ class Array{
         int get_size() const {return this->data_elements;};
         int get_elements() const {return this->data_elements;};
         std::vector<int> get_shape() const {return dim_size;};
+        Array<int> get_convolution_shape(Array<int>& filter_shape, const bool padding=false);
+        std::vector<int> get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false);
+        std::vector<int> get_stacked_shape();
         std::string get_shapestring() const;
         int get_subspace(int dimension) const;
         std::vector<int> subspace() {return this->subspace_size;};       
@@ -424,6 +427,8 @@ class Array{
         Array(){};
         Array(const std::initializer_list<int>& shape);
         Array(const std::vector<int>& shape);
+        Array(const Array<int>& shape);
+        Array(const int elements);
         
         //=move constructor
         Array(Array&& other) noexcept;

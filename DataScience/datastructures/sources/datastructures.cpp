@@ -3508,7 +3508,7 @@ Array<T> Array<T>::add_dimension(int size, T init_value){
     return std::move(*result);
 }
 
-// stacks an Array of Arrays into a single array
+// stacks a nested Array of Arrays into a single combined array
 template<typename T>
 Array<T> Array<T>::stack() {
     Array<T> result = this->data[0].add_dimension(1);
@@ -3516,6 +3516,15 @@ Array<T> Array<T>::stack() {
     for (int n = 1; n < this->data_elements; n++){
         result.concatenate(this->data[n].add_dimension(1),axis);
     }
+    return result;
+}
+
+// returns the shape that result from stacking
+// a nested Array of Arrays into a single combined Array
+template<typename T>
+std::vector<int> Array<T>::get_stacked_shape(){
+    std::vector<int> result = this->data[0].get_shape();
+    result.push_back(this->dimensions);
     return result;
 }
 
@@ -4059,6 +4068,123 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
     return std::move(*result);
 }
 
+template<typename T>
+Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool padding=false){
+
+    // check valid filter dimensions
+    if (filter.dimensions>this->dimensions){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method ",
+            "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
+            "filter can't have more dimensions then the array; filter has shape ", filter.get_shapestring(),
+            ", source array has shape ", this->get_shapestring());
+    }
+    for (int d=0;d<filter.dimensions;d++){
+        if (filter.get_size(d)>this->dim_size[d]){
+            Log::log(LOG_LEVEL_WARNING,
+                "invalid usage of method ",
+                "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
+                "the source Array has shape ", this->get_shapestring(), " whilst the filter has shape ",
+                filter.get_shapestring(), ", therefore the filter has size ", filter.get_size(d),
+                " in dimension ", d, ", but the Array has only size ", this->dim_size(d),
+                " in dimension ", d);
+        }
+    }
+    if (filter.dimensions<this->dimensions-1){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method ",
+            "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
+            "Array is ", this->dimensions, "-dimensional, therefore only filters with ",
+            this->dimensions-1, " or ", this->dimensions, " are allowed");
+    }
+
+    // return original shape if padding applies
+    if (padding) {
+        Array<int> result(this->dimensions);
+        for (int d=0; d<this->dimensions; d++) {
+            result[d] = this->dim_size[d];
+        }
+        return result;
+    }
+
+    // 1d convolution for 1d arrays
+    if (this->dimensions == 1){
+        Array<int> result(1);
+        try {
+            int filter_width = filter.get_size(0);
+            result[0] = this->data_elements - filter_width;
+        }
+        catch (...) {
+            Log::log(LOG_LEVEL_WARNING,
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());
+        }
+        return result;
+    }
+    // 2d convolution for 2d arrays
+    if (this->dimensions==2 && filter.dimensions==2){
+        Array<int> result(2);
+        try {
+            result[0] = this->dim_size[0]-filter.get_size(0);
+            result[1] = this->dim_size[1]-filter.get_size(1);
+        }
+        catch (...) {
+            Log::log(LOG_LEVEL_WARNING,
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());            
+        }
+    }
+    // 2d convoltion for 3d arrays
+    if (this->dimensions==3 && filter.dimensions==3){
+        Array<int> result(2);
+        try {
+            result[0] = this->dim_size[0]-filter.get_size(0);
+            result[1] = this->dim_size[1]-filter.get_size(1);
+        }
+        catch (...) {
+            Log::log(LOG_LEVEL_WARNING,
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());                        
+        }        
+    }
+
+    // nd convolution
+    if (filter.dimensions == this->dimensions-1){
+        try {
+            Array<int> result;
+            for (int d=0;d<this->dimensions-1;d++){
+                result.push_back(this->dim_size[d]-filter.get_size(d));
+            }
+            result.push_back(filter.get_size(filter.dimensions-1));
+            return result;
+        }
+        catch (...) {
+            Log::log(LOG_LEVEL_WARNING,
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());
+        }
+        return result;
+    }
+}
+
+template<typename T>
+std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false){
+    // convert filter shape from type std::vector to Array
+    Array<int> filter_shape_Array(filter_shape.size());
+    for (int d=0; d<filter_shape.size(); d++){
+        filter_shape_Array[d] = filter_shape[d];
+    }
+    // get result
+    Array<int> result_Array = get_convolution_shape(filter_shape_Array, padding);
+    // convert back into std::vector
+    std::vector<int> result_vector(result_Array.get_dimensions());
+    for (int d=0; d<result_Array.get_dimensions(); d++){
+        result_vector[d] = result_Array[d];
+    }
+    // return result
+    return result_vector;
+}
+
 // +=================================+   
 // | Constructors & Destructors      |
 // +=================================+
@@ -4125,6 +4251,12 @@ Array<T>::Array(const std::vector<int>& shape) {
     }
     // initialize data buffer
     this->data = std::make_unique<T[]>(this->capacity);
+}
+
+// constructor for 1d Arrays
+template<typename T>
+Array<T>::Array(const int elements) {
+    Array({elements});
 }
 
 // Array move constructor

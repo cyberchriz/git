@@ -67,9 +67,10 @@ struct Layer{
         int dimensions;
         int timesteps;
         bool stacked=false; // indicates whether this is a stacked layer such as CNN or stacked pooling
-        int filter_radius; // radius for CNN filters (=kernels)
-        Vector<Array<double>> feature_stack;
-        Vector<Array<double>> filter_stack;
+        Array<Array<double>> feature_stack_x;
+        Array<Array<double>> feature_stack_h;
+        Array<Array<double>> gradient_stack;
+        Array<Array<double>> filter_stack;
         std::vector<int> filter_shape;
         std::initializer_list<int> shape;
         Array<double> h; // hidden states
@@ -77,29 +78,36 @@ struct Layer{
         Array<double> gradient;
         Array<double> loss;
         Array<double> loss_sum;
-        Array<double> filter; // holds a stack of filters for CNNs
-        Vector<Array<double>> x_t; // vector of timesteps holding the input states for RNN, LSTM
-        Vector<Array<double>> h_t; // vector of timesteps holding the hidden states for LSTMs
-        Vector<Array<double>> c_t; // vector of timesteps holding the cell states for LSTMs
+        Array<Array<double>> x_t; // vector of timesteps holding the input states for RNN, LSTM
+        Array<Array<double>> h_t; // vector of timesteps holding the hidden states for LSTMs
+        Array<Array<double>> c_t; // vector of timesteps holding the cell states for LSTMs
+        Array<Array<double>> U;   // stores the weights for h(t-1) for RNN
         Array<Array<double>> U_f; // stores the weights for h(t-1) to calculate the forget gate: f(t) = σ(W_f * x(t) + U_f * h(t-1) + b_f)
         Array<Array<double>> U_i; // stores the weights for h(t-1) to calculate the input gate: i(t) = σ(W_i * x(t) + U_i * h(t-1) + b_i)
-        Array<Array<double>> U_o; // stores the weights for h(t-1) to calculate the outout gate: o(t) = σ(W_o * x(t) + U_o * h(t-1) + b_o)
+        Array<Array<double>> U_o; // stores the weights for h(t-1) to calculate the output gate: o(t) = σ(W_o * x(t) + U_o * h(t-1) + b_o)
         Array<Array<double>> U_c; // stores the weights for h(t-1) to calculate the candidate gate: c(t) = tanh(W_c * x(t) + U_c * h(t-1) + b_c)
+        Array<Array<double>> U_z; // stores the weights for h(t-1) to calculate the update gate: z(t) = σ(W_z * x(t) + U_z + h(t-1) + b_z)
+        Array<Array<double>> U_r; // stores the weights for h(t-1) to calculate the reset gate: r(t) = σ(W_r * x(t) + U_r + h(t-1) + b_r)
         Array<Array<double>> W_f; // forget gate weights for x(t)
         Array<Array<double>> W_i; // input gate weights for x(t)
         Array<Array<double>> W_o; // output gate weights for x(t)
         Array<Array<double>> W_c; // candidate gate weights for x(t)
+        Array<Array<double>> W_z; // update gate weights for x(t)
+        Array<Array<double>> W_r; // reset gate weights for x(t)
         Array<Array<double>> W_x; // stores the weights for dense connections (dense layers, output layers)
-        Array<double> f_gate;
-        Array<double> i_gate;
-        Array<double> o_gate;
-        Array<double> c_gate;
-        Array<double> W_h; // stores the weights for h(t-1) in recurrent neural networks
+        Array<double> f_gate; // forget gate for LSTM
+        Array<double> i_gate; // input gate for LSTM
+        Array<double> o_gate; // output gate for LSTM
+        Array<double> c_gate; // candidate gate for LSTM + GRU
+        Array<double> z_gate; // update gate for GRU
+        Array<double> r_gate; // reset gate for GRU
         Array<double> b; // stores the bias matrix for the given layer
         Array<double> b_f; // forget gate bias weights;
         Array<double> b_i; // input gate bias weights;
         Array<double> b_o; // output gate bias weights;
         Array<double> b_c; // candidate gate bias weights;
+        Array<double> b_z; // update gate bias weights;
+        Array<double> b_r; // reset gate bias weights;
         // weights for dense connections
         Array<Array<double *>> W_out; // pointers to W_i weights of next layer
         double dropout_ratio=0;
@@ -114,123 +122,70 @@ struct Layer{
 };
 
 class NeuralNet{
-    // nested struct for adding new layers to an instance of NeuralNet
-    struct AddLayer{
-        private:
-
-            struct ActivationLayer{
-                public:
-                    // public methods
-                    void sigmoid();
-                    void ReLU();
-                    void lReLU();
-                    void ELU();
-                    void tanh();
-
-                    // constructor
-                    ActivationLayer(NeuralNet* network) : network(network){};
-                private:
-                    NeuralNet* network;
-            };
-
-            struct Pooling{
-                public:
-                    // public methods
-                    void max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
-                    void avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
-                    // constructor
-                    Pooling(NeuralNet* network) : network(network){};
-                private:
-                    NeuralNet* network;
-            };                
-
-        public:
-            // public methods
-            void input(std::initializer_list<int> shape);
-            void input(const int neurons){input({neurons});}
-            void output(std::initializer_list<int> shape, LossFunction loss_function=MSE);
-            void output(const int neurons, LossFunction loss_function=MSE){output({neurons},loss_function);}
-            void lstm(std::initializer_list<int> shape, const int timesteps);
-            void lstm(const int neurons, const int timesteps=10){lstm({neurons},timesteps);}
-            void lstm(const int timesteps=10){lstm(network->layer[network->layers-1].shape,timesteps);}
-            void recurrent(std::initializer_list<int> shape, const int timesteps=10);
-            void recurrent(const int neurons, const int timesteps=10){recurrent({neurons}, timesteps);}
-            void recurrent(const int timesteps=10){recurrent(network->layer[network->layers-1].shape,timesteps);}
-            void dense(std::initializer_list<int> shape);
-            void dense(const int neurons){dense({neurons});}
-            void dense(){dense(network->layer[network->layers-1].shape);}
-            void convolutional(const int filter_radius=1, bool padding=false);
-            void GRU(std::initializer_list<int> shape);
-            void GRU(const int neurons){GRU({neurons});}
-            void GRU(){GRU(network->layer[network->layers-1].shape);}
-            void dropout(const double ratio=0.2);
-            void flatten();
-            Pooling pool;
-            ActivationLayer activation;
-
-            // constructor
-            AddLayer(NeuralNet* network) :
-                // member initialization list
-                network(network),
-                activation(network),
-                pool(network) {
-                // constructor definition
-                logger = Log();
-                logger.enable_to_console(true);
-                logger.enable_to_file(false);
-                logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
-            };
-
-            // destructor
-            ~AddLayer(){};
-        protected:
-        private:
-            // private methods
-            static void init(NeuralNet* network, LayerType type, std::initializer_list<int> shape);
-            void make_dense_connections();
-            std::initializer_list<int> vector_to_initlist(const std::vector<int>& vec);
-            // private member objects
-            NeuralNet* network;
-            Log logger;
-    };    
     public:
         // public methods
-        void fit(const Vector<Array<double>>& features, const Vector<Array<double>>& labels, const int batch_size, const int epochs); // for batch training
+        void fit(const Array<Array<double>>& features, const Array<Array<double>>& labels, const int batch_size, const int epochs); // for batch training
         void fit(const Array<double>& features, const Array<double>& labels); // for online training
         Array<double> predict(const Array<double>& features, bool rescale=true); // predict output from new feature input
         void save(); // save model to file
         void load(); // load model from file
         void summary(); // prints a summary of the model architecture     
-        void set_scaling_method(ScalingMethod method){scaling_method = method;}  
-        AddLayer add_layer;
+        void set_scaling_method(ScalingMethod method){scaling_method = method;}
+
+        void addlayer_input(std::initializer_list<int> shape);
+        void addlayer_input(const int neurons){addlayer_input({neurons});}
+        void addlayer_output(std::initializer_list<int> shape, LossFunction loss_function=MSE);
+        void addlayer_output(const int neurons, LossFunction loss_function=MSE){addlayer_output({neurons},loss_function);}
+        void addlayer_sigmoid();
+        void addlayer_ReLU();
+        void addlayer_lReLU();
+        void addlayer_ELU();
+        void addlayer_tanh();         
+        void addlayer_pool_max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
+        void addlayer_pool_avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);               
+        void addlayer_lstm(std::initializer_list<int> shape, const int timesteps);
+        void addlayer_lstm(const int neurons, const int timesteps=10){addlayer_lstm({neurons},timesteps);}
+        void addlayer_lstm(const int timesteps=10){addlayer_lstm(layer[layers-1].shape,timesteps);}
+        void addlayer_recurrent(std::initializer_list<int> shape, const int timesteps=10);
+        void addlayer_recurrent(const int neurons, const int timesteps=10){addlayer_recurrent({neurons}, timesteps);}
+        void addlayer_recurrent(const int timesteps=10){addlayer_recurrent(layer[layers-1].shape,timesteps);}
+        void addlayer_dense(std::initializer_list<int> shape);
+        void addlayer_dense(const int neurons){addlayer_dense({neurons});}
+        void addlayer_dense(){addlayer_dense(layer[layers-1].shape);}
+        void addlayer_convolutional(const int filter_radius=1, bool padding=false);
+        void addlayer_GRU(std::initializer_list<int> shape, const int timesteps=10);
+        void addlayer_GRU(const int neurons, const int timesteps=10){addlayer_GRU({neurons}, timesteps);}
+        void addlayer_GRU(const int timesteps=10){addlayer_GRU(layer[layers-1].shape, timesteps);}
+        void addlayer_dropout(const double ratio=0.2);
+        void addlayer_flatten();
+
         // constructor(s)
-        NeuralNet():
-            // member initialization list
-            add_layer(this),
-            layers(0) {
-            // constructor definition
-            logger = Log();
-            logger.enable_to_console(true);
-            logger.enable_to_file(false);
-            logger.set_level(LogLevel::LOG_LEVEL_DEBUG);
+        NeuralNet(){
+            Log::enable_to_console(true);
+            Log::enable_to_file(false);
+            Log::set_level(LogLevel::LOG_LEVEL_DEBUG);            
         }
         // destructor
         ~NeuralNet(){};
-        // public member objects
-        std::vector<Layer> layer;
-        int layers;
-        double loss_avg;
-        LossFunction loss_function;
-        int backprop_iterations=0;
-        int batch_counter=0;
-        int loss_counter=0;
-        int feature_maps = 10;
     private:
         // private methods
         void backpropagate();
         void calculate_loss();
+        void layer_init(LayerType type, std::initializer_list<int> shape);
+        void layer_make_dense_connections();
+        std::vector<int> initlist_to_vector(const std::initializer_list<int>& list);
+        std::initializer_list<int> vector_to_initlist(const std::vector<int>& vec);
+        void addlayer_pool(LayerType type, std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape);         
+            
         // private members
-        Log logger;
+        std::vector<Layer> layer;
+        int layers=0;
+        double loss_avg=0;
+        LossFunction loss_function=LossFunction::MSE;
+        int backprop_iterations=0;
+        int batch_counter=0;
+        int loss_counter=0;
+        int feature_maps = 10;        
         Array<double> features_mean;
         Array<double> features_stddev;
         Array<double> features_min;
