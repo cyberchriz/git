@@ -348,73 +348,139 @@ void NeuralNet::summary(){
 
 // performs a single iteration of backpropagation
 void NeuralNet::backpropagate(){
+    // - delta rule for output neurons: delta w_ij= lr * loss_func_derivative * act'(net_inp_j) * out_i
+    // - delta rule for hidden neurons: delta w_ij=lr * SUM_k[err_k*w_jk] * act'(net_inp_j) * out_i
+    // - general rule: delta w_ij= lr * partial_error_k * layer_function_drv * out_i     
     backprop_iterations++;
     // get average gradients for this batch
     layer[layers-1].gradient/=batch_counter;
     // reset batch counter
     batch_counter = 0;
-    // calculate hidden gradients
-    for (int l=layers-2; l>0; l--){
+    // update weights and push partial derivative to preceding layer
+    for (int l=layers-1; l>0; l--){
         switch (layer[l].type){
-            case max_pooling_layer:
-                // TODO
-                break;
-            case avg_pooling_layer:
-                // TODO
-                break;
-            case lstm_layer:
-                // TODO
-                break;
-            case recurrent_layer:
-                // TODO
-                break;
-            case dense_layer:
-                // TODO
-                break;
-            case convolutional_layer:
-                // TODO
-                break;
-            case GRU_layer:
-                // TODO
-                break;
-            case dropout_layer:
-                // TODO
-                break;
-            case ReLU_layer:
-                // TODO
-                break;
-            case lReLU_layer:
-                // TODO
-                break;
-            case ELU_layer:
-                // TODO
-                break;
-            case sigmoid_layer:
-                // TODO
-                break;
-            case tanh_layer:
-                // TODO
-                break;
-            case flatten_layer:
-                // TODO
-                break;
-            default:
-                // do nothing
-                break;
-        }   
-    }
-    // update weights
-    for (int l=layers-2; l>0; l--){
-        switch (layer[l].type){
-            case max_pooling_layer:
-                // TODO
-                break;
-            case avg_pooling_layer:
-                // TODO
-                break;
-            case input_layer:
-                // TODO
-                break;
+
+            case max_pooling_layer: {
+                if (layer[l-1].stacked){
+                    layer[l].gradient_stack = layer[l].gradient.dissect(layer[l].dimensions-1);
+                    // initialize variables
+                    std::vector<int> index_i(layer[l-1].dimensions);
+                    std::vector<int> stride_shape_vec = initlist_to_vector(layer[l].pooling_stride_shape);
+                    std::vector<int> combined_index(layer[l-1].dimensions);  
+                    Array<int> slider_box(layer[l].pooling_slider_shape);                  
+                    for (int map=0; map<feature_maps; map++){
+                        layer[l-1].gradient_stack[map].fill_zeros();
+                        // iterate over pooled elements
+                        for (int j=0;j<layer[l].neurons;j++){
+                            // get associated index
+                            std::vector<int> index_j = layer[l].feature_stack_h.get_index(j);
+                            // get corresponding source index
+                            for (int n=0; n<layer[l-1].dimensions; n++){
+                                index_i[n] = index_j[n] * stride_shape_vec[n];
+                            }
+                            for (int s=0; s<slider_box.get_elements(); s++) {
+                                std::vector<int> box_element_index = slider_box.get_index(s);
+                                for (int n=0; n<layer[l-1].dimensions;n++){
+                                    combined_index[n] = index_i[n] + box_element_index[n];
+                                }
+                                if (layer[l-1].feature_stack_h[map].get(combined_index) == layer[l].feature_stack_h[map][j]){
+                                    layer[l-1].gradient_stack[map].set(combined_index,layer[l].gradient_stack[map][j]);
+                                }
+                            }
+                        }                        
+                    }
+                    layer[l-1].gradient=layer[l-1].gradient_stack.stack();
+                }
+                else {
+                    layer[l-1].gradient.fill_zeros();
+                    // initialize variables
+                    std::vector<int> index_i(layer[l-1].dimensions);
+                    std::vector<int> stride_shape_vec = initlist_to_vector(layer[l].pooling_stride_shape);
+                    std::vector<int> combined_index(layer[l-1].dimensions);
+                    Array<int> slider_box(layer[l].pooling_slider_shape);                    
+                    // iterate over pooled elements
+                    for (int j=0;j<layer[l].neurons;j++){
+                        // get associated index
+                        std::vector<int> index_j = layer[l].h.get_index(j);
+                        // get corresponding source index
+                        for (int n=0; n<layer[l-1].dimensions; n++){
+                            index_i[n] = index_j[n] * stride_shape_vec[n];
+                        }
+                        for (int s=0; s<slider_box.get_elements(); s++) {
+                            std::vector<int> box_element_index = slider_box.get_index(s);
+                            for (int n=0; n<layer[l-1].dimensions;n++){
+                                combined_index[n] = index_i[n] + box_element_index[n];
+                            }
+                            if (layer[l-1].h.get(combined_index) == layer[l].h[j]){
+                                layer[l-1].gradient.set(combined_index,layer[l].gradient[j]);
+                            }
+                        }
+                    }
+                }
+            } break;
+
+            case avg_pooling_layer: {
+                if (layer[l-1].stacked){
+                    layer[l].gradient_stack = layer[l].gradient.dissect(layer[l].dimensions-1);
+                    // initialize variables
+                    Array<int> slider_box(layer[l].pooling_slider_shape);
+                    int slider_box_elements = slider_box.get_elements();
+                    std::vector<int> index_i(layer[l-1].dimensions);
+                    std::vector<int> stride_shape_vec = initlist_to_vector(layer[l].pooling_stride_shape);
+                    std::vector<int> combined_index(layer[l-1].dimensions);  
+                    // iterate over feature maps                  
+                    for (int map=0; map<feature_maps; map++){
+                        layer[l-1].gradient_stack[map].fill_zeros();
+                        // iterate over pooled elements
+                        for (int j=0;j<layer[l].neurons;j++){
+                            // get associated index
+                            std::vector<int> index_j = layer[l].feature_stack_h.get_index(j);
+                            // get corresponding source index
+                            for (int n=0; n<layer[l-1].dimensions; n++){
+                                index_i[n] = index_j[n] * stride_shape_vec[n];
+                            }
+                            for (int s=0; s<slider_box.get_elements(); s++) {
+                                std::vector<int> box_element_index = slider_box.get_index(s);
+                                for (int n=0; n<layer[l-1].dimensions;n++){
+                                    combined_index[n] = index_i[n] + box_element_index[n];
+                                }
+                                layer[l-1].gradient_stack[map].set(combined_index,
+                                    layer[l-1].gradient_stack[map].get(combined_index) + layer[l].gradient_stack[map][j]);
+                            }
+                        }
+                        layer[l-1].gradient_stack[map] /= slider_box_elements;
+                    }
+                    layer[l-1].gradient=layer[l-1].gradient_stack.stack();
+                }
+                else {
+                    layer[l-1].gradient.fill_zeros();
+                    // initialize variables
+                    std::vector<int> index_i(layer[l-1].dimensions);
+                    std::vector<int> stride_shape_vec = initlist_to_vector(layer[l].pooling_stride_shape);
+                    std::vector<int> combined_index(layer[l-1].dimensions);
+                    Array<int> slider_box(layer[l].pooling_slider_shape);
+                    int slider_box_elements = slider_box.get_elements();
+                    // iterate over pooled elements
+                    for (int j=0;j<layer[l].neurons;j++){
+                        // get associated index
+                        std::vector<int> index_j = layer[l].h.get_index(j);
+                        // get corresponding source index
+                        for (int n=0; n<layer[l-1].dimensions; n++){
+                            index_i[n] = index_j[n] * stride_shape_vec[n];
+                        }
+                        for (int s=0; s<slider_box.get_elements(); s++) {
+                            std::vector<int> box_element_index = slider_box.get_index(s);
+                            for (int n=0; n<layer[l-1].dimensions;n++){
+                                combined_index[n] = index_i[n] + box_element_index[n];
+                            }
+                            layer[l-1].gradient.set(combined_index,
+                                layer[l-1].gradient.get(combined_index) + layer[l].gradient[j]);
+                        }
+                    }
+                    layer[l-1].gradient /= slider_box_elements;
+                }
+            } break;
+
             case output_layer:
                 // TODO
                 break;

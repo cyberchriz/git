@@ -256,7 +256,7 @@ void MLP::backpropagate(){
                 }                
             }
         }
-        // get hidden errors, i.e. SUM_k[err_k*w_jk]
+        // get hidden gradient = SUM_k[err_k*w_jk]
         else{
             for (int j=0;j<layer[l].neurons;j++){
                 layer[l].neuron[j].gradient=0;
@@ -277,7 +277,7 @@ void MLP::backpropagate(){
     // (=with respect to how much they each influenced the (hidden) error)
     // - delta rule for output neurons: delta w_ij=lr*(label-output)*act'(net_inp_j)*out_i
     // - delta rule for hidden neurons: delta w_ij=lr*SUM_k[err_k*w_jk]*act'(net_inp_j)*out_i
-    // - general rule: delta w_ij=lr*error*act'(net_inp_j)*out_i    
+    // - general rule: delta w_ij=lr*error_k*act'(net_inp_j)*out_i    
     for (int l=layers-1;l>=1;l--){
         int input_neurons=layer[l-1].neurons;
         OPTIMIZATION_METHOD method=layer[l].opt_method;
