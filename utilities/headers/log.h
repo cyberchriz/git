@@ -8,11 +8,11 @@
 #include <string>
 
 enum LogLevel {
-    LOG_LEVEL_NONE,
     LOG_LEVEL_ERROR,
     LOG_LEVEL_WARNING,
     LOG_LEVEL_INFO,
-    LOG_LEVEL_DEBUG
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_NONE
 };
 
 class Log {
@@ -53,9 +53,16 @@ public:
         log_to_file = active;
     }    
 
+    // returns 'true' if the currently set log level
+    // is the specified level or higher
+    // (and not LOG_LEVEL_NONE)
+    static bool at_least(LogLevel level){
+        return log_level!=LOG_LEVEL_NONE && log_level>=level;
+    }
+
     template <typename... Args>
     static void log(int level, Args&&... args) {
-        if (level > LogLevel::LOG_LEVEL_NONE &&
+        if (level < LogLevel::LOG_LEVEL_NONE &&
             level <= log_level) {
             const char* const levelStrings[] = {
                 "ERROR", "WARNING", "INFO", "DEBUG"
