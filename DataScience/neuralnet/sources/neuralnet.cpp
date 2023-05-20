@@ -482,8 +482,75 @@ void NeuralNet::backpropagate(){
             } break;
 
             case output_layer:
-                // TODO
-                break;
+            case dense_layer: {
+                // push gradients to preceding layer
+                layer[l-1].gradient.fill_zeros();
+                for (int i=0; i<layer[l-1].h.get_elements(); i++){
+                    layer[l-1].gradient[i] = *layer[l-1].W_out[i].dotproduct(layer[l].h);
+                }
+                if (layer[l-1].stacked){
+                    layer[l-1].gradient_stack = layer[l-1].gradient.dissect(layer[l-1].dimensions-1);
+                }
+                // update weights
+                switch (opt_method){
+                    case MOMENTUM: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                            // general rule: delta w_ij= out_i * partial_error_k * layer_function_drv * lr
+                            layer[l].delta_W_x[j] = (layer[l].delta_W_x[j] * momentum) + 
+                                                    (layer[l-1].h * layer[l].gradient[j] * lr * (1-momentum));
+                            layer[l].W_x[j] -= layer[l].delta_W_x[j];
+                        }
+                    } break; 
+
+                    case NESTEROV: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                            // lookahead step
+                            Array<double> lookahead(layer[l].h.get_shape());
+                            lookahead = (layer[l].delta_W_x[j] * momentum) +
+                                        (layer[l-1].h * layer[l].gradient[j] * lr * (1-momentum));
+                            // momentum step
+                            layer[l].delta_W_x = (lookahead * momentum) +
+                                                (layer[l-1].h * layer[l].gradient[j] * lr * (1-momentum));
+                            // update step
+                            layer[l].W_x[j] -= layer[l].delta_W_x[j];
+                        }
+                    } break;
+
+                    case RMSPROP: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                        // TODO
+                        }
+                    } break;
+
+                    case ADAM: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                        // TODO
+                        }
+                    } break;
+
+                    case ADAGRAD: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                        // TODO
+                        }
+                    } break;    
+
+                    case ADADELTA: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                        // TODO
+                        }
+                    } break; 
+
+                    case VANILLA:
+                    default: {
+                        for (int j=0; j<layer[l].neurons; j++){
+                            // general rule: delta w_ij= out_i * partial_error_k * layer_function_drv * lr
+                            layer[l].delta_W_x[j] = layer[l-1].h * layer[l].gradient[j] * lr;
+                            layer[l].W_x[j] -= layer[l].delta_W_x[j];
+                        }
+                    } break;                                                                                               
+                }
+            } break;
+
             case lstm_layer:
                 // TODO
                 /* STEPS:
@@ -527,9 +594,6 @@ void NeuralNet::backpropagate(){
                 */                
                 break;
             case recurrent_layer:
-                // TODO
-                break;
-            case dense_layer:
                 // TODO
                 break;
             case convolutional_layer:
@@ -579,25 +643,33 @@ void NeuralNet::calculate_loss(){
         // Mean Squared Error
         case MSE: {
             layer[l].loss_sum += (layer[l].label - layer[l].h).pow(2);
-            layer[l].gradient += (layer[l].h - layer[l].label) * 2;
+            layer[l].gradient += gradient_clipping ?
+                                ((layer[l].h - layer[l].label) * 2).min(max_gradient) : 
+                                (layer[l].h - layer[l].label) * 2;
         } break;
 
         // Mean Absolute Error
         case MAE: {
             layer[l].loss_sum += (layer[l].label - layer[l].h).abs();
-            layer[l].gradient += (layer[l].h - layer[l].label).sign();
+            layer[l].gradient += gradient_clipping ? 
+                                ((layer[l].h - layer[l].label).sign()).min(max_gradient) :
+                                (layer[l].h - layer[l].label).sign();
         } break;
 
         // Mean Absolute Percentage Error
         case MAPE: {
             layer[l].loss_sum += (layer[l].label - layer[l].h).Hadamard_division(layer[l].label).abs();
-            layer[l].gradient += (layer[l].h - layer[l].label).sign().Hadamard_product(layer[l].label).Hadamard_division((layer[l].h - layer[l].label)).abs();
+            layer[l].gradient += gradient_clipping ? 
+                                ((layer[l].h - layer[l].label).sign().Hadamard_product(layer[l].label).Hadamard_division((layer[l].h - layer[l].label)).abs()).min(max_gradient) :
+                                (layer[l].h - layer[l].label).sign().Hadamard_product(layer[l].label).Hadamard_division((layer[l].h - layer[l].label)).abs();
         } break;
 
         // Mean Squared Logarithmic Error
         case MSLE: {              
             layer[l].loss_sum += ((layer[l].h + 1).log() - (layer[l].label + 1).log()).pow(2);
-            layer[l].gradient += (((layer[l].h + 1).log() - (layer[l].label + 1).log()).Hadamard_division(layer[l].h + 1)) * 2;
+            layer[l].gradient += gradient_clipping ? 
+                                ((((layer[l].h + 1).log() - (layer[l].label + 1).log()).Hadamard_division(layer[l].h + 1)) * 2).min(max_gradient) :
+                                (((layer[l].h + 1).log() - (layer[l].label + 1).log()).Hadamard_division(layer[l].h + 1)) * 2;
         } break;
 
         // Categorical Crossentropy
@@ -610,43 +682,57 @@ void NeuralNet::calculate_loss(){
                 }
             }
             layer[l].loss_sum[true_output] -= layer[l].label.Hadamard_product(layer[l].h.log()).sum();
-            layer[l].gradient -= layer[l].label.Hadamard_division(layer[l].h);
+            layer[l].gradient -= gradient_clipping ? 
+                                (layer[l].label.Hadamard_division(layer[l].h)).min(max_gradient) :
+                                layer[l].label.Hadamard_division(layer[l].h);
         } break;
 
         // Sparse Categorical Crossentropy
-        case SparceCatCrossEntr: {
+        case SparseCatCrossEntr: {
             layer[l].loss_sum -= layer[l].h.log();
-            layer[l].gradient -= layer[l].label.Hadamard_division(layer[l].h);
+            layer[l].gradient -= gradient_clipping ? 
+                                (layer[l].label.Hadamard_division(layer[l].h)).min(max_gradient) : 
+                                layer[l].label.Hadamard_division(layer[l].h);
         } break;
 
         // Binary Crossentropy
         case BinCrossEntr: {
             layer[l].loss_sum -= layer[l].label.Hadamard_product(layer[l].h.log()) + ((layer[l].label*-1)+1) * ((layer[l].h*-1)+1).log();
-            layer[l].gradient -= layer[l].label.Hadamard_division(layer[l].h) - ((layer[l].label*-1)+1).Hadamard_division((layer[l].h*-1)+1);
+            layer[l].gradient -= gradient_clipping ? 
+                                (layer[l].label.Hadamard_division(layer[l].h) - ((layer[l].label*-1)+1).Hadamard_division((layer[l].h*-1)+1)).min(max_gradient) : 
+                                layer[l].label.Hadamard_division(layer[l].h) - ((layer[l].label*-1)+1).Hadamard_division((layer[l].h*-1)+1);
         } break;
 
         // Kullback-Leibler Divergence
         case KLD: {
             layer[l].loss_sum += layer[l].label.Hadamard_product(layer[l].label.Hadamard_division(layer[l].h).log());
-            layer[l].gradient += layer[l].label.Hadamard_product(layer[l].label.log() - layer[l].h.log() + 1);
+            layer[l].gradient += gradient_clipping ?
+                                (layer[l].label.Hadamard_product(layer[l].label.log() - layer[l].h.log() + 1)).min(max_gradient) :
+                                layer[l].label.Hadamard_product(layer[l].label.log() - layer[l].h.log() + 1);
         } break;
 
         // Poisson
         case Poisson: {
             layer[l].loss_sum += layer[l].h - layer[l].label.Hadamard_product(layer[l].h.log());
-            layer[l].gradient += layer[l].h - layer[l].label;
+            layer[l].gradient += gradient_clipping ? 
+                                (layer[l].h - layer[l].label).min(max_gradient) : 
+                                layer[l].h - layer[l].label;
         } break;
 
         // Hinge
         case Hinge: {
             layer[l].loss_sum += ((layer[l].label.Hadamard_product(layer[l].h) * -1) + 1).max(0);
-            layer[l].gradient -= layer[l].label.Hadamard_product((layer[l].label.Hadamard_product(layer[l].h)*-1 + 1).sign());
+            layer[l].gradient -= gradient_clipping ? 
+                                (layer[l].label.Hadamard_product((layer[l].label.Hadamard_product(layer[l].h)*-1 + 1).sign())).min(max_gradient) :
+                                layer[l].label.Hadamard_product((layer[l].label.Hadamard_product(layer[l].h)*-1 + 1).sign());
         } break;
 
         // Squared Hinge
         case SquaredHinge: {
             layer[l].loss_sum += ((layer[l].label.Hadamard_product(layer[l].h) * -1 + 1).max(0)).pow(2);
-            layer[l].gradient += (layer[l].label.Hadamard_product(layer[l].h)*-1 + 1).max(0) * 2;
+            layer[l].gradient += gradient_clipping ? 
+                                ((layer[l].label.Hadamard_product(layer[l].h)*-1 + 1).max(0) * 2).min(max_gradient) : 
+                                (layer[l].label.Hadamard_product(layer[l].h)*-1 + 1).max(0) * 2;
         } break;
 
         default: {
@@ -912,6 +998,8 @@ void NeuralNet::layer_make_dense_connections(){
     for (int j=0;j<neurons_j;j++){
         layer[l].W_x[j] = Array<double>(layer[l-1].h.get_shape());
         layer[l].W_x[j].fill_He_ReLU(neurons_i);
+        layer[l].delta_W_x[j] = Array<double>(layer[l-1].h.get_shape());
+        layer[l].delta_W_x[j].fill_zeros();
     }
     // attach outgoing weights of preceding layer
     layer[l-1].W_out = Array<Array<int>>(layer[l-1].h.get_shape());

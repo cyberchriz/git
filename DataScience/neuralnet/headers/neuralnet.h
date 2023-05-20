@@ -22,7 +22,7 @@ enum LossFunction{
     MSLE,               // Mean Squared Logarithmic Error
     CosProx,            // Cosine Proximity
     CatCrossEntr,       // Categorical Crossentropy
-    SparceCatCrossEntr, // Sparse Categorical Crossentropy
+    SparseCatCrossEntr, // Sparse Categorical Crossentropy
     BinCrossEntr,       // Binary Crossentropy
     KLD,                // Kullback-Leibler Divergence
     Poisson,            // Poisson
@@ -57,6 +57,16 @@ enum ScalingMethod{
     min_max_normalized,
     mean_normalized,
     none
+};
+
+enum OPTIMIZATION_METHOD {
+   VANILLA,           // Vanilla Stochastic Gradient Descent
+   MOMENTUM,          // Stochastic Gradient Descent with Momentum
+   NESTEROV,          // Nesterov Accelerated Gradient (NAG)
+   RMSPROP,           // RMSprop
+   ADADELTA,          // ADADELTA
+   ADAM,              // ADAM
+   ADAGRAD            // AdaGrad
 };
 
 struct Layer{
@@ -95,6 +105,7 @@ struct Layer{
         Array<Array<double>> W_z; // update gate weights for x(t)
         Array<Array<double>> W_r; // reset gate weights for x(t)
         Array<Array<double>> W_x; // stores the weights for dense connections (dense layers, output layers)
+        Array<Array<double>> delta_W_x; // stores the weight deltas for dense connections in order to support momentum optimization
         Array<double> f_gate; // forget gate for LSTM
         Array<double> i_gate; // input gate for LSTM
         Array<double> o_gate; // output gate for LSTM
@@ -131,6 +142,11 @@ class NeuralNet{
         void load(); // load model from file
         void summary(); // prints a summary of the model architecture     
         void set_scaling_method(ScalingMethod method){scaling_method = method;}
+        void set_optimizer(OPTIMIZATION_METHOD method){opt_method = method;}
+        void set_lr(const double value){lr = std::fmin(1,std::fmax(0,value));}
+        void set_momentum(const double value){momentum = std::fmin(1,std::fmax(0,value));}
+        void set_loss_function(const LossFunction func){loss_function = func;}
+        void set_gradient_clipping(const bool active=true, const double limit=0.49999){gradient_clipping=active; max_gradient = std::fmax(0,limit);}
 
         void addlayer_input(std::initializer_list<int> shape);
         void addlayer_input(const int neurons){addlayer_input({neurons});}
@@ -195,4 +211,9 @@ class NeuralNet{
         Array<double> labels_min;
         Array<double> labels_max;        
         ScalingMethod scaling_method = standardized;
+        double lr = 0.001;
+        double momentum = 0.9;
+        OPTIMIZATION_METHOD opt_method = VANILLA;
+        bool gradient_clipping = false;
+        double max_gradient;
 };
