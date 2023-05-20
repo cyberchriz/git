@@ -7,7 +7,7 @@
 
 // this code can be used in 2 ways:
 // 1. create an instance of Timer, then use the methods elapsed_sec(), elapsed_millisec() or elapsed_microsec on this instance
-// define the flag 'TIMELOG' as a preprocessor directive, then use the macro 'TIMER' anywhere in the code start a timer
+// 2. define the flag 'TIMELOG' as a preprocessor directive, then use the macro 'TIMER' anywhere in the code start a timer
 // --> it will print its lifetime on the console once it goes out of scope, i.e. when the function it lives in ends
 
 //#define TIMELOG
@@ -44,7 +44,7 @@ struct Timer {
     }
     // destructor
     ~Timer() {
-        std::cout << "end of timer lifetime: " << elapsed_millisec() << "ms\n";
+        std::cout << " -> end of timer lifetime: " << elapsed_millisec() << "ms\n";
     }
 };
 

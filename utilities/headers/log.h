@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <timer.h>
 
 enum LogLevel {
     LOG_LEVEL_ERROR,
@@ -51,7 +52,13 @@ public:
 
     static void enable_to_file(bool active=true){
         log_to_file = active;
-    }    
+    }
+
+    static void time(int level=LOG_LEVEL_DEBUG){
+        if (level < LogLevel::LOG_LEVEL_NONE && level <= log_level) {
+            Timer timer = Timer();
+        }
+    }
 
     // returns 'true' if the currently set log level
     // is the specified level or higher
@@ -62,8 +69,7 @@ public:
 
     template <typename... Args>
     static void log(int level, Args&&... args) {
-        if (level < LogLevel::LOG_LEVEL_NONE &&
-            level <= log_level) {
+        if (level < LogLevel::LOG_LEVEL_NONE && level <= log_level) {
             const char* const levelStrings[] = {
                 "ERROR", "WARNING", "INFO", "DEBUG"
             };
