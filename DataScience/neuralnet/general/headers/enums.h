@@ -2,12 +2,13 @@
 
 // available neural network optimization methods
 enum OPTIMIZATION_METHOD {
-   Vanilla=1,           // Vanilla Stochastic Gradient Descent
-   Nesterov=2,          // Nesterov Accelerated Gradient (NAG)
-   RMSprop=3,           // RMSprop
-   ADADELTA=4,          // ADADELTA
-   ADAM=5,              // ADAM
-   AdaGrad=6            // AdaGrad
+   VANILLA,           // Vanilla Stochastic Gradient Descent
+   MOMENTUM,          // Stochastic Gradient Descent with Momentum
+   NESTEROV,          // Nesterov Accelerated Gradient (NAG)
+   RMSPROP,           // RMSprop
+   ADADELTA,          // ADADELTA
+   ADAM,              // ADAM
+   ADAGRAD            // AdaGrad
 };
 
 // available feature and label scaling methods

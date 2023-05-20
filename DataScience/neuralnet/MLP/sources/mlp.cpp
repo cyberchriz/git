@@ -285,13 +285,19 @@ void MLP::backpropagate(){
             if (layer[l].neuron[j].dropout){continue;}
             for (int i=0;i<input_neurons;i++){
                 if (layer[l-1].neuron[i].dropout){continue;}
-                if (method==Vanilla){
+                if (method==VANILLA){
+                    // get delta
+                    layer[l].neuron[j].input_weight_delta[i] = lr * layer[l].neuron[j].gradient * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
+                    // update
+                    layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i];
+                }
+                if (method==MOMENTUM){
                     // get delta
                     layer[l].neuron[j].input_weight_delta[i] = (lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr*layer[l].neuron[j].gradient) * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
                     // update
                     layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i]+layer[l].neuron[j].input_weight_delta[i];
-                }
-                else if (method==Nesterov){
+                }                
+                else if (method==NESTEROV){
                     // lookahead step
                     double lookahead = (lr_momentum*layer[l].neuron[j].input_weight_delta[i]) + (1-lr_momentum)*(lr*layer[l].neuron[j].gradient) * deactivate(layer[l].neuron[j].x,layer[l].activation) * layer[l-1].neuron[i].h;
                     // momentum step
@@ -299,7 +305,7 @@ void MLP::backpropagate(){
                     // update step
                     layer[l].neuron[j].input_weight[i] = layer[l].neuron[j].input_weight[i] + layer[l].neuron[j].input_weight_delta[i];
                 }
-                else if (method==RMSprop){
+                else if (method==RMSPROP){
                     // opt_v update
                     layer[l].neuron[j].opt_v[i] =  lr_momentum*layer[l].neuron[j].opt_v[i] + (1-lr_momentum)*pow(deactivate(layer[l].neuron[j].x,layer[l].activation),2) * layer[l].neuron[j].gradient;
                     // get delta
@@ -329,7 +335,7 @@ void MLP::backpropagate(){
                     // update
                     layer[l].neuron[j].input_weight[i] =  layer[l].neuron[j].input_weight[i]  + layer[l].neuron[j].input_weight_delta[i];
                 }
-                else if (method==AdaGrad){
+                else if (method==ADAGRAD){
                     // opt_v update
                     layer[l].neuron[j].opt_v[i] =  layer[l].neuron[j].opt_v[i] + pow(deactivate(layer[l].neuron[j].x, layer[l].activation) * layer[l].neuron[j].gradient * layer[l-1].neuron[i].h,2);
                     // get delta
