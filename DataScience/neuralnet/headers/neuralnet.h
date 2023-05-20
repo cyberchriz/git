@@ -106,6 +106,8 @@ struct Layer{
         Array<Array<double>> W_r; // reset gate weights for x(t)
         Array<Array<double>> W_x; // stores the weights for dense connections (dense layers, output layers)
         Array<Array<double>> delta_W_x; // stores the weight deltas for dense connections in order to support momentum optimization
+        Array<Array<double>> opt_v;
+        Array<Array<double>> opt_w;
         Array<double> f_gate; // forget gate for LSTM
         Array<double> i_gate; // input gate for LSTM
         Array<double> o_gate; // output gate for LSTM
@@ -140,7 +142,7 @@ class NeuralNet{
         Array<double> predict(const Array<double>& features, bool rescale=true); // predict output from new feature input
         void save(); // save model to file
         void load(); // load model from file
-        void summary(); // prints a summary of the model architecture     
+        void log_summary(LogLevel level=LOG_LEVEL_INFO); // logs a summary of the model architecture     
         void set_scaling_method(ScalingMethod method){scaling_method = method;}
         void set_optimizer(OPTIMIZATION_METHOD method){opt_method = method;}
         void set_lr(const double value){lr = std::fmin(1,std::fmax(0,value));}
