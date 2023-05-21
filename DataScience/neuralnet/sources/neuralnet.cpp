@@ -104,6 +104,7 @@ void NeuralNet::fit(const Array<double>& features, const Array<double>& labels){
 // feedforward, i.e. predict output from new feature input
 Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
     Log::time(LOG_LEVEL_DEBUG);
+    forward_iterations++;
     // iterate over layers
     for (int l=1;l<layers;l++){
         switch (layer[l].type){
@@ -152,24 +153,29 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
                 // get current inputs x(t)
                 layer[l].x_t.pop_first();
                 layer[l].x_t.push_back(layer[l-1].h);            
-                // shift c_t and h_t by 1 timestep
+                // shift c_t, h_t and gates by 1 timestep
                 layer[l].c_t.pop_first();
                 layer[l].h_t.pop_first();
+                // roll timesteps for gates
+                layer[l].f_gate_t.push_back(layer[l].f_gate_t.pop_first());
+                layer[l].i_gate_t.push_back(layer[l].i_gate_t.pop_first());
+                layer[l].o_gate_t.push_back(layer[l].o_gate_t.pop_first());
+                layer[l].c_gate_t.push_back(layer[l].c_gate_t.pop_first());
                 // calculate gate inputs
                 for (int j=0;j<layer[l].neurons;j++){
-                    layer[l].f_gate.set(j,layer[l].W_f[j].dotproduct(layer[l].x_t[t]) + layer[l].U_f[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_f[j]);
-                    layer[l].i_gate.set(j,layer[l].W_i[j].dotproduct(layer[l].x_t[t]) + layer[l].U_i[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_i[j]);
-                    layer[l].o_gate.set(j,layer[l].W_o[j].dotproduct(layer[l].x_t[t]) + layer[l].U_o[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_o[j]);
-                    layer[l].c_gate.set(j,layer[l].W_c[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_c[j]);
+                    layer[l].f_gate_t[t].set(j,layer[l].W_f[j].dotproduct(layer[l].x_t[t]) + layer[l].U_f[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_f[j]);
+                    layer[l].i_gate_t[t].set(j,layer[l].W_i[j].dotproduct(layer[l].x_t[t]) + layer[l].U_i[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_i[j]);
+                    layer[l].o_gate_t[t].set(j,layer[l].W_o[j].dotproduct(layer[l].x_t[t]) + layer[l].U_o[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_o[j]);
+                    layer[l].c_gate_t[t].set(j,layer[l].W_c[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_c[j]);
                 }
                 // activate gates
-                layer[l].f_gate = layer[l].f_gate.activation(ActFunc::SIGMOID);
-                layer[l].f_gate = layer[l].i_gate.activation(ActFunc::SIGMOID);
-                layer[l].f_gate = layer[l].o_gate.activation(ActFunc::SIGMOID);
-                layer[l].f_gate = layer[l].c_gate.activation(ActFunc::TANH);
+                layer[l].f_gate_t[t] = layer[l].f_gate_t[t].activation(ActFunc::SIGMOID);
+                layer[l].i_gate_t[t] = layer[l].i_gate_t[t].activation(ActFunc::SIGMOID);
+                layer[l].o_gate_t[t] = layer[l].o_gate_t[t].activation(ActFunc::SIGMOID);
+                layer[l].c_gate_t[t] = layer[l].c_gate_t[t].activation(ActFunc::TANH);
                 // add c_t and h_t results for current timestep
-                layer[l].c_t.push_back(layer[l].f_gate.Hadamard_product(layer[l].c_t[t-1]) + layer[l].i_gate.Hadamard_product(layer[l].c_gate));
-                layer[l].h_t.push_back(layer[l].o_gate.Hadamard_product(layer[l].c_t[t].activation(ActFunc::TANH)));
+                layer[l].c_t.push_back(layer[l].f_gate_t[t].Hadamard_product(layer[l].c_t[t-1]) + layer[l].i_gate_t[t].Hadamard_product(layer[l].c_gate_t[t]));
+                layer[l].h_t.push_back(layer[l].o_gate_t[t].Hadamard_product(layer[l].c_t[t].activation(ActFunc::TANH)));
                 layer[l].h = layer[l].h_t[t];
                 } break;
 
@@ -207,17 +213,21 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
                 layer[l].x_t.push_back(layer[l-1].h);            
                 // shift c_t and h_t by 1 timestep
                 layer[l].h_t.pop_first();
+                // roll gates
+                layer[l].z_gate_t.push_back(layer[l].z_gate_t.pop_first());
+                layer[l].r_gate_t.push_back(layer[l].r_gate_t.pop_first());
+                layer[l].c_gate_t.push_back(layer[l].c_gate_t.pop_first());
                 // calculate gate inputs
                 for (int j=0; j<layer[l].neurons; j++){
-                    layer[l].z_gate.set(j,layer[l].W_z[j].dotproduct(layer[l].x_t[t]) + layer[l].U_z[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_z[j]);
-                    layer[l].r_gate.set(j,layer[l].W_r[j].dotproduct(layer[l].x_t[t]) + layer[l].U_r[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_r[j]);
-                    layer[l].c_gate.set(j,layer[l].W_c[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c[j].dotproduct(layer[l].r_gate.Hadamard_product(layer[l].h_t[t-1])) + layer[l].b_c[j]);                    
+                    layer[l].z_gate_t[t].set(j,layer[l].W_z[j].dotproduct(layer[l].x_t[t]) + layer[l].U_z[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_z[j]);
+                    layer[l].r_gate_t[t].set(j,layer[l].W_r[j].dotproduct(layer[l].x_t[t]) + layer[l].U_r[j].dotproduct(layer[l].h_t[t-1]) + layer[l].b_r[j]);
+                    layer[l].c_gate_t[t].set(j,layer[l].W_c[j].dotproduct(layer[l].x_t[t]) + layer[l].U_c[j].dotproduct(layer[l].r_gate_t[t].Hadamard_product(layer[l].h_t[t-1])) + layer[l].b_c[j]);                    
                 }
                 // activate gates
-                layer[l].z_gate = layer[l].z_gate.activation(ActFunc::SIGMOID);
-                layer[l].r_gate = layer[l].r_gate.activation(ActFunc::SIGMOID);
-                layer[l].c_gate = layer[l].c_gate.activation(ActFunc::TANH);
-                layer[l].h_t[t] = ((layer[l].z_gate-1)*-1).Hadamard_product(layer[l].h_t[t-1]) + layer[l].z_gate.Hadamard_product(layer[l].c_gate);
+                layer[l].z_gate_t[t] = layer[l].z_gate_t[t].activation(ActFunc::SIGMOID);
+                layer[l].r_gate_t[t] = layer[l].r_gate_t[t].activation(ActFunc::SIGMOID);
+                layer[l].c_gate_t[t] = layer[l].c_gate_t[t].activation(ActFunc::TANH);
+                layer[l].h_t[t] = ((layer[l].z_gate_t[t]-1)*-1).Hadamard_product(layer[l].h_t[t-1]) + layer[l].z_gate_t[t].Hadamard_product(layer[l].c_gate_t[t]);
                 layer[l].h = layer[l].h_t[t];
             } break;
                 
@@ -626,57 +636,148 @@ void NeuralNet::backpropagate(){
                 }
             } break;
 
-            case lstm_layer:
-                // TODO
-                /* STEPS:
-                Iterate over the timesteps from last (current) to oldest (first); for each timestep:
+            case lstm_layer: {
+                layer[l].gradient_t.pop_first();
+                layer[l].gradient_t.push_back(layer[l].gradient);
+                for (int t = layer[l].timesteps - 2; t >= std::max(layer[l].timesteps - forward_iterations, 1); t--){
+                    // Compute the derivative of the loss function with respect to the LSTM output gate activation at the current time step:
+                    // dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_derivative(o(t))
+                    Array<double> o_gate_gradient = layer[l].gradient_t[t].Hadamard_product(layer[l].c_t[t].activation(TANH)).Hadamard_product(layer[l].o_gate_t[t].derivative(SIGMOID));
 
-                Compute the derivative of the loss function with respect to the output at the current time step:
-                dL/dy(t) = the derivative of the loss function with respect to the output y(t) at time step t. This will depend on the specific loss function you are using.
+                    // Compute the derivative of the loss function with respect to the LSTM cell state at the current time step:
+                    // dL/dc(t) = dL/dy(t) * o(t) * tanh_derivative(c(t)) + dL/dc(t+1) * f(t+1)
+                    Array<double> c_gate_gradient;
+                    if (t < layer[l].timesteps - 1) {
+                        c_gate_gradient = layer[l].gradient_t[t].Hadamard_product(layer[l].o_gate_t[t]).Hadamard_product(layer[l].c_gate_t[t].derivative(TANH))
+                                        + layer[l].c_t[t+1].Hadamard_product(layer[l].f_gate_t[t+1]);
+                    } else {
+                        c_gate_gradient = layer[l].gradient_t[t].Hadamard_product(layer[l].o_gate_t[t]).Hadamard_product(layer[l].c_gate_t[t].derivative(TANH));
+                    }
 
-                Compute the derivative of the loss function with respect to the LSTM output gate activation at the current time step:
-                dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_derivative(o(t))
+                    // Compute the derivative of the loss function with respect to the LSTM forget gate activation at the current time step:
+                    // dL/df(t) = dL/dc(t) * c(t-1) * sigmoid_derivative(f(t))
+                    Array<double> f_gate_gradient = c_gate_gradient.Hadamard_product(layer[l].c_t[t-1]).Hadamard_product(layer[l].f_gate_t[t].derivative(SIGMOID));
 
-                Compute the derivative of the loss function with respect to the LSTM cell state at the current time step:
-                dL/dc(t) = dL/dy(t) * o(t) * tanh_derivative(c(t)) + dL/dc(t+1) * f(t+1)
+                    // Compute the derivative of the loss function with respect to the LSTM input gate activation at the current time step:
+                    // dL/di(t) = dL/dc(t) * g(t) * sigmoid_derivative(i(t))
+                    Array<double> i_gate_gradient = c_gate_gradient.Hadamard_product(layer[l].c_gate_t[t]).Hadamard_product(layer[l].i_gate_t[t].derivative(SIGMOID));
 
-                Compute the derivative of the loss function with respect to the LSTM forget gate activation at the current time step:
-                dL/df(t) = dL/dc(t) * c(t-1) * sigmoid_derivative(f(t))
+                    // Compute the derivative of the loss function with respect to the LSTM candidate activation at the current time step:
+                    // dL/dg(t) = dL/dc(t) * i(t) * tanh_derivative(g(t))
+                    Array<double> gradient = c_gate_gradient.Hadamard_product(layer[l].i_gate_t[t]).Hadamard_product(layer[l].c_t[t].derivative(TANH));
 
-                Compute the derivative of the loss function with respect to the LSTM input gate activation at the current time step:
-                dL/di(t) = dL/dc(t) * g(t) * sigmoid_derivative(i(t))
 
-                Compute the derivative of the loss function with respect to the LSTM candidate activation at the current time step:
-                dL/dg(t) = dL/dc(t) * i(t) * tanh_derivative(g(t))
+                    // Compute the gradients of the weight matrices and bias vectors for the current time step and update the weights:
+                    for (int j = 0; j < layer[l].neurons; j++) {
+                        // dL/dW_i = dL/di(t) * x(t)^T
+                        layer[l].W_i[j] -= layer[l].x_t[t] * i_gate_gradient[j] * lr;
 
-                Compute the gradients of the weight matrices and bias vectors for the current time step:
-                dL/dW_i = dL/di(t) * x(t)^T
-                dL/dW_f = dL/df(t) * x(t)^T
-                dL/dW_o = dL/do(t) * x(t)^T
-                dL/dW_c = dL/dg(t) * x(t)^T
-                dL/dU_i = dL/di(t) * h(t-1)^T
-                dL/dU_f = dL/df(t) * h(t-1)^T
-                dL/dU_o = dL/do(t) * h(t-1)^T
-                dL/dU_c = dL/dg(t) * h(t-1)^T
-                dL/db_i = dL/di(t)
-                dL/db_f = dL/df(t)
-                dL/db_o = dL/do(t)
-                dL/db_c = dL/dg(t)
+                        // dL/dW_f = dL/df(t) * x(t)^T
+                        layer[l].W_f[j] -= layer[l].x_t[t] * f_gate_gradient[j] * lr;
 
-                Update the weights and biases using the gradients and a suitable optimization algorithm, such as stochastic gradient descent (SGD) or Adam.
-                
-                Propagate the derivative of the loss function with respect to the hidden state h(t-1) and cell state c(t-1) to the previous time step, and repeat steps 1-8 for the previous time step, until you reach the first time step in the sequence.
-                */                
-                break;
+                        // dL/dW_o = dL/do(t) * x(t)^T
+                        layer[l].W_o[j] -= layer[l].x_t[t] * o_gate_gradient[j] * lr;
+
+                        // dL/dW_c = dL/dg(t) * x(t)^T
+                        layer[l].W_c[j] -= layer[l].x_t[t] * gradient[j] * lr;
+
+                        // dL/dU_i = dL/di(t) * h(t-1)^T
+                        layer[l].U_i[j] -= layer[l].h_t[t-1] * i_gate_gradient[j] * lr;
+
+                        // dL/dU_f = dL/df(t) * h(t-1)^T
+                        layer[l].U_f[j] -= layer[l].h_t[t-1] * f_gate_gradient[j] * lr;
+
+                        // dL/dU_o = dL/do(t) * h(t-1)^T
+                        layer[l].U_o[j] -= layer[l].h_t[t-1] * o_gate_gradient[j] * lr;
+
+                        // dL/dU_c = dL/dg(t) * h(t-1)^T
+                        layer[l].U_c[j] -= layer[l].h_t[t-1] * gradient[j] * lr;
+
+                        // dL/db_i = dL/di(t)
+                        layer[l].b_i[j] -= i_gate_gradient[j] * lr;
+
+                        // dL/db_f = dL/df(t)
+                        layer[l].b_f[j] -= f_gate_gradient[j] * lr;
+
+                        // dL/db_o = dL/do(t)
+                        layer[l].b_o[j] -= o_gate_gradient[j] * lr;
+
+                        // dL/db_c = dL/dg(t)
+                        layer[l].b_c[j] -= gradient[j] * lr;
+                    }
+
+                    // Compute the gradient propagated to the previous LSTM layer
+                    layer[l-1].gradient = (layer[l].U_i.tensordot(i_gate_gradient, {0})
+                                        + layer[l].U_f.tensordot(f_gate_gradient, {0})
+                                        + layer[l].U_o.tensordot(o_gate_gradient, {0})
+                                        + layer[l].U_c.tensordot(gradient, {0}));
+                }
+
+                // Update the hidden state of the LSTM layer
+                layer[l].h = layer[l].h_t[layer[l].timesteps - 1];
+            } break;
+
+
             case recurrent_layer:
                 // TODO
                 break;
+                
             case convolutional_layer:
                 // TODO
                 break;
-            case GRU_layer:
-                // TODO
-                break;
+
+            case GRU_layer: {
+                int t = layer[l].timesteps - 1;
+
+                // Compute the gradient of the loss function with respect to the GRU hidden state at the last timestep
+                layer[l].gradient_t[t] = layer[l].gradient;
+
+                // Backpropagate the gradient through time
+                for (t = layer[l].timesteps - 1; t >= 0; t--) {
+                    // Compute the gradients of the weight matrices for the current time step and update the weights
+                    for (int j = 0; j < layer[l].neurons; j++) {
+
+                        // Compute dL/dW_z = dL/dh_t * dz_gate_t * x_t
+                        layer[l].W_z[j] -= layer[l].gradient_t[t].Hadamard_product(layer[l].x_t[t]).Hadamard_product(layer[l].z_gate_t[t].derivative(ActFunc::SIGMOID)) * lr;
+                        
+                        // Compute dL/dW_r = dL/dh_t * dr_gate_t * x_t
+                        layer[l].W_r[j] -= layer[l].gradient_t[t].Hadamard_product(layer[l].x_t[t]).Hadamard_product(layer[l].r_gate_t[t].derivative(ActFunc::SIGMOID)) * lr;
+
+                        // Compute dL/dW_c = dL/dh_t * dc_gate_t * x_t
+                        layer[l].W_c[j] -= layer[l].gradient_t[t].Hadamard_product(layer[l].x_t[t]).Hadamard_product(layer[l].c_gate_t[t].derivative(ActFunc::TANH)) * lr;
+                        
+                        // Compute dL/dU_z = dL/dh_t * dz_gate_t * h_t-1
+                        layer[l].U_z[j] -= layer[l].gradient_t[t].Hadamard_product(layer[l].h_t[t-1]).Hadamard_product(layer[l].z_gate_t[t].derivative(ActFunc::SIGMOID)) * lr;
+
+                        // Compute dL/dU_r = dL/dh_t * dr_gate_t * h_t-1
+                        layer[l].U_r[j] -= layer[l].gradient_t[t].Hadamard_product(layer[l].h_t[t-1]).Hadamard_product(layer[l].r_gate_t[t].derivative(ActFunc::SIGMOID)) * lr;
+
+                        // Compute dL/dU_c = dL/dh_t * dc_gate_t * (r_gate_t * h_t-1)
+                        layer[l].U_c[j] -= layer[l].gradient_t[t].Hadamard_product(layer[l].h_t[t-1].Hadamard_product(layer[l].r_gate_t[t]) * layer[l].c_gate_t[t].derivative(ActFunc::TANH)) * lr;
+                    }
+
+                    // update bias vectors:
+
+                    // Compute dL/db_z = dL/dh_t * dz_gate_t
+                    layer[l].b_z -= layer[l].gradient_t[t].Hadamard_product(layer[l].z_gate_t[t].derivative(ActFunc::SIGMOID)) * lr;  
+
+                    // Compute dL/db_r = dL/dh_t * dr_gate_t
+                    layer[l].b_r -= layer[l].gradient_t[t].Hadamard_product(layer[l].r_gate_t[t].derivative(ActFunc::SIGMOID)) * lr;   
+
+                    // Compute dL/db_c = dL/dh_t * dc_gate_t
+                    layer[l].b_c -= layer[l].gradient_t[t].Hadamard_product(layer[l].c_gate_t[t].derivative(ActFunc::TANH)) * lr;                                                                           
+
+                    // Compute the gradient propagated to the previous GRU layer
+                    Array<double> prev_gradient = (layer[l].U_z.tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].z_gate_t[t].derivative(ActFunc::SIGMOID)))
+                                                    + layer[l].U_r.tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].r_gate_t[t].derivative(ActFunc::SIGMOID)))
+                                                    + layer[l].U_c.tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].c_gate_t[t].derivative(ActFunc::TANH))));
+
+                    // Propagate the gradient to the previous layer
+                    layer[l-1].gradient = prev_gradient;
+                }
+            } break;
+
+
 
             case dropout_layer: {
                 // push gradients to preceding layer
@@ -868,17 +969,23 @@ void NeuralNet::addlayer_lstm(std::initializer_list<int> shape, const int timest
     layer[l].c_t = Array<Array<double>>(timesteps);
     layer[l].h_t = Array<Array<double>>(timesteps);
     layer[l].x_t = Array<Array<double>>(timesteps);
+    layer[l].gradient_t = Array<Array<double>>(timesteps);
+    layer[l].f_gate_t = Array<Array<double>>(timesteps);
+    layer[l].i_gate_t = Array<Array<double>>(timesteps);
+    layer[l].o_gate_t = Array<Array<double>>(timesteps);
+    layer[l].c_gate_t = Array<Array<double>>(timesteps);
     for (int t=0;t<timesteps;t++){
-        // initialize vectors of timesteps for the cell state and hidden state
+        // initialize vectors of timesteps for the cell state, hidden state and gradient h_t
         layer[l].c_t[t] = Array<double>(shape); layer[l].c_t[t].fill_zeros();
         layer[l].h_t[t] = Array<double>(shape); layer[l].h_t[t].fill_zeros();
         layer[l].x_t[t] = Array<double>(shape); layer[l].h_t[t].fill_zeros();
-    }
-    // initialize gate value arrays
-    layer[l].f_gate = Array<double>(shape);
-    layer[l].i_gate = Array<double>(shape);
-    layer[l].o_gate = Array<double>(shape);
-    layer[l].c_gate = Array<double>(shape);    
+        layer[l].gradient_t[t] = Array<double>(shape); layer[l].gradient_t.fill_zeros();
+        // initialize gate value arrays
+        layer[l].f_gate_t[t] = Array<double>(shape); layer[l].f_gate_t[t].fill_zeros();
+        layer[l].i_gate_t[t] = Array<double>(shape); layer[l].i_gate_t[t].fill_zeros();
+        layer[l].o_gate_t[t] = Array<double>(shape); layer[l].o_gate_t[t].fill_zeros();
+        layer[l].c_gate_t[t] = Array<double>(shape); layer[l].c_gate_t[t].fill_zeros();
+    }   
     // initialize gate weights to h(t-1)
     layer[l].U_f = Array<Array<double>>(shape);
     layer[l].U_i = Array<Array<double>>(shape);
@@ -915,16 +1022,19 @@ void NeuralNet::addlayer_GRU(std::initializer_list<int> shape, const int timeste
     layer[l].c_t = Array<Array<double>>(timesteps);
     layer[l].h_t = Array<Array<double>>(timesteps);
     layer[l].x_t = Array<Array<double>>(timesteps);
+    layer[l].z_gate_t = Array<Array<double>>(timesteps);
+    layer[l].r_gate_t = Array<Array<double>>(timesteps);
+    layer[l].c_gate_t = Array<Array<double>>(timesteps);    
     for (int t=0;t<timesteps;t++){
         // initialize vectors of timesteps for the cell state and hidden state
         layer[l].c_t[t] = Array<double>(shape); layer[l].c_t[t].fill_zeros();
         layer[l].h_t[t] = Array<double>(shape); layer[l].h_t[t].fill_zeros();
         layer[l].x_t[t] = Array<double>(shape); layer[l].h_t[t].fill_zeros();
+        // initialize gate value arrays  
+        layer[l].z_gate_t[t] = Array<double>(shape); layer[l].z_gate_t[t].fill_zeros();
+        layer[l].r_gate_t[t] = Array<double>(shape); layer[l].r_gate_t[t].fill_zeros();
+        layer[l].c_gate_t[t] = Array<double>(shape); layer[l].c_gate_t[t].fill_zeros();
     }
-    // initialize gate value arrays  
-    layer[l].z_gate = Array<double>(shape);
-    layer[l].r_gate = Array<double>(shape);
-    layer[l].c_gate = Array<double>(shape);
     // initialize gate weights to h(t-1) 
     layer[l].U_z = Array<Array<double>>(shape);
     layer[l].U_r = Array<Array<double>>(shape);

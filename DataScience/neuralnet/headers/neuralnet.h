@@ -88,6 +88,7 @@ struct Layer{
         Array<double> gradient;
         Array<double> loss;
         Array<double> loss_sum;
+        Array<Array<double>> gradient_t; // vector of timesteps holding the gradients for h_t
         Array<Array<double>> x_t; // vector of timesteps holding the input states for RNN, LSTM
         Array<Array<double>> h_t; // vector of timesteps holding the hidden states for LSTMs
         Array<Array<double>> c_t; // vector of timesteps holding the cell states for LSTMs
@@ -108,12 +109,12 @@ struct Layer{
         Array<Array<double>> delta_W_x; // stores the weight deltas for dense connections in order to support momentum optimization
         Array<Array<double>> opt_v;
         Array<Array<double>> opt_w;
-        Array<double> f_gate; // forget gate for LSTM
-        Array<double> i_gate; // input gate for LSTM
-        Array<double> o_gate; // output gate for LSTM
-        Array<double> c_gate; // candidate gate for LSTM + GRU
-        Array<double> z_gate; // update gate for GRU
-        Array<double> r_gate; // reset gate for GRU
+        Array<Array<double>> f_gate_t;
+        Array<Array<double>> i_gate_t;
+        Array<Array<double>> o_gate_t;
+        Array<Array<double>> c_gate_t;
+        Array<Array<double>> z_gate_t; // update gate for GRU
+        Array<Array<double>> r_gate_t; // reset gate for GRU
         Array<double> b; // stores the bias matrix for the given layer
         Array<double> b_f; // forget gate bias weights;
         Array<double> b_i; // input gate bias weights;
@@ -201,6 +202,7 @@ class NeuralNet{
         double loss_avg=0;
         LossFunction loss_function=LossFunction::MSE;
         int backprop_iterations=0;
+        int forward_iterations=0;
         int batch_counter=0;
         int loss_counter=0;
         int feature_maps = 10;        
