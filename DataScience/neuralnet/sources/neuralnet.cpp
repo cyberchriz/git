@@ -180,11 +180,17 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
                 } break;
 
             case recurrent_layer: {
+                // define 't' as current timestep
                 int t = layer[l].timesteps-1;
+                
+                // roll input vector x_t by 1 timestep and update the current input
                 layer[l].x_t.pop_first();
                 layer[l].x_t.push_back(layer[l-1].h);
-                layer[l].h_t.pop_first();
-                layer[l].h_t.grow(1);
+                
+                // roll output h_t by 1 timestep
+                layer[l].h_t.push_back(layer[l].h_t.pop_first());
+                
+                // iterate over all neurons of the recurrent layer and compute the current outputs h_t
                 for (int j=0;j<layer[l].neurons;j++){
                     // set h(t) = x(t)*W_x + h(t-1)*U + bias
                     layer[l].h_t[t][j] = layer[l].x_t[t].dotproduct(layer[l].W_x[j]) + layer[l].h_t[t-1].dotproduct(layer[l].U[j]) + layer[l].b[j];
@@ -721,7 +727,7 @@ void NeuralNet::backpropagate(){
             case recurrent_layer:
                 // TODO
                 break;
-                
+
             case convolutional_layer:
                 // TODO
                 break;

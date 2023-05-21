@@ -2,7 +2,7 @@ author: cyberchriz (Christian Suer);
 language: C++
 ___
 # `Data Science`
-### [______Vector / Matrix / Array](DataScience/general/docs/array.md) (with sample analysis)
+### [______Arrays](DataScience/datastructures/docs/array.md)
 ### [______Neural Networks](DataScience/neuralnet/docs/neuralnet.md)
 ### [______Classification](DataScience/classification/docs/classification.md)
 ### [______Distributions](DataScience/distributions/docs/distributions.md)

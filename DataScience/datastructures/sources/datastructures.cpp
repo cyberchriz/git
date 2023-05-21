@@ -1319,12 +1319,11 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
     if (this->dimensions!=other.dimensions || this->dimensions>2 || other.dimension()>2){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other) const': ",
-            "this overload can only if both Arrays are 1-dimensional or both are 2-dimensional; ",
+            "this overload is meant to be used only if both Arrays are 1-dimensional or both are 2-dimensional; ",
             "failed with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-            ") -> will return *this as unmodified; for Arrays with more than 2 dimensions please use ",
-            "method 'Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes) const' instead");
-        return *this;
+            ") -> the returned result assumes that the contraction axes are 0+1");
+        return this->tensordot(other, {0,1});
     }
     // use case for 1d Arrays:
     if (this->dimensions==1){
@@ -1397,10 +1396,16 @@ T Array<T>::dotproduct(const Array<T>& other) const {
     }
 }
 
-// Alias for the dotproduct (=scalar product)
+// Alias for tensordot matrix multiplication
 template<typename T>
-T Array<T>::operator*(const Array<T>& other) const {
-    return this->dotproduct(other);
+Array<T> Array<T>::operator*(const Array<T>& other) const {
+    return this->tensordot(other);
+}
+
+// Alias for tensordot matrix multiplication
+template<typename T>
+void Array<T>::operator*=(const Array<T>& other) const {
+    *this = this->tensordot(other);
 }
 
 // +=================================+   

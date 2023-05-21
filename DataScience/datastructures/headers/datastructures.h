@@ -21,11 +21,11 @@ template<typename T> class Array;
 
 // list of time series differencing methods for stationarity transformation
 enum DIFFERENCING{
-   integer=1,
-   logreturn=2,
-   fractional=3,
-   deltamean=4,
-   original=5
+   integer,
+   logreturn,
+   fractional,
+   deltamean,
+   original
 };
 
 // list of available activation functions
@@ -55,7 +55,7 @@ struct CorrelationResult{
     Array<T> y_predict;
     void print(){
         std::cout // print to console
-        << "=========================================================================="
+        <<   "=========================================================================="
         << "\nCorrelation Results (this=x vs. other=y):"
         << "\n   - mean value of x = " << x_mean
         << "\n   - mean value of y = " << y_mean
@@ -122,6 +122,16 @@ struct LinRegResult{
     double SSR=0;
     T predict(const T x){return y_intercept + _slope * x;}
     bool is_good_fit(double threshold=0.95){return r_squared>threshold;}
+    void print(){
+        std::cout // print to console
+        <<   "=========================================================================="
+        << "\nLinear Regression Results (with 'this'=x vs. 'other'=y):"
+        << "\n   - y = " << _slope << " * x + " << y_intercept
+        << "\n   - r_squared = " << r_squared << "(=" << r_squared>0.95 ? "" : "no " << "'good fit' with confidence interval of 0.95)"
+        << "\n   - SST = " << SST
+        << "\n   - SSR = " << SSR
+        << "\n==========================================================================" << std::endl;
+    }    
     // parametric constructor
     LinRegResult(const int elements){
         _y_regression = std::make_unique<double[]>(elements);
@@ -145,7 +155,7 @@ struct PolyRegResult{
         double x_mean=0;
         double r_squared;
         std::unique_ptr<double[]> coefficient;  
-        bool _is_good_fit(double threshold=0.95){return r_squared>threshold;}
+        bool is_good_fit(double threshold=0.95){return r_squared>threshold;}
         T predict(const T x){
             double y_pred = 0;
             for (int p = 0; p<=power;p++) {
@@ -245,12 +255,13 @@ class Array{
 
         // multiplication
         T product() const; // product reduction (=multiplying all elements with each other)
-        Array<T> operator*(const T factor) const; // elementwise multiplication
+        Array<T> operator*(const T factor) const; // elementwise multiplication with a scalar
+        void operator*=(const T factor); // alias for elementwise multiplication with a scalar
         Array<T> tensordot(const Array<T>& other, const std::vector<int>& axes) const; //=tensor reduction
         Array<T> tensordot(const Array<T>& other) const; //=tensor reduction
+        Array<T> operator*(const Array<T>& other) const; //=alias for tensordot matrix multiplication
+        void operator*=(const Array<T>& other) const; //=alias for tensordot matrix multiplication
         T dotproduct(const Array<T>& other) const; //=scalar product
-        T operator*(const Array<T>& other) const; //=alias for the dotproduct (=scalar product)
-        void operator*=(const T factor);
         Array<T> Hadamard_product(const Array<T>& other) const;
         
         // division
