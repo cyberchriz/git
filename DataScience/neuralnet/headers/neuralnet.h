@@ -20,42 +20,42 @@ enum LossFunction{
     MAE,                // Mean Absolute Error
     MAPE,               // Mean Absolute Percentage Error
     MSLE,               // Mean Squared Logarithmic Error
-    CosProx,            // Cosine Proximity
-    CatCrossEntr,       // Categorical Crossentropy
-    SparseCatCrossEntr, // Sparse Categorical Crossentropy
-    BinCrossEntr,       // Binary Crossentropy
+    COS_PROX,            // Cosine Proximity
+    CAT_CROSS_ENTR,       // Categorical Crossentropy
+    SPARSE_CAT_CROSS_ENTR, // Sparse Categorical Crossentropy
+    BIN_CROSS_ENTR,       // Binary Crossentropy
     KLD,                // Kullback-Leibler Divergence
-    Poisson,            // Poisson
-    Hinge,              // Hinge
-    SquaredHinge,       // Squared Hinge
-    LogCosh,            // LogCosh
+    POISSON,            // Poisson
+    HINGE,              // Hinge
+    SQUARED_HINGE,       // Squared Hinge
+    LOG_COSH,            // LogCosh
     LOSS_FUNCTION_COUNT
 };
 
 enum LayerType{
-    max_pooling_layer,
-    avg_pooling_layer,
-    input_layer,
-    output_layer,
-    lstm_layer,
-    recurrent_layer,
-    dense_layer,
-    convolutional_layer,
-    GRU_layer,
-    dropout_layer,
-    ReLU_layer,
-    lReLU_layer,
-    ELU_layer,
-    sigmoid_layer,
-    tanh_layer,
-    flatten_layer,
+    MAX_POOL,
+    AVG_POOL,
+    INPUT,
+    OUTPUT,
+    LSTM,
+    RECURRENT,
+    DENSE,
+    CONVOLUTIONAL,
+    GRU,
+    DROPOUT,
+    RELU,
+    LRELU,
+    ELU,
+    SIGMOID,
+    TANH,
+    FLATTEN,
     LAYER_TYPE_COUNT // used to verify valid enum argument          
 };
 
 enum ScalingMethod{
-    standardized,
-    min_max_normalized,
-    mean_normalized,
+    STANDARDIZED,
+    MIN_MAX_NORM,
+    MEAN_NORM,
     none
 };
 
@@ -76,8 +76,7 @@ struct Layer{
         int neurons;
         int dimensions;
         int timesteps;
-        bool stacked=false; // indicates whether this is a stacked layer such as CNN or stacked pooling
-        Array<Array<double>> feature_stack_x;
+        int maps=1;
         Array<Array<double>> feature_stack_h;
         Array<Array<double>> gradient_stack;
         Array<Array<double>> filter_stack;
@@ -127,6 +126,7 @@ struct Layer{
         double dropout_ratio=0;
         std::initializer_list<int> pooling_slider_shape; // vector of pointers to pooling slider shapes
         std::initializer_list<int> pooling_stride_shape; // vector of pointers to pooling stride shapes
+        bool is_stacked(){return maps>1;}
 
         // public constructor
         Layer();
@@ -171,7 +171,7 @@ class NeuralNet{
         void addlayer_dense(std::initializer_list<int> shape);
         void addlayer_dense(const int neurons){addlayer_dense({neurons});}
         void addlayer_dense(){addlayer_dense(layer[layers-1].shape);}
-        void addlayer_convolutional(const int filter_radius=1, bool padding=false);
+        void addlayer_convolutional(const int filter_radius=1, const int feature_maps=10, bool padding=false);
         void addlayer_GRU(std::initializer_list<int> shape, const int timesteps=10);
         void addlayer_GRU(const int neurons, const int timesteps=10){addlayer_GRU({neurons}, timesteps);}
         void addlayer_GRU(const int timesteps=10){addlayer_GRU(layer[layers-1].shape, timesteps);}
@@ -204,8 +204,7 @@ class NeuralNet{
         int backprop_iterations=0;
         int forward_iterations=0;
         int batch_counter=0;
-        int loss_counter=0;
-        int feature_maps = 10;        
+        int loss_counter=0;    
         Array<double> features_mean;
         Array<double> features_stddev;
         Array<double> features_min;
@@ -214,7 +213,7 @@ class NeuralNet{
         Array<double> labels_stddev;
         Array<double> labels_min;
         Array<double> labels_max;        
-        ScalingMethod scaling_method = standardized;
+        ScalingMethod scaling_method = STANDARDIZED;
         double lr = 0.001;
         double momentum = 0.9;
         OPTIMIZATION_METHOD opt_method = VANILLA;
