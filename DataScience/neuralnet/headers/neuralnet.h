@@ -1,7 +1,7 @@
 // author: 'cyberchriz' (Christian Suer)
 // license: 'github.com/cyberchriz/git/LICENCE.md'
 
-// objective of this file: flexible implementation of modular neural networks
+// objective of this file: flexible implementation of sequential modular neural networks
 // with a variety of different layer types, making use of matrix operations
 
 #pragma once
