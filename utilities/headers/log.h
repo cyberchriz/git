@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <timer.h>
+#include "timer.h"
 
 enum LogLevel {
     LOG_LEVEL_ERROR,
