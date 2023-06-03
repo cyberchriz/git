@@ -33,22 +33,21 @@ enum LossFunction{
 };
 
 enum LayerType{
-    MAX_POOL,
-    AVG_POOL,
-    INPUT,
-    OUTPUT,
-    LSTM,
-    RECURRENT,
-    DENSE,
-    CONVOLUTIONAL,
-    GRU,
-    DROPOUT,
-    RELU,
-    LRELU,
-    ELU,
-    SIGMOID,
-    TANH,
-    FLATTEN,
+    POOL_LAYER,
+    INPUT_LAYER,
+    OUTPUT_LAYER,
+    LSTM_LAYER,
+    RECURRENT_LAYER,
+    DENSE_LAYER,
+    CONVOLUTIONAL_LAYER,
+    GRU_LAYER,
+    DROPOUT_LAYER,
+    RELU_LAYER,
+    LRELU_LAYER,
+    ELU_LAYER,
+    SIGMOID_LAYER,
+    TANH_LAYER,
+    FLATTEN_LAYER,
     LAYER_TYPE_COUNT // used to verify valid enum argument          
 };
 
@@ -126,6 +125,7 @@ struct Layer{
         double dropout_ratio=0;
         std::initializer_list<int> pooling_slider_shape; // vector of pointers to pooling slider shapes
         std::initializer_list<int> pooling_stride_shape; // vector of pointers to pooling stride shapes
+        PoolMethod pooling_method;
         bool is_stacked(){return maps>1;}
 
         // public constructor
@@ -160,8 +160,7 @@ class NeuralNet{
         void addlayer_lReLU();
         void addlayer_ELU();
         void addlayer_tanh();         
-        void addlayer_pool_max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);
-        void addlayer_pool_avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);               
+        void addlayer_pool(const PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);               
         void addlayer_lstm(std::initializer_list<int> shape, const int timesteps);
         void addlayer_lstm(const int neurons, const int timesteps=10){addlayer_lstm({neurons},timesteps);}
         void addlayer_lstm(const int timesteps=10){addlayer_lstm(layer[layers-1].shape,timesteps);}

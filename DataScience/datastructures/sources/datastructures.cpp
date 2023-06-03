@@ -114,12 +114,12 @@ T Array<T>::get(const std::vector<int>& index) const {
 template<typename T>
 T Array<T>::get(const Array<int>& index) const {
     // check valid index dimensions
-    if (index.get_dimensions() != this->dimmensions){
+    if (index.get_elements() != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'T Array<T>::get(const Array<int>& index) const': ",
-            "index has ", index.get_dimensions(), ", but the Array has ", this->dimensions,
-            " --> will return NAN");
-        return NAN;
+            "invalid usage of method 'T Array<T>::get(const Array<int>& index) const' ",
+            "with ", index.get_elements(), "d index parameter for a ", this->dimensions,
+            "d array -> will return NAN");
+        return T(NAN);
     }
     // copy Array to std::vector
     std::vector<int> temp(index.get_size());
@@ -171,8 +171,9 @@ T Array<T>::get(const int row, const int col) const {
 // returns the shape of the array as std::string
 template<typename T>
 std::string Array<T>::get_shapestring() const {
+    const static int MAX_DIM = 10;
     std::string result = "{";
-    for (int i=0;i<this->dimensions;i++){
+    for (int i=0;i<std::min(this->dimensions, MAX_DIM);i++){
         result += std::to_string(this->dim_size[i]);
         if (i!=this->dimensions-1){
             result += ',';
@@ -189,8 +190,8 @@ int Array<T>::get_element(const std::initializer_list<int>& index) const {
     if (index.size() != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "method 'get_element()' has been used with invalid index dimensions; the corresponding array has ",
-            this->dimensions, " dimensions (with shape ", this->get_shapestring(), "), result will be int(NAN)");
-        return int(NAN);
+            this->dimensions, " dimensions (shape: ", this->get_shapestring(), "), result will be int(T(NAN))");
+        return int(T(NAN));
     }
     // deal with the special case of single dimension Arrays
     if (this->dimensions == 1){
@@ -226,13 +227,13 @@ int Array<T>::get_element(const std::initializer_list<int>& index) const {
 template<typename T>
 int Array<T>::get_element(const std::vector<int>& index) const {
     // check for invalid index dimensions
-    if (index.size() != this->dimensions){
+    if (int(index.size()) != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "method 'int Array<T>::get_element(const std::vector<int>& index) const'",
             "has been used with invalid index dimensions; the corresponding array has ",
-            this->dimensions, " dimensions (with shape ",
-            this->get_shapestring(), "), result will be int(NAN)");
-        return int(NAN);
+            this->dimensions, " dimensions (shape: ",
+            this->get_shapestring(), "), result will be int(T(NAN))");
+        return int(T(NAN));
     }    
     // deal with the special case of single dimension Arrays
     if (this->dimensions == 1){
@@ -286,11 +287,12 @@ std::vector<int> Array<T>::get_index(int element) const {
     // initialize dimension index to last dimension
     int i = this->dimensions-1;
     // decrement iterator down to first dimension
+    int _element = element;
     for (; iterator >= result.begin(); i--, iterator--){
         // calculate index for this dimension
-        result[i] = element % this->dim_size[i];
+        result[i] = _element % this->dim_size[i];
         // divide flattened_index by size of this dimension
-        element /= this->dim_size[i];
+        _element /= this->dim_size[i];
     }
     return result;
 }
@@ -302,16 +304,16 @@ int Array<T>::get_subspace(int dimension) const {
     if (dimension<0){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'int Array<T>::get_subspace(int dimension) const': ",
-            " dimension argument is ", dimension, "but must be positive --> result will be int(NAN)");
-        return int(NAN);
+            " dimension argument is ", dimension, "but must be positive --> result will be int(T(NAN))");
+        return int(T(NAN));
     }
     if (dimension>this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'int Array<T>::get_subspace(int dimension) const': ",
             " dimension argument is ", dimension, "but must the Array has only ", this->dimensions,
             " dimensions (indexing starts from zero, therefore ", this->dimensions-1,
-            " is the highest allowed value) --> result will be int(NAN)");
-        return int(NAN);
+            " is the highest allowed value) --> result will be int(T(NAN))");
+        return int(T(NAN));
     }
     // return subspace size
     return this->subspace_size[dimension];
@@ -420,13 +422,30 @@ void Array<T>::fill_random_binary(double ratio){
     // check valid ratio
     if (ratio >1 || ratio <0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'void Array<T>::fill_dropout(double ratio)': "
+            "invalid usage of method 'void Array<T>::fill_random_binary(double ratio)': "
             "ratio argument must be between 0-1 but is ", ratio,
             " --> argument will be clipped to fit this range");
     }
     double valid_ratio = std::fmax(std::fmin(ratio,1.0),0);    
     for (int i=0;i<this->data_elements;i++){
         this->data[i] = Random<double>::uniform() > valid_ratio;
+    }
+}
+
+// randomly sets the specified fraction of the values to -1
+// and the rest to +1 (default: 0.5, i.e. 50%)
+template<typename T>
+void Array<T>::fill_random_sign(double ratio){
+    // check valid ratio
+    if (ratio >1 || ratio <0){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method 'void Array<T>::fill_random_sign(double ratio)': "
+            "ratio argument must be between 0-1 but is ", ratio,
+            " --> argument will be clipped to fit this range");
+    }
+    double valid_ratio = std::fmax(std::fmin(ratio,1.0),0);    
+    for (int i=0;i<this->data_elements;i++){
+        this->data[i] = Random<double>::uniform() > valid_ratio ? 1 : -1;
     }
 }
 
@@ -503,7 +522,7 @@ T Array<T>::min() const {
         Log::log(LOG_LEVEL_WARNING,
             "invalid useage of method 'Array<T>::min() const': ",
             "not defined for empty array -> will return NAN");
-        return NAN;
+        return T(NAN);
     }
     T result = this->data[0];
     for (int i=0;i<this->data_elements;i++){
@@ -519,13 +538,31 @@ T Array<T>::max() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid useage of method 'Array<T>::max() const': ",
             "not defined for empty array -> will return NAN");
-        return NAN;
+        return T(NAN);
     }
     T result = this->data[0];
     for (int i=0;i<this->data_elements;i++){
         result = std::fmax(result, this->data[i]);
+    }
+    return result;
+}
+
+// returns the highest value of the Array,
+// across all dimensions
+template<typename T>
+T Array<T>::maxabs() const {
+    // check if Array has data
+    if (this->data_elements==0){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid useage of method 'Array<T>::min() const': ",
+            "not defined for empty array -> will return NAN");
+        return T(NAN);
+    }
+    T result = std::fabs(this->data[0]);
+    for (int i=0;i<this->data_elements;i++){
+        result = std::fmax(result, std::fabs(this->data[i]));
     }
     return result;
 }
@@ -539,14 +576,14 @@ T Array<T>::mode() const {
         Log::log(LOG_LEVEL_WARNING,
             "invalid useage of method 'Array<T>::min() const': ",
             "not defined for empty array -> will return NAN");
-        return NAN;
+        return T(NAN);
     }    
     // Sort the array in ascending order
     auto sorted = this->sort();
     // Create an unordered map to store the frequency of each element
     std::unordered_map<T, size_t> freq_map;
     for (size_t i = 0; i < this->data_elements; i++) {
-        freq_map[sorted->data[i]]++;
+        freq_map[sorted.data[i]]++;
     }
     // Find the element(s) with the highest frequency
     T mode;
@@ -562,7 +599,7 @@ T Array<T>::mode() const {
         }
     }
     // If there is only one mode, return it
-    if (modes.get_size() == 1) {
+    if (modes.size() == 1) {
         mode = modes[0];
     } else {
         // If there are multiple modes, return the first one
@@ -578,8 +615,8 @@ double Array<T>::mean() const {
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
             "invalid useage of method 'Array<T>::min() const': ",
-            "not defined for empty array -> will return double(NAN)");
-        return double(NAN);
+            "not defined for empty array -> will return double(T(NAN))");
+        return double(T(NAN));
     }    
     double sum=0;
     for (int n=0;n<this->data_elements;n++){
@@ -595,8 +632,8 @@ double Array<T>::median() const {
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
             "invalid useage of method 'Array<T>::min() const': ",
-            "not defined for empty array -> will return double(NAN)");
-        return double(NAN);
+            "not defined for empty array -> will return double(T(NAN))");
+        return double(T(NAN));
     }    
     // Copy the data to a temporary array for sorting
     // note: .get() is used to retrieve a raw pointer from a std::unique_ptr
@@ -624,8 +661,8 @@ double Array<T>::variance() const {
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
             "invalid useage of method 'Array<T>::min() const': ",
-            "not defined for empty array -> will return double(NAN)");
-        return double(NAN);
+            "not defined for empty array -> will return double(T(NAN))");
+        return double(T(NAN));
     }    
     double mean = this->mean();
     double sum_of_squares = 0.0;
@@ -870,8 +907,8 @@ T Array<T>::sum() const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'T Array<T>::sum() const' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning NAN");
-        return NAN;
+            this->get_typename(), this->get_shapestring(), " -> returning NAN");
+        return T(NAN);
     }
 }
 
@@ -886,9 +923,9 @@ Array<T> Array<T>::operator+(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'T Array<T>::operator+(const T value) const' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning Array<NAN>");
-        result->fill_values(NAN);
+            "method 'T Array<T>::operator+(const T value) const' has failed with 'this' of type ",
+            this->get_typename(), this->get_shapestring(), " adding value of '", value, "' -> returning Array<NAN>");
+        result->fill_values(T(NAN));
     }    
     return std::move(*result);
 }
@@ -901,9 +938,10 @@ Array<T> Array<T>::operator+(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<T> Array<T>::operator+(const Array<T>& other) const' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning Array<NAN>");        
-        result->fill_values(NAN);
+            "method 'Array<T> Array<T>::operator+(const Array<T>& other) const' has failed with 'this' of type ",
+            this->get_typename(), this->get_shapestring(), " and 'other' of type ", 
+            other.get_typename(), other.get_shapestring(), " -> returning Array<NAN>");        
+        result->fill_values(T(NAN));
     }
     else {
         try {
@@ -913,9 +951,10 @@ Array<T> Array<T>::operator+(const Array<T>& other) const {
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'Array<T> Array<T>::operator+(const Array<T>& other) const' has failed with type ",
-                this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning Array<NAN>");        
-            result->fill_values(NAN);            
+                "method 'Array<T> Array<T>::operator+(const Array<T>& other) const' has failed with 'this' of type ",
+                this->get_typename(), this->get_shapestring(), " and 'other' of type ", 
+                other.get_typename(), other.get_shapestring(), " -> returning Array<NAN>");            
+            result->fill_values(T(NAN));            
         }
     }
     return std::move(*result);
@@ -934,7 +973,7 @@ Array<T>& Array<T>::operator++(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "prefix increment method 'Array<T>& Array<T>::operator++()' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning *this as unmodified");         
+            this->get_typename(), this->get_shapestring(), " -> returning *this as unmodified");         
     }
     return *this;
 }
@@ -958,7 +997,7 @@ Array<T> Array<T>::operator++(int) const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "postfix increment method 'Array<T>& Array<T>::operator++(int)' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning *this as unmodified");
+            this->get_typename(), this->get_shapestring(), " -> returning *this as unmodified");
         return *this;       
     }    
 }
@@ -975,7 +1014,7 @@ void Array<T>::operator+=(const T value) {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "elementwise addition with method 'void Array<T>::operator+=(const T value)' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> source Array will be unmodified");        
+            this->get_typename(), this->get_shapestring(), " -> source Array will be unmodified");        
     }
 }
 
@@ -989,7 +1028,7 @@ void Array<T>::operator+=(const Array<T>& other){
         Log::log(LOG_LEVEL_WARNING,
             "calling method 'void Array<T>::operator+=(const Array<T>& other)' with Arrays of non-matching shapes: this",
             this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be Array<NAN>");
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }
     try {
@@ -1003,7 +1042,7 @@ void Array<T>::operator+=(const Array<T>& other){
             "'this' has type ", this->get_typename(), " with shape ", this->get_shapestring(),
             ", 'other' has type ", other.get_typename(), " with shape ", other.get_shapestring(),
             ", result will be Array<NAN>");
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }    
 }
@@ -1024,8 +1063,8 @@ Array<T> Array<T>::operator-(const T value) const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'T Array<T>::operator-(const T value) const' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning Array<NAN>");
-        result->fill_values(NAN);
+            this->get_typename(), this->get_shapestring(), " -> returning Array<NAN>");
+        result->fill_values(T(NAN));
     }    
     return std::move(*result);
 }
@@ -1039,8 +1078,8 @@ Array<T> Array<T>::operator-(const Array<T>& other) const {
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
             "method 'Array<T> Array<T>::operator-(const Array<T>& other) const' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning Array<NAN>");        
-        result->fill_values(NAN);
+            this->get_typename(), this->get_shapestring(), " -> returning Array<NAN>");        
+        result->fill_values(T(NAN));
     }
     else {
         try {
@@ -1051,8 +1090,8 @@ Array<T> Array<T>::operator-(const Array<T>& other) const {
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'Array<T> Array<T>::operator-(const Array<T>& other) const' has failed with type ",
-                this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning Array<NAN>");        
-            result->fill_values(NAN);            
+                this->get_typename(), this->get_shapestring(), " -> returning Array<NAN>");        
+            result->fill_values(T(NAN));            
         }
     }
     return std::move(*result);
@@ -1070,7 +1109,7 @@ Array<T>& Array<T>::operator--(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "prefix decrement method 'Array<T>& Array<T>::operator--()' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning *this as unmodified");         
+            this->get_typename(), this->get_shapestring(), " -> returning *this as unmodified");         
     }
     return *this;
 }
@@ -1094,7 +1133,7 @@ Array<T> Array<T>::operator--(int) const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "postfix decrement method 'Array<T>& Array<T>::operator--(int)' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> returning *this as unmodified");
+            this->get_typename(), this->get_shapestring(), " -> returning *this as unmodified");
         return *this;       
     }    
 }
@@ -1111,7 +1150,7 @@ void Array<T>::operator-=(const T value) {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "elementwise substraction with method 'void Array<T>::operator-=(const T value)' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") --> source Array will be unmodified");        
+            this->get_typename(), this->get_shapestring(), " -> source Array will be unmodified");        
     }
 }
 
@@ -1125,7 +1164,7 @@ void Array<T>::operator-=(const Array<T>& other){
         Log::log(LOG_LEVEL_WARNING,
             "calling method 'void Array<T>::operator-=(const Array<T>& other)' with Arrays of non-matching shapes: this",
             this->get_shapestring(), " vs other", other.get_shapestring(), " -> result will be Array<NAN>");
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }
     try {
@@ -1139,7 +1178,7 @@ void Array<T>::operator-=(const Array<T>& other){
             "'this' has type ", this->get_typename(), " with shape ", this->get_shapestring(),
             ", 'other' has type ", other.get_typename(), " with shape ", other.get_shapestring(),
             ", result will be Array<NAN>");
-        this->fill_values(NAN);
+        this->fill_values(T(NAN));
         return;
     }    
 }
@@ -1168,8 +1207,8 @@ T Array<T>::product() const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'T Array<T>::product() const' has failed with type ", this->get_typename(),
-            " (shape: ", this->get_shapestring(), ") --> result will be NAN");        
-        return NAN;
+            this->get_shapestring(), " -> result will be NAN");        
+        return T(NAN);
     }
 }
 
@@ -1189,8 +1228,8 @@ Array<T> Array<T>::operator*(const T factor) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method Array<T> Array<T>::operator*(const T factor) const' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") and factor=", factor);
+            "method Array<T> Array<T>::operator*(const T factor) const' has failed with type=",
+            this->get_typename(), this->get_shapestring(), " and factor=", factor);
     }
     return std::move(*result);
 }
@@ -1212,8 +1251,8 @@ void Array<T>::operator*=(const T factor){
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'void Array<T>::operator*=(const T factor)' has failed with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(), ") and factor=", factor);
+            "method 'void Array<T>::operator*=(const T factor)' has failed with type=",
+            this->get_typename(), this->get_shapestring(), " and factor=", factor);
     }
 }
 
@@ -1230,7 +1269,7 @@ Array<T> Array<T>::Hadamard_product(const Array<T>& other) const {
             "calling method 'Array<T> Array<T>::Hadamard_product(const Array<T>& other) const'",
             " with arrays of non-matching shapes: this", this->get_shapestring(),
             " vs other", other.get_shapestring(), " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     else {
         try {
@@ -1244,7 +1283,7 @@ Array<T> Array<T>::Hadamard_product(const Array<T>& other) const {
             " with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);            
+        result->fill_values(T(NAN));            
         }
     }
     return std::move(*result);
@@ -1303,8 +1342,8 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes) const'",
-            " has failed with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(), ") -> result is undefined");
+            " has failed with 'this' as type ", this->get_typename(), this->get_shapestring(),
+            " vs. 'other' as type ", other.get_typename(), other.get_shapestring(), " -> result is undefined");
         return std::move(*result);        
     }
     
@@ -1320,9 +1359,9 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other) const': ",
             "this overload is meant to be used only if both Arrays are 1-dimensional or both are 2-dimensional; ",
-            "failed with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-            ") -> the returned result assumes that the contraction axes are 0+1");
+            "failed with 'this' as type ", this->get_typename(), this->get_shapestring(),
+            " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+            " -> the returned result assumes that the contraction axes are 0+1");
         return this->tensordot(other, {0,1});
     }
     // use case for 1d Arrays:
@@ -1335,9 +1374,9 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
             Log::log(LOG_LEVEL_WARNING,
                 "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other) const', ",
                 "attempting Array 2d-tensordot with shapes that can't be multiplied: ",
-                "failed with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-                ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-                ") --> will return *this as unmodified");
+                "failed with 'this' as type ", this->get_typename(), this->get_shapestring(),
+                " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+                " -> will return *this as unmodified");
             return *this;
         }
         try {
@@ -1358,9 +1397,9 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'Array<T> Array<T>::tensordot(const Array<T>& other) const' for 2d-tensordot has failed, ",
-                "with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-                ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-                ") --> will return *this as unmodified");
+                "with 'this' as type ", this->get_typename(), this->get_shapestring(),
+                " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+                " -> will return *this as unmodified");
             return *this;            
         }
     }
@@ -1374,10 +1413,10 @@ T Array<T>::dotproduct(const Array<T>& other) const {
         Log::log(LOG_LEVEL_WARNING,
             "calling method 'T Array<T>::dotproduct(const Array<T>& other) const'",
             " with arrays of non-matching shapes,",
-            " with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-            ") -> result will be NAN");
-        return NAN;
+            " with 'this' as type ", this->get_typename(), this->get_shapestring(),
+            " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+            " -> result will be NAN");
+        return T(NAN);
     }
     try {
         T result = 0;
@@ -1389,10 +1428,10 @@ T Array<T>::dotproduct(const Array<T>& other) const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'T Array<T>::dotproduct(const Array<T>& other) const' has failed,",
-            " with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-            ") -> result will be NAN");
-        return NAN;        
+            " with 'this' as type ", this->get_typename(), this->get_shapestring(),
+            " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+            " -> result will be NAN");
+        return T(NAN);        
     }
 }
 
@@ -1419,6 +1458,7 @@ Array<T> Array<T>::operator/(const T quotient) const {
         Log::log(LOG_LEVEL_WARNING,
             "invalid call of method 'Array<T> Array<T>::operator/(const T quotient) const' ",
             "with quotient=0 (zero division is undefined)");
+        return *this;
     }
     return (*this)*(1/quotient);
 }
@@ -1441,10 +1481,10 @@ Array<T> Array<T>::Hadamard_division(const Array<T>& other) const {
         Log::log(LOG_LEVEL_WARNING,
             "calling method 'Array<T> Array<T>::Hadamard_division(const Array<T>& other) const' ",
             "with arrays of non-matching shapes: ",
-            "'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-            ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+            "'this' as type ", this->get_typename(), this->get_shapestring(),
+            " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+            " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));
     }
     else {
         try {
@@ -1455,9 +1495,9 @@ Array<T> Array<T>::Hadamard_division(const Array<T>& other) const {
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'Array<T> Array<T>::Hadamard_division(const Array<T>& other) const' has failed, with ",
-                "'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-                ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-                ") -> result will be Array<NAN>");
+                "'this' as type ", this->get_typename(), this->get_shapestring(),
+                " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+                " -> result will be Array<NAN>");
             // check if failure was due to zero division
             try {
                 for (int i=0;i<this->data_elements;i++){
@@ -1470,7 +1510,7 @@ Array<T> Array<T>::Hadamard_division(const Array<T>& other) const {
             catch (...) {
                 // empty
             }
-            result->fill_values(NAN);            
+            result->fill_values(T(NAN));            
         }
     }
     return std::move(*result);
@@ -1498,8 +1538,8 @@ void Array<T>::operator%=(const double num){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'void Array<T>::operator%=(const double num)' has failed ",
-            "with type ", this->get_typename(), "(shape: ", this->get_shapestring(),
-            ") and num=", num, "--> 'this' will remain unmodified)");
+            "with type=", this->get_typename(), this->get_shapestring(),
+            " and num=", num, " -> 'this' will remain unmodified");
     }
 }
 
@@ -1513,7 +1553,7 @@ Array<double> Array<T>::operator%(const double num) const {
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<double> Array<T>::operator%(const double num) const' ",
             "with num=0 (zero division is undefined) --> returns Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try  {
@@ -1524,9 +1564,9 @@ Array<double> Array<T>::operator%(const double num) const {
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'Array<T> Array<T>::operator%(const double num)' has failed ",
-            "with type ", this->get_typename(), "(shape: ", this->get_shapestring(),
-            ") and num=", num, " --> returns Array<NAN>");
-        result->fill_values(NAN);       
+            "with type=", this->get_typename(), this->get_shapestring(),
+            " and num=", num, " --> returns Array<NAN>");
+        result->fill_values(T(NAN));       
     }
     return std::move(*result);
 }
@@ -1548,9 +1588,9 @@ Array<T> Array<T>::pow(const T exponent){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'Array<T> Array<T>::pow(const T exponent)' has failed ",
-            "with type ", this->get_typename(), "(shape: ", this->get_shapestring(),
-            ") and exponent=", exponent, " --> returns Array<NAN>"); 
-        result->fill_values(NAN);          
+            "with type=", this->get_typename(), this->get_shapestring(),
+            " and exponent=", exponent, " -> returns Array<NAN>"); 
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1566,10 +1606,10 @@ Array<T> Array<T>::pow(const Array<T>& other){
         Log::log(LOG_LEVEL_WARNING,
             "calling method 'Array<T> Array<T>::pow(const Array<T>& other)' ",
             "with arrays of non-matching shapes: ",
-            "'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-            ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+            "'this' as type ", this->get_typename(), this->get_shapestring(),
+            " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+            " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));
     }
     else {
         try { 
@@ -1580,10 +1620,10 @@ Array<T> Array<T>::pow(const Array<T>& other){
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'Array<T> Array<T>::pow(const Array<T>& other)' has failed, with ",
-                "'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-                ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
-                ") -> result will be Array<NAN>");
-            result->fill_values(NAN);            
+                "'this' as type ", this->get_typename(), this->get_shapestring(),
+                " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
+                " -> result will be Array<NAN>");
+            result->fill_values(T(NAN));            
         }
     }
     return std::move(*result);
@@ -1602,8 +1642,8 @@ Array<T> Array<T>::sqrt(){
     catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'Array<T> Array<T>::sqrt()' has failed, with type ",
-                this->get_typename(), " (shape: ", this->get_shapestring(),
-                ") -> result will be Array<NAN>");
+                this->get_typename(), this->get_shapestring(),
+                " -> result will be Array<NAN>");
             try {
                 for (int i=0;i<this->data_elements;i++){
                     if (this->data[i]<0){
@@ -1615,7 +1655,7 @@ Array<T> Array<T>::sqrt(){
             catch (...) {
                 // empty
             }
-            result->fill_values(NAN);         
+            result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -1632,8 +1672,8 @@ Array<T> Array<T>::log(){
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<T> Array<T>::log()' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
+            "method 'Array<T> Array<T>::log()' has failed, with type=",
+            this->get_typename(), this->get_shapestring(),
             ") -> result will be Array<NAN>"); 
         // check if failure was due to negative or zero values
         try {
@@ -1651,6 +1691,7 @@ Array<T> Array<T>::log(){
         catch (...) {
             // empty
         }            
+        result->fill_values(T(NAN)); 
     }
     return std::move(*result);
 }
@@ -1668,8 +1709,8 @@ Array<T> Array<T>::log10(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "method 'Array<T> Array<T>::log10()' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") -> result will be Array<NAN>"); 
+            this->get_typename(), this->get_shapestring(),
+            " -> result will be Array<NAN>"); 
         // check if failure was due to negative or zero values
         try {
             for (int i=0;i<this->data_elements;i++){
@@ -1686,6 +1727,7 @@ Array<T> Array<T>::log10(){
         catch (...) {
             // empty
         }
+        result->fill_values(T(NAN)); 
     }
     return std::move(*result);
 }
@@ -1707,9 +1749,9 @@ Array<T> Array<T>::round(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
         "method 'Array<T> Array<T>::round()' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+            this->get_typename(), this->get_shapestring(),
+            " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -1727,9 +1769,9 @@ Array<T> Array<T>::floor(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
         "method 'Array<T> Array<T>::floor()' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") -> result will be Array<NAN>");
-        result->fill_values(NAN);        
+            this->get_typename(), this->get_shapestring(),
+            " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));        
     }
     return std::move(*result);
 }
@@ -1747,9 +1789,9 @@ Array<T> Array<T>::ceil(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
         "method 'Array<T> Array<T>::ceil()' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") -> result will be Array<NAN>");
-        result->fill_values(NAN);          
+            this->get_typename(), this->get_shapestring(),
+            " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1767,9 +1809,9 @@ Array<T> Array<T>::abs(){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
         "method 'Array<T> Array<T>::abs()' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") -> result will be Array<NAN>");
-        result->fill_values(NAN);          
+            this->get_typename(), this->get_shapestring(),
+            " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1791,9 +1833,9 @@ Array<T> Array<T>::min(const T value){
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
         "method 'Array<T> Array<T>::min(const T value)' has failed, with type ",
-            this->get_typename(), " (shape: ", this->get_shapestring(),
-            ") with value of type ", typeid(T).name(), " --> result will be Array<NAN>");
-        result->fill_values(NAN);          
+            this->get_typename(), this->get_shapestring(),
+            " with value of type ", typeid(T).name(), " -> result will be Array<NAN>");
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1813,7 +1855,7 @@ Array<T> Array<T>::max(const T value){
         "method 'Array<T> Array<T>::max(const T value)' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") with value of type ", typeid(T).name(), " --> result will be Array<NAN>");
-        result->fill_values(NAN);          
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1829,7 +1871,7 @@ Array<T> Array<T>::min(const Array<T>& other){
             "arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -1843,7 +1885,7 @@ Array<T> Array<T>::min(const Array<T>& other){
             "with 'this' of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") vs. 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);          
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1859,7 +1901,7 @@ Array<T> Array<T>::max(const Array<T>& other){
             "arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -1873,7 +1915,7 @@ Array<T> Array<T>::max(const Array<T>& other){
             "with 'this' of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") vs. 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);          
+        result->fill_values(T(NAN));          
     }
     return std::move(*result);
 }
@@ -1896,7 +1938,7 @@ Array<T> Array<T>::cos(){
         "method 'Array<T> Array<T>::cos()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -1915,7 +1957,7 @@ Array<T> Array<T>::sin(){
         "method 'Array<T> Array<T>::sin()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -1934,7 +1976,7 @@ Array<T> Array<T>::tan(){
         "method 'Array<T> Array<T>::tan()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -1953,7 +1995,7 @@ Array<T> Array<T>::acos(){
         "method 'Array<T> Array<T>::acos()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -1972,7 +2014,7 @@ Array<T> Array<T>::asin(){
         "method 'Array<T> Array<T>::asin()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -1992,7 +2034,7 @@ Array<T> Array<T>::atan(){
         "method 'Array<T> Array<T>::atan()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2015,7 +2057,7 @@ Array<T> Array<T>::cosh(){
         "method 'Array<T> Array<T>::cosh()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2034,7 +2076,7 @@ Array<T> Array<T>::sinh(){
         "method 'Array<T> Array<T>::sinh()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2053,7 +2095,7 @@ Array<T> Array<T>::tanh(){
         "method 'Array<T> Array<T>::tanh()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2072,7 +2114,7 @@ Array<T> Array<T>::acosh(){
         "method 'Array<T> Array<T>::acosh()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2091,7 +2133,7 @@ Array<T> Array<T>::asinh(){
         "method 'Array<T> Array<T>::asinh()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2110,7 +2152,7 @@ Array<T> Array<T>::atanh(){
         "method 'Array<T> Array<T>::atanh()' has failed, with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2154,7 +2196,7 @@ Array<T> Array<T>::replace(const T old_value, const T new_value){
         "), query type 'old_value' as type ", typeid(old_value).name(),
         " and replacement type 'new_value' as type ", typeid(new_value).name(),
         " --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2173,7 +2215,7 @@ Array<char> Array<T>::sign(){
         "method 'Array<T> Array<T>::sign()' has failed, ",
         "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
         ") --> result will be Array<NAN>");
-        result->fill_values(NAN);         
+        result->fill_values(T(NAN));         
     }
     return std::move(*result);
 }
@@ -2198,7 +2240,7 @@ Array<double> Array<T>::scale_minmax(T min,T max){
                     ") and min value of type ",typeid(min).name, " / max value of type ",
                     typeid(max).name(), ", reason: checking for data_min and data_max resulted in NAN",
                     " --> result will be Array<NAN>");
-                result->fill_values(NAN);
+                result->fill_values(T(NAN));
                 return std::move(*result);
             }
         }
@@ -2209,7 +2251,7 @@ Array<double> Array<T>::scale_minmax(T min,T max){
                 ") and min value of type ",typeid(min).name, " / max value of type ",
                 typeid(max).name(), ", reason: NAN check of data_min and data_max failed ",
                 "--> result will be Array<NAN>");
-            result->fill_values(NAN);
+            result->fill_values(T(NAN));
             return std::move(*result);
         }
         double factor = (max-min) / (data_max-data_min);
@@ -2224,7 +2266,7 @@ Array<double> Array<T>::scale_minmax(T min,T max){
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and min value of type ",typeid(min).name, " / max value of type ",
             typeid(max).name(), " --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
 }
@@ -2245,7 +2287,7 @@ Array<double> Array<T>::scale_mean(){
                     "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
                     "), reason: checking for data_min and data_max resulted in NAN",
                     " --> result will be Array<NAN>");
-                result->fill_values(NAN);
+                result->fill_values(T(NAN));
                 return std::move(*result);
             }
         }
@@ -2255,7 +2297,7 @@ Array<double> Array<T>::scale_mean(){
                 "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
                 "), reason: NAN check of data_min and data_max failed ",
                 "--> result will be Array<NAN>");
-            result->fill_values(NAN);
+            result->fill_values(T(NAN));
             return std::move(*result);
         }        
         double mean = this->mean();
@@ -2269,7 +2311,7 @@ Array<double> Array<T>::scale_mean(){
             "method 'Array<double> Array<T>::scale_mean()' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);        
     }
 }
@@ -2288,7 +2330,7 @@ Array<double> Array<T>::scale_standardized(){
                 "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
                 "), reason: checking for mean and/or variance resulted in NAN",
                 " --> result will be Array<NAN>");
-            result->fill_values(NAN);
+            result->fill_values(T(NAN));
             return std::move(*result);
         }
     }
@@ -2298,7 +2340,7 @@ Array<double> Array<T>::scale_standardized(){
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: NAN check of mean and/or varience failed ",
             "--> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }       
     try {
@@ -2312,7 +2354,7 @@ Array<double> Array<T>::scale_standardized(){
             "method 'Array<double> Array<T>::scale_standardized()' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result); 
     }
 }
@@ -2331,7 +2373,7 @@ Array<double> Array<T>::scale_unit_length(){
             "method 'Array<double> Array<T>::scale_unit_length()' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: Euclidian norm is 0 or NAN --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result); 
     }
     try {
@@ -2347,7 +2389,7 @@ Array<double> Array<T>::scale_unit_length(){
             "method 'Array<double> Array<T>::scale_unit_length()' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);        
     }
 }
@@ -2402,7 +2444,7 @@ Array<T> Array<T>::activation(ActFunc activation_function){
             "method 'Array<T> Array<T>::activation(ActFunc activation_function)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);        
     }
     return std::move(*result);
@@ -2454,7 +2496,7 @@ Array<T> Array<T>::derivative(ActFunc activation_function){
             "method 'Array<T> Array<T>::derivative(ActFunc activation_function)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);        
     }
     return std::move(*result);
@@ -2480,7 +2522,7 @@ Array<T> Array<T>::function(const T (*pointer_to_function)(T)){
             "method 'Array<T> Array<T>::function(const T (*pointer_to_function)(T))' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);            
     }
     return std::move(*result);
@@ -2502,7 +2544,7 @@ Array<T> Array<T>::outliers_truncate(double z_score){
             "method 'Array<T> Array<T>::outliers_truncate(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: retrieving mean and/or stddev resulted in NAN --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
     try {
@@ -2519,7 +2561,7 @@ Array<T> Array<T>::outliers_truncate(double z_score){
             "method 'Array<T> Array<T>::outliers_truncate(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
 }
@@ -2536,7 +2578,7 @@ Array<T> Array<T>::outliers_winsoring(double z_score){
             "method 'Array<T> Array<T>::outliers_winsoring(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: retrieving mean and/or stddev resulted in NAN --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
     try {
@@ -2561,7 +2603,7 @@ Array<T> Array<T>::outliers_winsoring(double z_score){
             "method 'Array<T> Array<T>::outliers_winsoring(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
 }
@@ -2577,7 +2619,7 @@ Array<T> Array<T>::outliers_mean_imputation(double z_score){
             "method 'Array<T> Array<T>::outliers_mean_imputation(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: retrieving mean and/or stddev resulted in NAN --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
     try {
@@ -2596,7 +2638,7 @@ Array<T> Array<T>::outliers_mean_imputation(double z_score){
             "method 'Array<T> Array<T>::outliers_mean_imputation(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
 }
@@ -2613,7 +2655,7 @@ Array<T> Array<T>::outliers_median_imputation(double z_score){
             "method 'Array<T> Array<T>::outliers_median_imputation(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: retrieving mean and/or stddev and/or median resulted in NAN --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
     try {
@@ -2631,7 +2673,7 @@ Array<T> Array<T>::outliers_median_imputation(double z_score){
             "method 'Array<T> Array<T>::outliers_median_imputation(double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);        
     }
 }
@@ -2646,7 +2688,7 @@ Array<T> Array<T>::outliers_value_imputation(T value, double z_score){
             "method 'Array<T> Array<T>::outliers_value_imputation(T value, double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             "), reason: retrieving mean and/or stddev resulted in NAN --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);         
     }
     try {
@@ -2663,7 +2705,7 @@ Array<T> Array<T>::outliers_value_imputation(T value, double z_score){
             "method 'Array<T> Array<T>::outliers_value_imputation(T value, double z_score)' has failed, ",
             "with Array of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") --> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);  
     }
 }
@@ -2717,9 +2759,6 @@ Array<T>& Array<T>::operator=(const Array<T>& other) {
 // Array move assignment
 template<typename T>
 Array<T>& Array<T>::operator=(Array<T>&& other) noexcept {
-    if (!this->equalsize(other)){
-        Log::log(LOG_LEVEL_DEBUG, "calling move assignment operator= with arrays of non-matching shapes: this", this->get_shapestring(), " vs other", other.get_shapestring(), " -> this will now have the size of other");
-    }
     this->data_elements = other.get_elements();
     this->data = std::move(other.data);
     this->dim_size = std::move(other.dim_size);
@@ -2778,6 +2817,16 @@ Array<T>& Array<T>::operator=(T (&&arr)[]) noexcept {
     this->capacity = arr_elements;
     arr.reset();
     return *this;
+}
+// copy assignment operator with std::vector as argument
+template<typename T>
+Array<T> Array<T>::operator=(std::vector<T> vector){
+    int elements = vector.size();
+    Array<T> result = Array<T>({elements});
+    for (int i=0;i<elements;i++){
+        result[i] =vector[i];
+    }
+    return result;
 }
 
 // indexing operator [] for reading
@@ -2972,7 +3021,7 @@ Array<bool> Array<T>::operator>(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -2986,7 +3035,7 @@ Array<bool> Array<T>::operator>(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3007,7 +3056,7 @@ Array<bool> Array<T>::operator>=(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3021,7 +3070,7 @@ Array<bool> Array<T>::operator>=(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3042,7 +3091,7 @@ Array<bool> Array<T>::operator==(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3056,7 +3105,7 @@ Array<bool> Array<T>::operator==(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3077,7 +3126,7 @@ Array<bool> Array<T>::operator!=(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3091,7 +3140,7 @@ Array<bool> Array<T>::operator!=(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3112,7 +3161,7 @@ Array<bool> Array<T>::operator<(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3126,7 +3175,7 @@ Array<bool> Array<T>::operator<(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3147,7 +3196,7 @@ Array<bool> Array<T>::operator<=(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3161,7 +3210,7 @@ Array<bool> Array<T>::operator<=(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3187,7 +3236,7 @@ Array<bool> Array<T>::operator&&(const bool value) const {
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and comparison value of type ", typeid(value).name(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3209,7 +3258,7 @@ Array<bool> Array<T>::operator||(const bool value) const {
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and comparison value of type ", typeid(value).name(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3229,7 +3278,7 @@ Array<bool> Array<T>::operator!() const {
             "method 'Array<bool> Array<T>::operator!() const' has failed, ",
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3249,7 +3298,7 @@ Array<bool> Array<T>::operator&&(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3263,7 +3312,7 @@ Array<bool> Array<T>::operator&&(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3283,7 +3332,7 @@ Array<bool> Array<T>::operator||(const Array<T>& other) const {
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
         return std::move(*result);
     }
     try {
@@ -3297,7 +3346,7 @@ Array<bool> Array<T>::operator||(const Array<T>& other) const {
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
-        result->fill_values(NAN);
+        result->fill_values(T(NAN));
     }
     return std::move(*result);
 }
@@ -3356,11 +3405,7 @@ Array<T*> Array<T>::operator&() {
 // flattens the Array into a one-dimensional vector
 template<typename T>
 Array<T> Array<T>::flatten() const {
-    // check if Array already is 1d
-    if (this->dimensions==1){
-        return *this;
-    }
-    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>({this->data_elements});
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data_elements);
     for (int i=0;i<this->data_elements;i++){
         result->data[i]=this->data[i];
     }
@@ -3812,133 +3857,92 @@ Array<Array<T>> Array<T>::dissect(int axis){
     return result;
 }
 
-// moves a 'slider_shape' across the Array, with the step lengths
-// specified 'stride_shape'; from each slider position the max value inside
-// the slider gets assigned to a corresponding element of the result array
+// moves a box of shape 'slider_shape' across the Array, with the step lengths
+// specified as 'stride_shape'; from each slider position the pooled result of
+// the slider box gets assigned to a corresponding element of the result array
 template<typename T>
-Array<T> Array<T>::pool_max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape){
+Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape){
     std::vector<int> slider_shape_vec = initlist_to_vector(slider_shape);
     std::vector<int> stride_shape_vec = initlist_to_vector(stride_shape);
     // confirm valid slider shape
-    if (slider_shape.size() != this->dimensions){
+    if (int(slider_shape.size()) != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
-            "slider shape for max pooling must have same number of dimensions ",
+            "slider shape for pooling operation must have same number of dimensions ",
             "as the array it is acting upon -> auto-adjusting slider shape to fit");
-        while (slider_shape_vec.size() < this->dimensions){
+        while (int(slider_shape_vec.size()) < this->dimensions){
             slider_shape_vec.push_back(1);
         }
-        while (slider_shape_vec.size() > this->dimensions){
+        while (int(slider_shape_vec.size()) > this->dimensions){
             slider_shape_vec.pop_back();
         }
     }
     // confirm valid stride shape
-    if (stride_shape.size() != this->dimensions){
+    if (int(stride_shape.size()) != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
-            "stride shape for max pooling must have same number of dimensions ",
+            "stride shape for pooling operation must have same number of dimensions ",
             "as the array it is acting upon -> auto-adjusting stride shape to fit");
-        while (stride_shape_vec.size() < this->dimensions){
+        while (int(stride_shape_vec.size()) < this->dimensions){
             stride_shape_vec.push_back(1);
         }
-        while (stride_shape_vec.size() > this->dimensions){
+        while (int(stride_shape_vec.size()) > this->dimensions){
             stride_shape_vec.pop_back();
         }            
-    }    
+    }
+    // create source index
+    std::vector<int> index_source(this->dimensions);
     // get result shape
     std::vector<int> result_shape(this->dimensions,1);
     for (int d=0;d<this->dimensions;d++){
-        result_shape[d] = (this->dim_size[d] - slider_shape_vec[d]) / stride_shape_vec[d];
+        result_shape[d] = this->dim_size[d] / std::max(1,stride_shape_vec[d]);
     }
     // create result array
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(result_shape);
+    std::vector<int> index_result(result->get_dimensions());
     // create a sliding box for pooling
-    Array<double> slider = Array<double>(slider_shape);
-    // iterate over target
-    for (int j=0;j<result->get_elements();j++){
-        // get associated index
-        std::vector<int> index_j = result->get_index(j);
-        // get corresponding source index
-        Array<int> index_i(0);
-        for (int d=0;d<result->dimensions;d++){
-            index_i.push_back(index_j[d] * stride_shape_vec[d]);
+    Array<double> slider = Array<double>(slider_shape_vec);
+    std::vector<int> index_slider(slider.get_dimensions());
+    std::vector<int> index_combined(this->dimensions);
+    // iterate over result
+    int result_elements = result->get_elements();
+    for (int j=0;j<result_elements;j++){
+        // get associated result index
+        index_result = result->get_index(j);
+        // get corresponding source index at slider position
+        for (int d=0;d<this->dimensions;d++){
+            index_source[d] = index_result[d] * stride_shape_vec[d];
         }
         // iterate over elements of the slider
-        Array<int> index_slider(0);
         for (int n=0;n<slider.get_elements();n++){
-            // get multidimensional index of the slider element
+            // update multidimensional index of the slider element
             index_slider = slider.get_index(n);
+            // get combined index and check if it fits within source boundaries            
+            bool index_ok=true;
+            for (int d=0;d<index_combined.size();d++){
+                index_combined[d] = index_source[d] + index_slider[d];
+                if (index_combined[d]>=this->dim_size[d]){
+                    index_ok=false;
+                    break;
+                }                
+            }
             // assing slider value from the element with the index of the sum of index_i+index_slider
-            slider.set(n, this->get((index_i+index_slider).flatten()));
+            if (index_ok){
+                slider.set(n, this->get(index_combined));
+            }
         }
-        result->set(j,slider.max());
-    }
-    return std::move(*result);
-}
-
-// moves a 'slider_shape' across the Array, with the step lengths
-// specified 'stride_shape'; from each slider position the average
-// (=arithmetic mean) value inside the slider gets assigned to a
-// corresponding element of the result array
-template<typename T>
-Array<T> Array<T>::pool_avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape){
-    std::vector<int> slider_shape_vec = initlist_to_vector(slider_shape);
-    std::vector<int> stride_shape_vec = initlist_to_vector(stride_shape);
-    // confirm valid slider shape
-    if (slider_shape.size() != this->dimensions){
-        Log::log(LOG_LEVEL_WARNING,
-            "slider shape for avg pooling must have same number of dimensions ",
-            "as the array it is acting upon -> auto-adjusting slider shape to fit");
-        while (slider_shape_vec.size() < this->dimensions){
-            slider_shape_vec.push_back(1);
+        switch (method) {
+            case PoolMethod::MAX: result->set(j,slider.max()); break;
+            case PoolMethod::MAXABS: result->set(j,slider.maxabs()); break;
+            case PoolMethod::MEAN: result->set(j,slider.mean()); break;
+            case PoolMethod::MIN: result->set(j,slider.min()); break;
+            case PoolMethod::MEDIAN: result->set(j,slider.median()); break;
+            case PoolMethod::MODE: result->set(j,slider.mode()); break;
         }
-        while (slider_shape_vec.size() > this->dimensions){
-            slider_shape_vec.pop_back();
-        }
-    }
-    // confirm valid stride shape
-    if (stride_shape.size() != this->dimensions){
-        Log::log(LOG_LEVEL_WARNING,
-            "stride shape for avg pooling must have same number of dimensions ",
-            "as the array it is acting upon -> auto-adjusting stride shape to fit");
-        while (stride_shape_vec.size() < this->dimensions){
-            stride_shape_vec.push_back(1);
-        }
-        while (stride_shape_vec.size() > this->dimensions){
-            stride_shape_vec.pop_back();
-        }            
-    }    
-    // get result shape
-    std::vector<int> result_shape(this->dimensions,1);
-    for (int d=0;d<this->dimensions;d++){
-        result_shape[d] = (this->dim_size[d] - slider_shape_vec[d]) / stride_shape_vec[d];
-    }
-    // create result array
-    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(result_shape);
-    // create a sliding box for pooling
-    Array<double> slider = Array<double>(slider_shape);
-    // iterate over target
-    for (int j=0;j<result->get_elements();j++){
-        // get associated index
-        std::vector<int> index_j = result->get_index(j);
-        // get corresponding source index
-        Array<int> index_i;
-        for (int d=0;d<result->dimensions;d++){
-            index_i.push_back(index_j[d] * stride_shape_vec[d]);
-        }
-        // iterate over elements of the slider
-        Array<int> index_slider;
-        for (int n=0;n<slider.get_elements();n++){
-            // get multidimensional index of the slider element
-            index_slider = slider.get_index(n);
-            // assing slider value from the element with the index of the sum of index_i+index_slider
-            slider.set(n, this->get((index_i+index_slider).flatten()));
-        }
-        result.set(j,slider.mean());
     }
     return std::move(*result);
 }
 
 template<typename T>
-Array<T> Array<T>::convolution(const Array<T>& filter){
+Array<T> Array<T>::convolution(const Array<T>& filter, bool padding){
     // declare result Array
     std::unique_ptr<Array<T>> result;
 
@@ -3955,7 +3959,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
                 "invalid usage of method 'Array<T> Array<T>::convolution(const Array<T>& filter)': ",
                 "the source Array has shape ", this->get_shapestring(), " whilst the filter has shape ",
                 filter.get_shapestring(), ", therefore the filter has size ", filter.get_size(d),
-                " in dimension ", d, ", but the Array has only size ", this->dim_size(d),
+                " in dimension ", d, ", but the Array has only size ", this->dim_size[d],
                 " in dimension ", d);
         }
     }
@@ -3969,10 +3973,11 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
     if (this->dimensions == 1){
         try {
             int filter_width = filter.get_size(0);
-            result = std::make_unique<Array<T>>({this->data_elements - filter_width});
+            result = std::make_unique<Array<T>>(this->data_elements - ((filter_width-1)*!padding));
             result->fill_zeros();
-            for (int i=0; i<this->data_elements-filter_width; i++){
+            for (int i=0; i<result->get_elements(); i++){
                 for (int ii=0; ii<filter_width; ii++){
+                    if (i+ii>=this->data_elements){break;}
                     result->data[i] += this->data[i+ii] * filter.data[ii];
                 }
             }
@@ -3986,13 +3991,19 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
     // 2d convolution for matrices
     if (this->dimensions==2 && filter.dimensions==2){
         try {
-            result = std::make_unique<Array<T>>({this->dim_size[0]-filter.get_size(0), this->dim_size[1]-filter.get_size(1)});
+            int filter_height = filter.get_size(0);
+            int filter_width = filter.get_size(1);
+            std::initializer_list<int> result_shape = {this->dim_size[0] - (filter_height-1)*!padding,
+                                                       this->dim_size[1] - (filter_width-1)*!padding};
+            result = std::make_unique<Array<T>>(result_shape);
             result->fill_zeros();
-            for (int row=0;row<this->dim_size[0]-filter.get_size(0);row++){
-                for (int col=0; col<this->dim_size[1]-filter.get_size(1);col++){
-                    for (int filter_row=0;filter_row<filter.get_size(0);filter_row++){
-                        for (int filter_col=0;filter_col<filter.get_size(1);filter_col++){
-                            result->data[this->get_element({row,col})] += result->data[this->get_element({row+filter_row,col+filter_col})] * filter.get({filter_row,filter_col});
+            for (int row=0;row<result->get_size(0);row++){
+                for (int col=0; col<result->get_size(1);col++){
+                    for (int filter_row=0;filter_row<filter_height;filter_row++){
+                        if (row+filter_row>=this->dim_size[0]){break;}
+                        for (int filter_col=0;filter_col<filter_width;filter_col++){
+                            if (col+filter_col>=this->dim_size[1]){break;}
+                            result->data[this->get_element({row,col})] += this->data[this->get_element({row+filter_row,col+filter_col})] * filter.get({filter_row,filter_col});
                         }
                     }
                 }
@@ -4004,17 +4015,24 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
                 "to calculate convolution operation for the 2d source Array with 2d filter");            
         }
     }
-    // 2d convoltion for arrays
+    // 2d convoltion for 3d arrays (with 3d filters)
     if (this->dimensions==3 && filter.dimensions==3){
         try {
-            result= std::make_unique<Array<T>>({this->dim_size[0]-filter.get_size(0), this->dim_size[1]-filter.get_size(1)});
-            result->fill_zeros();
-            for (int row=0;row<this->dim_size[0]-filter.get_size(0);row++){
-                for (int col=0; col<this->dim_size[1]-filter.get_size(1);col++){
-                    for (int filter_row=0;filter_row<filter.get_size(0);filter_row++){
-                        for (int filter_col=0;filter_col<filter.get_size(1);filter_col++){
-                            for (int filter_channel=0;filter_channel<filter.get_size(2);filter_channel++){
-                                result->data[this->get_element({row,col})] += result->data[this->get_element({row+filter_row,col+filter_col,filter_channel})] * filter.get({filter_row,filter_col,filter_channel});
+            int filter_height = filter.get_size(0);
+            int filter_width = filter.get_size(1);
+            int filter_depth = filter.get_size(2);            
+            std::initializer_list<int> result_shape = {this->dim_size[0] - (filter_height-1)*!padding,
+                                                       this->dim_size[1] - (filter_width-1)*!padding};
+            result= std::make_unique<Array<T>>(result_shape);
+            result->fill_zeros();            
+            for (int row=0;row<result->get_size(0);row++){
+                for (int col=0; col<result->get_size(1);col++){
+                    for (int filter_row=0;filter_row<filter_height;filter_row++){
+                        if (row+filter_row>=this->dim_size[0]){break;}
+                        for (int filter_col=0;filter_col<filter_width;filter_col++){
+                            if (col+filter_col>=this->dim_size[1]){break;}
+                            for (int filter_channel=0;filter_channel<filter_depth && filter_channel<this->dim_size[2];filter_channel++){
+                                result->data[this->get_element({row,col})] += this->data[this->get_element({row+filter_row,col+filter_col,filter_channel})] * filter.get({filter_row,filter_col,filter_channel});
                             }
                         }
                     }
@@ -4033,30 +4051,28 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
         try {
             std::vector<int> result_shape;
             for (int d=0;d<this->dimensions-1;d++){
-                result_shape.push_back(this->dim_size[d]-filter.get_size(d));
+                result_shape.push_back(this->dim_size[d]- (filter.get_size(d)-1)*padding);
             }
             result_shape.push_back(filter.get_size(filter.dimensions-1));
             result = std::make_unique<Array<T>>(result_shape);
             std::vector<int> source_index(this->dimensions);
             std::vector<int> filter_index(filter.dimensions);
             std::vector<int> combined_index(this->dimensions);
-            for (int i=0;i<this->data_elements;i++){
+            for (int i=0;i<result->get_elements();i++){
                 source_index = this->get_index(i);
                 combined_index = source_index;
-                // check if filter fits within array borders at this position
-                bool index_okay = true;
-                for (int d=0;d<filter.dimensions;d++){
-                    if (source_index[d]+filter.get_size(d) >= this->dim_size[d]){
-                        index_okay = false;
-                        break;
-                    }
-                }
                 // assign dotproduct of filter and corresponding array elements to result array
-                if (index_okay){
-                    for (int ii=0;ii<filter.data_elements;ii++){
-                        filter_index = filter.get_index(ii);
-                        for (int d=0;d<filter.dimensions;d++)
+                for (int ii=0;ii<filter.data_elements;ii++){
+                    filter_index = filter.get_index(ii);
+                    bool index_okay=true;
+                    for (int d=0;d<filter.dimensions;d++){
                         combined_index[d] += filter_index[d];
+                        if (combined_index[d]>=result->get_size(d)){
+                            index_okay=false;
+                            break;
+                        }
+                    }
+                    if (index_okay){
                         result->data[i] += this->get(combined_index) * filter.get(filter_index);
                     }
                 }
@@ -4074,28 +4090,28 @@ Array<T> Array<T>::convolution(const Array<T>& filter){
 }
 
 template<typename T>
-Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool padding=false){
+Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool padding){
 
     // check valid filter dimensions
-    if (filter.dimensions>this->dimensions){
+    if (filter_shape.dimensions>this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method ",
             "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
-            "filter can't have more dimensions then the array; filter has shape ", filter.get_shapestring(),
+            "filter can't have more dimensions then the array; filter has shape ", filter_shape.get_shapestring(),
             ", source array has shape ", this->get_shapestring());
     }
-    for (int d=0;d<filter.dimensions;d++){
-        if (filter.get_size(d)>this->dim_size[d]){
+    for (int d=0;d<filter_shape.dimensions;d++){
+        if (filter_shape.get_size(d)>this->dim_size[d]){
             Log::log(LOG_LEVEL_WARNING,
                 "invalid usage of method ",
                 "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
                 "the source Array has shape ", this->get_shapestring(), " whilst the filter has shape ",
-                filter.get_shapestring(), ", therefore the filter has size ", filter.get_size(d),
+                filter_shape.get_shapestring(), ", therefore the filter has size ", filter_shape.get_size(d),
                 " in dimension ", d, ", but the Array has only size ", this->dim_size(d),
                 " in dimension ", d);
         }
     }
-    if (filter.dimensions<this->dimensions-1){
+    if (filter_shape.dimensions<this->dimensions-1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method ",
             "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
@@ -4116,64 +4132,64 @@ Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool 
     if (this->dimensions == 1){
         Array<int> result(1);
         try {
-            int filter_width = filter.get_size(0);
+            int filter_width = filter_shape.get_size(0);
             result[0] = this->data_elements - filter_width;
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());
         }
         return result;
     }
     // 2d convolution for 2d arrays
-    if (this->dimensions==2 && filter.dimensions==2){
+    if (this->dimensions==2 && filter_shape.dimensions==2){
         Array<int> result(2);
         try {
-            result[0] = this->dim_size[0]-filter.get_size(0);
-            result[1] = this->dim_size[1]-filter.get_size(1);
+            result[0] = this->dim_size[0]-filter_shape.get_size(0);
+            result[1] = this->dim_size[1]-filter_shape.get_size(1);
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());            
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());            
         }
     }
     // 2d convoltion for 3d arrays
-    if (this->dimensions==3 && filter.dimensions==3){
+    if (this->dimensions==3 && filter_shape.dimensions==3){
         Array<int> result(2);
         try {
-            result[0] = this->dim_size[0]-filter.get_size(0);
-            result[1] = this->dim_size[1]-filter.get_size(1);
+            result[0] = this->dim_size[0]-filter_shape.get_size(0);
+            result[1] = this->dim_size[1]-filter_shape.get_size(1);
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());                        
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());                        
         }        
     }
 
     // nd convolution
-    if (filter.dimensions == this->dimensions-1){
+    if (filter_shape.dimensions == this->dimensions-1){
+        Array<int> result;
         try {
-            Array<int> result;
             for (int d=0;d<this->dimensions-1;d++){
-                result.push_back(this->dim_size[d]-filter.get_size(d));
+                result.push_back(this->dim_size[d]-filter_shape.get_size(d));
             }
-            result.push_back(filter.get_size(filter.dimensions-1));
+            result.push_back(filter_shape.get_size(filter_shape.dimensions-1));
             return result;
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter.get_shapestring());
+                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());
         }
         return result;
     }
 }
 
 template<typename T>
-std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false){
+std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding){
     // convert filter shape from type std::vector to Array
     Array<int> filter_shape_Array(filter_shape.size());
     for (int d=0; d<filter_shape.size(); d++){
@@ -4243,10 +4259,11 @@ Array<T>::Array(const std::vector<int>& shape) {
     // calculate subspace size for each dimension
     int totalsize = 1;
     this->subspace_size.resize(this->dimensions);
+    this->dim_size.resize(this->dimensions);
     for (int i = 0; i < this->dimensions; i++) {
-        totalsize *= this->dim_size[i];
         this->subspace_size[i] = totalsize;
         this->dim_size[i]=shape[i];
+        totalsize *= this->dim_size[i];
     }
     this->data_elements = totalsize;
     // set reserve capacity for 1d Arrays
@@ -4278,7 +4295,7 @@ Array<T>::Array(Array&& other) noexcept {
 
 // Array copy constructor
 template<typename T>
-Array<T>::Array(const Array& other) {
+Array<T>::Array(Array& other) {
     this->data_elements = other.data_elements;
     this->capacity = other.get_capacity();    
     this->dimensions = other.dimensions;
@@ -4323,7 +4340,7 @@ void Array<T>::resize_array(std::unique_ptr<T[]>& arr, const int newSize) {
     std::unique_ptr<T[]> newArr = std::make_unique<T[]>(newSize);
     // Copy the elements from the old array to the new array
     for (int i = 0; i < newSize; i++) {
-        if (i < this->__elements) {
+        if (i < this->data_elements) {
             newArr[i] = arr[i];
         } else {
             newArr[i] = 0;
@@ -4685,7 +4702,7 @@ Array<T> Array<T>::stationary(DIFFERENCING method, double degree, double fract_e
 template<typename T>
 Array<T> Array<T>::sort(bool ascending) const {
     // make a copy
-    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data_elements);
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     for (int i=0;i<this->data_elements;i++){
         result->data[i] = this->data[i];
     }
@@ -4851,7 +4868,7 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
                 index[0]=row; index[1]=col;
                 std::cout << this->get(index);
                 // add delimiter between columns (except after last value in row)
-                if (col != this->dim_size[1]-1) {
+                if (col != int(this->dim_size[1]-1)) {
                     std::cout << delimiter;
                 }
             }

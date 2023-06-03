@@ -15,7 +15,7 @@ class Layer{
         int input_dimensions;
         std::vector<Neuron> neuron;   
         // constructor
-        Layer(int neurons, int inputs_per_neuron, OPTIMIZATION_METHOD _opt_method=Vanilla, ACTIVATION_FUNC _activation=f_tanh){
+        Layer(int neurons, int inputs_per_neuron, OPTIMIZATION_METHOD _opt_method=VANILLA, ACTIVATION_FUNC _activation=f_tanh){
             this->neurons=neurons;
             this->opt_method=_opt_method;
             this->activation=_activation;
