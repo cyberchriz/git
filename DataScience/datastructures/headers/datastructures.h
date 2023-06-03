@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_map>
-#include <typeinfo>
-#include <type_traits>
+#include <typeindex>
+#include <boost/core/demangle.hpp>
 #include "../../distributions/headers/random_distributions.h"
 #include "../../distributions/headers/cumulative_distribution_functions.h"
 //#define MEMLOG
@@ -37,6 +37,16 @@ enum ActFunc {
     TANH,       // hyperbolic tangent (tanh)
     SOFTMAX,    // softmax (=normalized exponential)
     IDENT       // identity function
+};
+
+// list of available pooling methods
+enum PoolMethod {
+    MAX,
+    MAXABS,
+    MIN,
+    MEAN,
+    MEDIAN,
+    MODE
 };
 
 // return struct for correlation results
@@ -127,7 +137,7 @@ struct LinRegResult{
         <<   "=========================================================================="
         << "\nLinear Regression Results (with 'this'=x vs. 'other'=y):"
         << "\n   - y = " << _slope << " * x + " << y_intercept
-        << "\n   - r_squared = " << r_squared << "(=" << r_squared>0.95 ? "" : "no " << "'good fit' with confidence interval of 0.95)"
+        << "\n   - r_squared = " << r_squared << "(=" << (r_squared>0.95 ? "" : "no ") << "'good fit' with confidence interval of 0.95)"
         << "\n   - SST = " << SST
         << "\n   - SSR = " << SSR
         << "\n==========================================================================" << std::endl;
@@ -188,7 +198,7 @@ class Array{
         T get(const Array<int>& index) const;
         T get(const int row, const int col) const;
         int get_dimensions() const {return this->dimensions;};
-        int get_size(int dimension) const {return this->dim_size[dimensions];};
+        int get_size(int dimension) const {return this->dim_size[dimension];};
         int get_size() const {return this->data_elements;};
         int get_elements() const {return this->data_elements;};
         std::vector<int> get_shape() const {return dim_size;};
@@ -202,8 +212,9 @@ class Array{
         int get_element(const std::initializer_list<int>& index) const;
         int get_element(const std::vector<int>& index) const;
         std::vector<int> get_index(int element) const;    
-        std::type_info const& get_type(){return typeid(T);};
-        const char* get_typename(){return typeid(T).name();};
+        const std::type_info& get_type() const {return typeid(T);};
+        std::string get_typename() const {return boost::core::demangle(std::type_index(typeid(*this)).name());}
+
 
         // fill, initialize
         void fill_values(const T value);
@@ -212,6 +223,7 @@ class Array{
         void fill_random_gaussian(const T mu=0, const T sigma=1);
         void fill_random_uniform(const T min=0, const T max=1.0);
         void fill_random_binary(double ratio=0.5);
+        void fill_random_sign(double ratio=0.5);
         void fill_range(const T start=0, const T step=1);
         void fill_dropout(double ratio=0.2);
         void fill_Xavier_normal(int fan_in, int fan_out);
@@ -223,6 +235,7 @@ class Array{
         // basic distribution properties
         T min() const;
         T max() const;
+        T maxabs() const;
         T mode() const;
         double mean() const;
         double median() const;
@@ -338,6 +351,7 @@ class Array{
         Array<T>& operator=(Array<T>&& other) noexcept; // =move assignment
         Array<T>& operator=(const T (&arr)[]); // =copy assignment
         Array<T>& operator=(T (&&arr)[]) noexcept; // =move assignment
+        Array<T> operator=(std::vector<T> vector); // std::vector copy assignment
 
         // elementwise comparison by single value
         Array<bool> operator>(const T value) const;
@@ -380,9 +394,8 @@ class Array{
         Array<T> padding_pre(const int amount, const T value=0);
         Array<T> padding_post(const int amount, const T value=0);
         Array<Array<T>> dissect(int axis);
-        Array<T> pool_max(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);     
-        Array<T> pool_avg(const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape); 
-        Array<T> convolution(const Array<T>& filter);    
+        Array<T> pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);     
+        Array<T> convolution(const Array<T>& filter, bool padding=false);    
         Array<T> transpose() const;    
         Array<T> reverse() const;
         Array<T> stack();
@@ -445,7 +458,7 @@ class Array{
         Array(Array&& other) noexcept;
 
         // copy constructor
-        Array(const Array& other);
+        Array(Array& other);
         ~Array();   
     
     private:
