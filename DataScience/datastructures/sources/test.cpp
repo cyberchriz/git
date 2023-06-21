@@ -1,7 +1,8 @@
 #include "../headers/datastructures.h"
-#include <iostream>
-#include <vector>
 
 int main(){
-
+    Array<int> arr{10,10};
+    arr.fill_random_uniform(-10,10);
+    arr.print("source array:", " ");
+    arr.pool(PoolMethod::MAXABS, {2,2}, {2,2}).print("maxabs pooling:", " ");
 }

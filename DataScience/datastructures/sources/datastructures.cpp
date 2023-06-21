@@ -90,7 +90,7 @@ void Array<T>::set(const int row, const int col, const T value){
         return;
     }
     // set value
-    this->data[std::fmin(this->data_elements-1,col + row*this->dim_size[1])] = value;
+    this->data[std::fmin(this->data_elements-1,col + row * this->dim_size[1])] = value;
 }
 
 // returns the value of an array element via its index
@@ -116,7 +116,7 @@ T Array<T>::get(const Array<int>& index) const {
     // check valid index dimensions
     if (index.get_elements() != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'T Array<T>::get(const Array<int>& index) const' ",
+            "invalid usage of method 'T Array<T>::get(const Array<int>& index)' ",
             "with ", index.get_elements(), "d index parameter for a ", this->dimensions,
             "d array -> will return NAN");
         return T(NAN);
@@ -165,7 +165,7 @@ T Array<T>::get(const int row, const int col) const {
         return NAN;
     }
     // get value
-    return this->data[std::fmin(this->data_elements-1,col + row*this->dim_size[1])];
+    return this->data[std::fmin(this->data_elements-1,col + row * this->dim_size[1])];
 }
 
 // returns the shape of the array as std::string
@@ -187,7 +187,7 @@ std::string Array<T>::get_shapestring() const {
 template<typename T>
 int Array<T>::get_element(const std::initializer_list<int>& index) const {
     // check for invalid index dimensions
-    if (index.size() != this->dimensions){
+    if (int(index.size()) != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "method 'get_element()' has been used with invalid index dimensions; the corresponding array has ",
             this->dimensions, " dimensions (shape: ", this->get_shapestring(), "), result will be int(T(NAN))");
@@ -229,11 +229,11 @@ int Array<T>::get_element(const std::vector<int>& index) const {
     // check for invalid index dimensions
     if (int(index.size()) != this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
-            "method 'int Array<T>::get_element(const std::vector<int>& index) const'",
+            "method 'int Array<T>::get_element(const std::vector<int>& index)'",
             "has been used with invalid index dimensions; the corresponding array has ",
             this->dimensions, " dimensions (shape: ",
-            this->get_shapestring(), "), result will be int(T(NAN))");
-        return int(T(NAN));
+            this->get_shapestring(), "), result will be 0");
+        return 0;
     }    
     // deal with the special case of single dimension Arrays
     if (this->dimensions == 1){
@@ -267,13 +267,13 @@ std::vector<int> Array<T>::get_index(int element) const {
     // check valid element index
     if (element <0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'std::vector<int> Array<T>::get_index(int element) const': ",
+            "invalid usage of method 'std::vector<int> Array<T>::get_index(int element)': ",
             "element index must be positive but is ", element);
         return result;
     }
     if (element>=this->data_elements){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'std::vector<int> Array<T>::get_index(int element) const': ",
+            "invalid usage of method 'std::vector<int> Array<T>::get_index(int element)': ",
             "element index is ", element, " but the Array has only ", this->data_elements, "elements",
             " (indexing start from zero, therefore ", this->data_elements-1, " is the highest allowed value)");
     }
@@ -303,17 +303,17 @@ int Array<T>::get_subspace(int dimension) const {
     // check valid dimension argument
     if (dimension<0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'int Array<T>::get_subspace(int dimension) const': ",
-            " dimension argument is ", dimension, "but must be positive --> result will be int(T(NAN))");
-        return int(T(NAN));
+            "invalid usage of method 'int Array<T>::get_subspace(int dimension)': ",
+            " dimension argument is ", dimension, "but must be positive --> result will be 0");
+        return 0;
     }
     if (dimension>this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'int Array<T>::get_subspace(int dimension) const': ",
+            "invalid usage of method 'int Array<T>::get_subspace(int dimension)': ",
             " dimension argument is ", dimension, "but must the Array has only ", this->dimensions,
             " dimensions (indexing starts from zero, therefore ", this->dimensions-1,
-            " is the highest allowed value) --> result will be int(T(NAN))");
-        return int(T(NAN));
+            " is the highest allowed value) --> result will be 0");
+        return 0;
     }
     // return subspace size
     return this->subspace_size[dimension];
@@ -493,7 +493,7 @@ void Array<T>::fill_He_ReLU(int fan_in){
         // get a random number from a normal distribution with zero mean and variance one
         this->data[i] = Random<double>::gaussian(0.0,1.0);
         // apply He ReLU formula
-        this->data[i] *= sqrt(2/((double)(fan_in)));
+        this->data[i] *= std::sqrt(2.0/fan_in);
     }
 }
 
@@ -505,7 +505,7 @@ void Array<T>::fill_He_ELU(int fan_in){
         // get a random value from a gaussian normal distribution with zero mean and variance one
         this->data[i] = Random<double>::gaussian(0.0,1.0);
         // apply He ELU formula
-        this->data[i] *= sqrt(1.55/(double(fan_in)));
+        this->data[i] *= std::sqrt(1.55/(double(fan_in)));
     }
 }
 
@@ -520,7 +520,7 @@ T Array<T>::min() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid useage of method 'Array<T>::min()': ",
             "not defined for empty array -> will return NAN");
         return T(NAN);
     }
@@ -538,7 +538,7 @@ T Array<T>::max() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::max() const': ",
+            "invalid useage of method 'Array<T>::max()': ",
             "not defined for empty array -> will return NAN");
         return T(NAN);
     }
@@ -549,20 +549,20 @@ T Array<T>::max() const {
     return result;
 }
 
-// returns the highest value of the Array,
-// across all dimensions
+// returns the value of the Array with the highest
+// deviation from zero, across all dimensions
 template<typename T>
 T Array<T>::maxabs() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid usage of method 'Array<T>::maxabs()': ",
             "not defined for empty array -> will return NAN");
         return T(NAN);
     }
-    T result = std::fabs(this->data[0]);
+    T result = this->data[0];
     for (int i=0;i<this->data_elements;i++){
-        result = std::fmax(result, std::fabs(this->data[i]));
+        result = std::fabs(this->data[i]) > std::fabs(result) ? this->data[i] : result;
     }
     return result;
 }
@@ -574,7 +574,7 @@ T Array<T>::mode() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid useage of method 'Array<T>::min()': ",
             "not defined for empty array -> will return NAN");
         return T(NAN);
     }    
@@ -582,7 +582,7 @@ T Array<T>::mode() const {
     auto sorted = this->sort();
     // Create an unordered map to store the frequency of each element
     std::unordered_map<T, size_t> freq_map;
-    for (size_t i = 0; i < this->data_elements; i++) {
+    for (int i = 0; i < this->data_elements; i++) {
         freq_map[sorted.data[i]]++;
     }
     // Find the element(s) with the highest frequency
@@ -614,7 +614,7 @@ double Array<T>::mean() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid useage of method 'Array<T>::min()': ",
             "not defined for empty array -> will return double(T(NAN))");
         return double(T(NAN));
     }    
@@ -631,7 +631,7 @@ double Array<T>::median() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid useage of method 'Array<T>::min()': ",
             "not defined for empty array -> will return double(T(NAN))");
         return double(T(NAN));
     }    
@@ -660,7 +660,7 @@ double Array<T>::variance() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid useage of method 'Array<T>::min() const': ",
+            "invalid useage of method 'Array<T>::min()': ",
             "not defined for empty array -> will return double(T(NAN))");
         return double(T(NAN));
     }    
@@ -684,109 +684,58 @@ double Array<T>::stddev() const {
 // by elementwise comparison
 template<typename T>
 Array<double> Array<T>::nested_min() const {
-    // check if Array has data
-    if (this->data_elements==0){
-        Log::log(LOG_LEVEL_WARNING,
-            "improper usage of method 'Array<double> Array<T>::nested_min() const' with empty array",
-            " --> result Array will be empty, too");
-        if (typeid(*this)==typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // type cast to Array<double>
-            return Array<double>(*this);
-        }
-    }
+    std::unique_ptr<Array<double>> result;
     // using a 'try' block in order to avoid a crash if the elements aren't nested Arrays
     try {
-        std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->data[0].get_shape());
-        result = this->data[0];
+        result = std::make_unique<Array<double>>(this->data[0].get_shape());
+        *result = this->data[0];
         for (int i=1;i<this->data_elements;i++){
-            for (int j=0;j<this->data[0].get_elements();j++){
-                result->data[j] = std::fmin(result->data[j], this->data[i].data[j]);
+            for (int j=0;j<result->get_elements();j++){
+                result->data[j] = std::fmin(result->data[j], this->data[i][j]);
             }
         }
-        return std::move(*result);
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "improper usage of method 'Array<double> Array<T>::nested_min() const': ",
             "source must have type Array<Array<T>> but is ", this->get_typename());
-        if (typeid(*this)==typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // type cast to Array<double>
-            return Array<double>(*this);
-        }        
     }
+    return std::move(*result);
 }
 
 // returns the highest values of Arrays nested inside an Array
 // by elementwise comparison
 template<typename T>
 Array<double> Array<T>::nested_max() const {
-    // check if Array has data
-    if (this->data_elements==0){
-        Log::log(LOG_LEVEL_WARNING,
-            "improper usage of method 'Array<double> Array<T>::nested_max() const' with empty array",
-            " --> result Array will be empty, too");
-        if (typeid(*this)==typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // type cast to Array<double>
-            return Array<double>(*this);
-        }
-    }
+    std::unique_ptr<Array<double>> result;
     // using a 'try' block in order to avoid a crash if the elements aren't nested Arrays
     try {
-        std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->data[0].get_shape());
-        result = this->data[0];
+        result = std::make_unique<Array<double>>(this->data[0].get_shape());
+        *result = this->data[0];
         for (int i=1;i<this->data_elements;i++){
-            for (int j=0;j<this->data[0].get_elements();j++){
-                result->data[j] = std::fmax(result->data[j], this->data[i].data[j]);
+            for (int j=0;j<result->get_elements();j++){
+                result->data[j] = std::fmax(result->data[j], this->data[i][j]);
             }
         }
-        return std::move(*result);
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "improper usage of method 'Array<double> Array<T>::nested_max() const': ",
             "source must have type Array<Array<T>> but is ", this->get_typename());
-        if (typeid(*this)==typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // type cast to Array<double>
-            return Array<double>(*this);
-        }        
     }
+    return std::move(*result);
 }
 
 // returns the elementwise arrithmetic mean across Arrays nested as Array elements
 template<typename T>
 Array<double> Array<T>::nested_mean() const {
-    // check if Array has data
-    if (this->data_elements==0){
-        Log::log(LOG_LEVEL_WARNING,
-            "improper usage of method 'Array<double> Array<T>::nested_mean() const' with empty array",
-            " --> result Array will be empty, too");
-        if (typeid(*this)==typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // type cast to Array<double>
-            return Array<double>(*this);
-        }
-    }
+    std::unique_ptr<Array<double>> result;
     // using a 'try' block in order to avoid a crash if the elements aren't nested Arrays
     try {
-        std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->data[0].get_shape());
         result->fill_zeros();        
         for (int i=1;i<this->data_elements;i++){
-            for (int j=0;j<this->data[0].get_elements();j++){
-                result->data[j] += this->data[i]->data[j];
+            for (int j=0;j<result->get_elements();j++){
+                result->data[j] += this->data[i][j];
             }
         }
         (*result)/=this->data_elements;
@@ -796,53 +745,30 @@ Array<double> Array<T>::nested_mean() const {
         Log::log(LOG_LEVEL_WARNING,
             "improper usage of method 'Array<double> Array<T>::nested_mean() const': ",
             "source must have type Array<Array<T>> but is ", this->get_typename());
-        if (typeid(T) = typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // typecast to correct return type
-            return Array<double>(*this);
-        }
     }
+    return std::move(*result);
 }
 
 // returns the elementwise variance of an array of arrays
 template<typename T>
-Array<double> Array<T>::nested_variance() const {
-    // check if Array has data
-    if (this->data_elements==0){
-        Log::log(LOG_LEVEL_WARNING,
-            "improper usage of method 'Array<double> Array<T>::nested_variance() const' with empty array",
-            " --> result Array will be empty, too");
-        if (typeid(*this)==typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // type cast to Array<double>
-            return Array<double>(*this);
-        }
-    }    
+Array<double> Array<T>::nested_variance() const {  
+    // using a 'try' block in order to avoid a crash if the elements aren't nested Arrays
     try {
-        Array<T> mean = this->mean();
-        std::unique_ptr<Array<double>> sum_of_squares = std::make_unique<Array<double>>(this->data[0].get_shape());        
-        sum_of_squares->fill_zeros();
-        for (int i = 0; i < this->data_elements; i++) {
-            sum_of_squares += (this->data[i] - mean).pow(2);
+        Array<double> mean = this->nested_mean();
+        Array<double> sum_of_squares = Array<double>(this->data[0].get_shape());        
+        sum_of_squares.fill_zeros();
+        for (int n = 0; n < this->data_elements; n++) {
+            for (int i=0; i<sum_of_squares.get_elements(); i++){
+                sum_of_squares[i] += std::pow(this->data[n][i] - mean[i], 2);
+            }
         }
-        return std::move(*(sum_of_squares / T(this->data_elements)));        
+        return std::move(sum_of_squares/this->data_elements);  
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "improper usage of method 'Array<double> Array<T>::nested_variance() const': ",
             "source must have type Array<Array<T>> but is ", this->get_typename());
-        if (typeid(T) = typeid(Array<double>)){
-            return *this;
-        }
-        else {
-            // typecast to correct return type
-            return Array<double>(*this);
-        }
-    }    
+    }
 }
 
 // returns the standard deviation of Arrays nested inside an Array
@@ -856,13 +782,6 @@ Array<double> Array<T>::nested_stddev() const {
 // across all dimensions
 template<typename T>
 double Array<T>::skewness() const {
-    // check if Array has data
-    if (this->data_elements==0){
-        Log::log(LOG_LEVEL_WARNING,
-            "improper usage of method 'double Array<T>::skewness() const' with empty Array",
-            " --> result will be NAN");
-        return NAN;
-    }
     double skewness = 0;
     for (int i = 0; i < this->data_elements; i++) {
         skewness += std::pow((this->data[i] - this->mean()) / this->stddev(), 3);
@@ -878,7 +797,7 @@ double Array<T>::kurtosis() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "improper usage of method 'double Array<T>::kurtosis() const' with empty Array",
+            "improper usage of method 'double Array<T>::kurtosis()' with empty Array",
             " --> result will be NAN");
         return NAN;
     }    
@@ -906,7 +825,7 @@ T Array<T>::sum() const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'T Array<T>::sum() const' has failed with type ",
+            "method 'T Array<T>::sum()' has failed with type ",
             this->get_typename(), this->get_shapestring(), " -> returning NAN");
         return T(NAN);
     }
@@ -923,7 +842,7 @@ Array<T> Array<T>::operator+(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'T Array<T>::operator+(const T value) const' has failed with 'this' of type ",
+            "method 'T Array<T>::operator+(const T value)' has failed with 'this' of type ",
             this->get_typename(), this->get_shapestring(), " adding value of '", value, "' -> returning Array<NAN>");
         result->fill_values(T(NAN));
     }    
@@ -938,10 +857,9 @@ Array<T> Array<T>::operator+(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<T> Array<T>::operator+(const Array<T>& other) const' has failed with 'this' of type ",
+            "method 'Array<T> Array<T>::operator+(const Array<T>& other)' has failed with 'this' of type ",
             this->get_typename(), this->get_shapestring(), " and 'other' of type ", 
-            other.get_typename(), other.get_shapestring(), " -> returning Array<NAN>");        
-        result->fill_values(T(NAN));
+            other.get_typename(), other.get_shapestring());        
     }
     else {
         try {
@@ -951,10 +869,9 @@ Array<T> Array<T>::operator+(const Array<T>& other) const {
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'Array<T> Array<T>::operator+(const Array<T>& other) const' has failed with 'this' of type ",
+                "method 'Array<T> Array<T>::operator+(const Array<T>& other)' has failed with 'this' of type ",
                 this->get_typename(), this->get_shapestring(), " and 'other' of type ", 
-                other.get_typename(), other.get_shapestring(), " -> returning Array<NAN>");            
-            result->fill_values(T(NAN));            
+                other.get_typename(), other.get_shapestring());            
         }
     }
     return std::move(*result);
@@ -964,7 +881,7 @@ Array<T> Array<T>::operator+(const Array<T>& other) const {
 // increments the values of the array by +1,
 // returns a reference to the source array itself
 template<typename T>
-Array<T>& Array<T>::operator++(){
+Array<T>& Array<T>::operator++() const {
     try {
         for (int i=0; i<this->data_elements; i++){
             this->data[i]+=1;
@@ -1062,7 +979,7 @@ Array<T> Array<T>::operator-(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'T Array<T>::operator-(const T value) const' has failed with type ",
+            "method 'T Array<T>::operator-(const T value)' has failed with type ",
             this->get_typename(), this->get_shapestring(), " -> returning Array<NAN>");
         result->fill_values(T(NAN));
     }    
@@ -1077,7 +994,7 @@ Array<T> Array<T>::operator-(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<T> Array<T>::operator-(const Array<T>& other) const' has failed with type ",
+            "method 'Array<T> Array<T>::operator-(const Array<T>& other)' has failed with type ",
             this->get_typename(), this->get_shapestring(), " -> returning Array<NAN>");        
         result->fill_values(T(NAN));
     }
@@ -1089,7 +1006,7 @@ Array<T> Array<T>::operator-(const Array<T>& other) const {
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'Array<T> Array<T>::operator-(const Array<T>& other) const' has failed with type ",
+                "method 'Array<T> Array<T>::operator-(const Array<T>& other)' has failed with type ",
                 this->get_typename(), this->get_shapestring(), " -> returning Array<NAN>");        
             result->fill_values(T(NAN));            
         }
@@ -1100,7 +1017,7 @@ Array<T> Array<T>::operator-(const Array<T>& other) const {
 // prefix decrement operator;
 // decrements the values of the array by -1
 template<typename T>
-Array<T>& Array<T>::operator--(){
+Array<T>& Array<T>::operator--() const {
     try {
         for (int i=0; i<this->data_elements; i++){
             this->data[i]-=1;
@@ -1194,7 +1111,7 @@ T Array<T>::product() const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "calling method 'T Array<T>::product() const' on empty array -> result will be NAN");
+            "calling method 'T Array<T>::product()' on empty array -> result will be NAN");
         return NAN;
     }
     try {
@@ -1206,7 +1123,7 @@ T Array<T>::product() const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'T Array<T>::product() const' has failed with type ", this->get_typename(),
+            "method 'T Array<T>::product()' has failed with type ", this->get_typename(),
             this->get_shapestring(), " -> result will be NAN");        
         return T(NAN);
     }
@@ -1219,7 +1136,7 @@ Array<T> Array<T>::operator*(const T factor) const {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
-            "calling method 'Array<T> Array<T>::operator*(const T factor) const' on empty >rray -> result will be empty, too");
+            "calling method 'Array<T> Array<T>::operator*(const T factor)' on empty >rray -> result will be empty, too");
     }
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -1228,7 +1145,7 @@ Array<T> Array<T>::operator*(const T factor) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method Array<T> Array<T>::operator*(const T factor) const' has failed with type=",
+            "method Array<T> Array<T>::operator*(const T factor)' has failed with type=",
             this->get_typename(), this->get_shapestring(), " and factor=", factor);
     }
     return std::move(*result);
@@ -1236,7 +1153,7 @@ Array<T> Array<T>::operator*(const T factor) const {
 
 // elementwise multiplication (*=) with a scalar
 template<typename T>
-void Array<T>::operator*=(const T factor){
+void Array<T>::operator*=(const T factor) {
     // check if Array has data
     if (this->data_elements==0){
         Log::log(LOG_LEVEL_WARNING,
@@ -1266,7 +1183,7 @@ Array<T> Array<T>::Hadamard_product(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if(!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "calling method 'Array<T> Array<T>::Hadamard_product(const Array<T>& other) const'",
+            "calling method 'Array<T> Array<T>::Hadamard_product(const Array<T>& other)'",
             " with arrays of non-matching shapes: this", this->get_shapestring(),
             " vs other", other.get_shapestring(), " -> result will be Array<NAN>");
         result->fill_values(T(NAN));
@@ -1279,7 +1196,7 @@ Array<T> Array<T>::Hadamard_product(const Array<T>& other) const {
         }
         catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<T> Array<T>::Hadamard_product(const Array<T>& other) const' has failed",
+            "method 'Array<T> Array<T>::Hadamard_product(const Array<T>& other)' has failed",
             " with 'this' as type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") vs. 'other' as type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -1316,23 +1233,23 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
         std::vector<int> index2(other.dimensions, 0);
         std::vector<int> index_out(out_dims.size(), 0);
         int contractionsize = 1;
-        for (int i = 0; i < axes.size(); i++) {
+        for (int i = 0; i < int(axes.size()); i++) {
             contractionsize *= this->dim_size[axes[i]];
         }
         for (int i = 0; i < result->dim_size[0]; i++) {
             index_out[0] = i;
             for (int j = 0; j < contractionsize; j++) {
-                for (int k = 0; k < axes.size(); k++) {
+                for (int k = 0; k < int(axes.size()); k++) {
                     index1[axes[k]] = j % this->dim_size[axes[k]];
                     index2[axes[k]] = j % other.dim_size[axes[k]];
                 }
-                for (int k = 1; k < out_dims.size(); k++) {
-                    int size = k <= axes[0] ? this->dim_size[k - 1] : other.dim_size[k - axes.size() - 1];
+                for (int k = 1; k < int(out_dims.size()); k++) {
+                    int size = k <= axes[0] ? this->dim_size[k - 1] : other.dim_size[k - int(axes.size()) - 1];
                     int val = (i / result->get_subspace(k)) % size;
                     if (k < axes[0] + 1) {
                         index1[k - 1] = val;
                     } else {
-                        index2[k - axes.size() - 1] = val;
+                        index2[k - int(axes.size()) - 1] = val;
                     }
                 }
                 result->set(index_out, result->get(index_out) + this->get(index1) * other.get(index2));
@@ -1341,7 +1258,7 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes) const'",
+            "method 'Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes)'",
             " has failed with 'this' as type ", this->get_typename(), this->get_shapestring(),
             " vs. 'other' as type ", other.get_typename(), other.get_shapestring(), " -> result is undefined");
         return std::move(*result);        
@@ -1355,9 +1272,9 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
 template<typename T>
 Array<T> Array<T>::tensordot(const Array<T>& other) const {
     // check valid dimensions
-    if (this->dimensions!=other.dimensions || this->dimensions>2 || other.dimension()>2){
+    if (this->dimensions!=other.dimensions || this->dimensions>2 || other.get_dimensions()>2){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other) const': ",
+            "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other)': ",
             "this overload is meant to be used only if both Arrays are 1-dimensional or both are 2-dimensional; ",
             "failed with 'this' as type ", this->get_typename(), this->get_shapestring(),
             " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
@@ -1369,24 +1286,24 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
         // TODO
     }
     else {
+        // Create the resulting matrix
+        std::initializer_list<int> result_shape = {this->get_size(0), other.get_size(1)};
+        std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(result_shape);         
         // Check if the matrices can be multiplied
-        if (this->size[1] != other.size[0]){
+        if (this->get_size(1) != other.get_size(0)){
             Log::log(LOG_LEVEL_WARNING,
-                "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other) const', ",
+                "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other)', ",
                 "attempting Array 2d-tensordot with shapes that can't be multiplied: ",
                 "failed with 'this' as type ", this->get_typename(), this->get_shapestring(),
-                " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
-                " -> will return *this as unmodified");
-            return *this;
+                " vs. 'other' as type ", other.get_typename(), other.get_shapestring());
+            return std::move(*result);
         }
-        try {
-            // Create the resulting matrix
-            std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->size[0], other.size[1]);        
+        try {       
             // Compute the dot product
-            for (int i = 0; i < this->size[0]; i++) {
-                for (int j = 0; j < other.size[1]; j++) {
+            for (int i = 0; i < this->get_size(0); i++) {
+                for (int j = 0; j < other.get_size(1); j++) {
                     T sum = 0;
-                    for (int k = 0; k < this->size[1]; k++) {
+                    for (int k = 0; k < this->get_size(1); k++) {
                         sum += this->get(i, k) * other.get(k, j);
                     }
                     result->set(i, j, sum);
@@ -1396,13 +1313,20 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'Array<T> Array<T>::tensordot(const Array<T>& other) const' for 2d-tensordot has failed, ",
+                "method 'Array<T> Array<T>::tensordot(const Array<T>& other)' for 2d-tensordot has failed, ",
                 "with 'this' as type ", this->get_typename(), this->get_shapestring(),
                 " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
                 " -> will return *this as unmodified");
-            return *this;            
+            return std::move(*result);            
         }
     }
+    // default return statement if all conditions above failed
+    Log::log(LOG_LEVEL_WARNING,
+        "method 'Array<T> Array<T>::tensordot(const Array<T>& other)' has failed, ",
+        "with 'this' as type ", this->get_typename(), this->get_shapestring(),
+        " vs. 'other' as type ", other.get_typename(), other.get_shapestring());
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
+    return std::move(*result);
 }
 
 // Array dotproduct, i.e. the scalar product
@@ -1411,12 +1335,13 @@ T Array<T>::dotproduct(const Array<T>& other) const {
     // check for equal shape
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "calling method 'T Array<T>::dotproduct(const Array<T>& other) const'",
+            "calling method 'T Array<T>::dotproduct(const Array<T>& other)'",
             " with arrays of non-matching shapes,",
             " with 'this' as type ", this->get_typename(), this->get_shapestring(),
             " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
-            " -> result will be NAN");
-        return T(NAN);
+            " -> result will be undefined");
+        T result;
+        return result;
     }
     try {
         T result = 0;
@@ -1427,7 +1352,7 @@ T Array<T>::dotproduct(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'T Array<T>::dotproduct(const Array<T>& other) const' has failed,",
+            "method 'T Array<T>::dotproduct(const Array<T>& other)' has failed,",
             " with 'this' as type ", this->get_typename(), this->get_shapestring(),
             " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
             " -> result will be NAN");
@@ -1443,7 +1368,7 @@ Array<T> Array<T>::operator*(const Array<T>& other) const {
 
 // Alias for tensordot matrix multiplication
 template<typename T>
-void Array<T>::operator*=(const Array<T>& other) const {
+void Array<T>::operator*=(const Array<T>& other) {
     *this = this->tensordot(other);
 }
 
@@ -1455,10 +1380,9 @@ void Array<T>::operator*=(const Array<T>& other) const {
 template<typename T>
 Array<T> Array<T>::operator/(const T quotient) const {
     if (quotient==0){
-        Log::log(LOG_LEVEL_WARNING,
-            "invalid call of method 'Array<T> Array<T>::operator/(const T quotient) const' ",
+        Log::log(LOG_LEVEL_ERROR,
+            "invalid call of method 'Array<T> Array<T>::operator/(const T quotient)' ",
             "with quotient=0 (zero division is undefined)");
-        return *this;
     }
     return (*this)*(1/quotient);
 }
@@ -1475,11 +1399,11 @@ void Array<T>::operator/=(const T quotient){
 // the dimensions of the two arrays must match!
 // the function will otherwise return Array<NAN>!
 template<typename T>
-Array<T> Array<T>::Hadamard_division(const Array<T>& other) const {
+Array<T> Array<T>::Hadamard_division(const Array<T>& other) {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if(!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "calling method 'Array<T> Array<T>::Hadamard_division(const Array<T>& other) const' ",
+            "calling method 'Array<T> Array<T>::Hadamard_division(const Array<T>& other)' ",
             "with arrays of non-matching shapes: ",
             "'this' as type ", this->get_typename(), this->get_shapestring(),
             " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
@@ -1494,7 +1418,7 @@ Array<T> Array<T>::Hadamard_division(const Array<T>& other) const {
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'Array<T> Array<T>::Hadamard_division(const Array<T>& other) const' has failed, with ",
+                "method 'Array<T> Array<T>::Hadamard_division(const Array<T>& other)' has failed, with ",
                 "'this' as type ", this->get_typename(), this->get_shapestring(),
                 " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
                 " -> result will be Array<NAN>");
@@ -1526,7 +1450,7 @@ template<typename T>
 void Array<T>::operator%=(const double num){
     if (num==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<double> Array<T>::operator%(const double num) const' ",
+            "invalid usage of method 'Array<double> Array<T>::operator%(const double num)' ",
             "with num=0 (zero division is undefined) --> 'this' will remain unmodified");
         return;
     }    
@@ -1551,7 +1475,7 @@ Array<double> Array<T>::operator%(const double num) const {
     std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->dim_size);
     if (num==0){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<double> Array<T>::operator%(const double num) const' ",
+            "invalid usage of method 'Array<double> Array<T>::operator%(const double num)' ",
             "with num=0 (zero division is undefined) --> returns Array<NAN>");
         result->fill_values(T(NAN));
         return std::move(*result);
@@ -1578,7 +1502,7 @@ Array<double> Array<T>::operator%(const double num) const {
 // elementwise exponentiation to the power of
 // the specified exponent
 template<typename T>
-Array<T> Array<T>::pow(const T exponent){
+Array<T> Array<T>::pow(const T exponent) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -1600,7 +1524,7 @@ Array<T> Array<T>::pow(const T exponent){
 // the dimensions of the two array must match!
 // the function will otherwise return a NAN array!
 template<typename T>
-Array<T> Array<T>::pow(const Array<T>& other){
+Array<T> Array<T>::pow(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if(!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
@@ -1632,7 +1556,7 @@ Array<T> Array<T>::pow(const Array<T>& other){
 // converts the individual values of the array
 // elementwise to their square root
 template<typename T>
-Array<T> Array<T>::sqrt(){
+Array<T> Array<T>::sqrt() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -1663,7 +1587,7 @@ Array<T> Array<T>::sqrt(){
 // converts the individual values of the array
 // elementwise to their natrual logarithm
 template<typename T>
-Array<T> Array<T>::log(){
+Array<T> Array<T>::log() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -1699,7 +1623,7 @@ Array<T> Array<T>::log(){
 // converts the individual values of the array
 // elementwise to their base-10 logarithm
 template<typename T>
-Array<T> Array<T>::log10(){
+Array<T> Array<T>::log10() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -1739,7 +1663,7 @@ Array<T> Array<T>::log10(){
 // rounds the values of the array elementwise
 // to their nearest integers
 template<typename T>
-Array<T> Array<T>::round(){
+Array<T> Array<T>::round() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1759,7 +1683,7 @@ Array<T> Array<T>::round(){
 // rounds the values of the array elementwise
 // to their next lower integers
 template<typename T>
-Array<T> Array<T>::floor(){
+Array<T> Array<T>::floor() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1779,7 +1703,7 @@ Array<T> Array<T>::floor(){
 // returns a copy of the array that stores the values as rounded
 // to their next higher integers
 template<typename T>
-Array<T> Array<T>::ceil(){
+Array<T> Array<T>::ceil() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1799,7 +1723,7 @@ Array<T> Array<T>::ceil(){
 // returns a copy of the array that stores the
 // absolute values of the source array
 template<typename T>
-Array<T> Array<T>::abs(){
+Array<T> Array<T>::abs() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1823,7 +1747,7 @@ Array<T> Array<T>::abs(){
 // elementwise minimum of the specified value
 // and the data elements of the Array
 template<typename T>
-Array<T> Array<T>::min(const T value){
+Array<T> Array<T>::min(const T value) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1843,7 +1767,7 @@ Array<T> Array<T>::min(const T value){
 // elementwise maximum of the specified value
 // and the data elements of the Array
 template<typename T>
-Array<T> Array<T>::max(const T value){
+Array<T> Array<T>::max(const T value) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1863,7 +1787,7 @@ Array<T> Array<T>::max(const T value){
 // returns the result of elementwise min() comparison
 // of 'this' vs 'other'
 template<typename T>
-Array<T> Array<T>::min(const Array<T>& other){
+Array<T> Array<T>::min(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
@@ -1893,7 +1817,7 @@ Array<T> Array<T>::min(const Array<T>& other){
 // returns the result of elementwise min() comparison
 // of 'this' vs 'other'
 template<typename T>
-Array<T> Array<T>::max(const Array<T>& other){
+Array<T> Array<T>::max(const Array<T>& other) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     if (!equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
@@ -1926,7 +1850,7 @@ Array<T> Array<T>::max(const Array<T>& other){
 
 // elementwise application of the cos() function
 template<typename T>
-Array<T> Array<T>::cos(){
+Array<T> Array<T>::cos() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1945,7 +1869,7 @@ Array<T> Array<T>::cos(){
 
 // elementwise application of the sin() function
 template<typename T>
-Array<T> Array<T>::sin(){
+Array<T> Array<T>::sin() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1964,7 +1888,7 @@ Array<T> Array<T>::sin(){
 
 // elementwise application of the tan() function
 template<typename T>
-Array<T> Array<T>::tan(){
+Array<T> Array<T>::tan() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -1983,7 +1907,7 @@ Array<T> Array<T>::tan(){
 
 // elementwise application of the acos() function
 template<typename T>
-Array<T> Array<T>::acos(){
+Array<T> Array<T>::acos() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2002,7 +1926,7 @@ Array<T> Array<T>::acos(){
 
 // elementwise application of the asin() function
 template<typename T>
-Array<T> Array<T>::asin(){
+Array<T> Array<T>::asin() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2022,7 +1946,7 @@ Array<T> Array<T>::asin(){
 
 // elementwise application of the atan() function
 template<typename T>
-Array<T> Array<T>::atan(){
+Array<T> Array<T>::atan() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2045,7 +1969,7 @@ Array<T> Array<T>::atan(){
 
 // elementwise application of the cosh() function
 template<typename T>
-Array<T> Array<T>::cosh(){
+Array<T> Array<T>::cosh() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2064,7 +1988,7 @@ Array<T> Array<T>::cosh(){
 
 // elementwise application of the sinh() function
 template<typename T>
-Array<T> Array<T>::sinh(){
+Array<T> Array<T>::sinh() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2083,7 +2007,7 @@ Array<T> Array<T>::sinh(){
 
 // elementwise application of the tanh() function
 template<typename T>
-Array<T> Array<T>::tanh(){
+Array<T> Array<T>::tanh() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2102,7 +2026,7 @@ Array<T> Array<T>::tanh(){
 
 // elementwise application of the acosh() function
 template<typename T>
-Array<T> Array<T>::acosh(){
+Array<T> Array<T>::acosh() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2121,7 +2045,7 @@ Array<T> Array<T>::acosh(){
 
 // elementwise application of the asinh() function
 template<typename T>
-Array<T> Array<T>::asinh(){
+Array<T> Array<T>::asinh() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2140,7 +2064,7 @@ Array<T> Array<T>::asinh(){
 
 // elementwise application of the atanh() function
 template<typename T>
-Array<T> Array<T>::atanh(){
+Array<T> Array<T>::atanh() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0;i<this->data_elements;i++){
@@ -2173,7 +2097,7 @@ int Array<T>::find(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-        "invalid usage of method 'int Array<T>::find(const T value) const' with type ",
+        "invalid usage of method 'int Array<T>::find(const T value)' with type ",
             this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name(), " --> returns 0");
         return 0;
@@ -2182,7 +2106,7 @@ int Array<T>::find(const T value) const {
 
 // replace all findings of given value by specified new value
 template<typename T>
-Array<T> Array<T>::replace(const T old_value, const T new_value){
+Array<T> Array<T>::replace(const T old_value, const T new_value) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -2203,7 +2127,7 @@ Array<T> Array<T>::replace(const T old_value, const T new_value){
 
 // returns 1 for all positive elements and -1 for all negative elements
 template<typename T>
-Array<char> Array<T>::sign(){
+Array<char> Array<T>::sign() const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -2226,7 +2150,7 @@ Array<char> Array<T>::sign(){
 
 // minmax scaling
 template<typename T>
-Array<double> Array<T>::scale_minmax(T min,T max){
+Array<double> Array<T>::scale_minmax(T min,T max) const {
     std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->dim_size);
     try {
         T data_min = this->data.min();
@@ -2273,7 +2197,7 @@ Array<double> Array<T>::scale_minmax(T min,T max){
 
 // mean scaling
 template<typename T>
-Array<double> Array<T>::scale_mean(){
+Array<double> Array<T>::scale_mean() const {
     std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->dim_size);
     try {
         T data_min = this->data.min();
@@ -2318,7 +2242,7 @@ Array<double> Array<T>::scale_mean(){
 
 // scaling with zero mean and variance 1
 template<typename T>
-Array<double> Array<T>::scale_standardized(){
+Array<double> Array<T>::scale_standardized() const {
     std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->dim_size);
     double mean = this->mean();
     double variance = this->variance();
@@ -2360,7 +2284,7 @@ Array<double> Array<T>::scale_standardized(){
 }
 
 template<typename T>
-Array<double> Array<T>::scale_unit_length(){
+Array<double> Array<T>::scale_unit_length() const {
     std::unique_ptr<Array<double>> result = std::make_unique<Array<double>>(this->dim_size);
     // calculate the Euclidean norm of the data array
     T norm = 0;
@@ -2400,7 +2324,7 @@ Array<double> Array<T>::scale_unit_length(){
 
 // neural network activation functions
 template<typename T>
-Array<T> Array<T>::activation(ActFunc activation_function){
+Array<T> Array<T>::activation(ActFunc activation_function) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         double alpha = 0.01;
@@ -2452,7 +2376,7 @@ Array<T> Array<T>::activation(ActFunc activation_function){
 
 // derivatives of neural network activation functions
 template<typename T>
-Array<T> Array<T>::derivative(ActFunc activation_function){
+Array<T> Array<T>::derivative(ActFunc activation_function) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         double alpha = 0.01;
@@ -2510,7 +2434,7 @@ Array<T> Array<T>::derivative(ActFunc activation_function){
 // the referred function to all its values
 // (the referred function should take a single argument of type <T>)
 template<typename T>
-Array<T> Array<T>::function(const T (*pointer_to_function)(T)){
+Array<T> Array<T>::function(const T (*pointer_to_function)(T)) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
@@ -2534,7 +2458,7 @@ Array<T> Array<T>::function(const T (*pointer_to_function)(T)){
 
 // truncate outliers by z-score
 template<typename T>
-Array<T> Array<T>::outliers_truncate(double z_score){
+Array<T> Array<T>::outliers_truncate(double z_score) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     double mean = this->mean();
     double stddev = this->stddev();
@@ -2568,7 +2492,7 @@ Array<T> Array<T>::outliers_truncate(double z_score){
 
 // truncate outliers by z-score winsoring
 template<typename T>
-Array<T> Array<T>::outliers_winsoring(double z_score){
+Array<T> Array<T>::outliers_winsoring(double z_score) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     double mean = this->mean();
     double stddev = this->stddev();
@@ -2609,7 +2533,7 @@ Array<T> Array<T>::outliers_winsoring(double z_score){
 }
 
 template<typename T>
-Array<T> Array<T>::outliers_mean_imputation(double z_score){
+Array<T> Array<T>::outliers_mean_imputation(double z_score) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     double mean = this->mean();
     double stddev = this->stddev();
@@ -2644,7 +2568,7 @@ Array<T> Array<T>::outliers_mean_imputation(double z_score){
 }
 
 template<typename T>
-Array<T> Array<T>::outliers_median_imputation(double z_score){
+Array<T> Array<T>::outliers_median_imputation(double z_score) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     double median = this->median();
     double mean = this->mean();
@@ -2679,7 +2603,7 @@ Array<T> Array<T>::outliers_median_imputation(double z_score){
 }
 
 template<typename T>
-Array<T> Array<T>::outliers_value_imputation(T value, double z_score){
+Array<T> Array<T>::outliers_value_imputation(T value, double z_score) const {
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->dim_size);
     double mean = this->mean();
     double stddev = this->stddev();
@@ -2719,38 +2643,35 @@ Array<T> Array<T>::outliers_value_imputation(T value, double z_score){
 // the current array;
 template<typename T>
 Array<T>& Array<T>::operator=(const Array<T>& other) {
-    // Check for self-assignment
-    if (this != &other) {
-        if (!equalsize(other)){
-            try {
-                // Allocate new memory for the array
-                std::unique_ptr<T[]> newdata = std::make_unique<T[]>(other.get_capacity());
-                // Copy the elements from the other array to the new array
-                std::copy(other.data.get(), other.data.get() + other.get_elements(), newdata.get());
-                // Assign the new data to this object
-                this->data = std::move(newdata);
-                this->data_elements = other.get_elements();
-                this->dim_size = other.dim_size;
-                this->subspace_size = other.subspace_size;
-                this->capacity = other.get_capacity();
-            }
-            catch (...) {
-                Log::log(LOG_LEVEL_WARNING,
-                    "method 'Array<T>& Array<T>::operator=(const Array<T>& other)' has failed, "
-                    "with 'this' of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-                    ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),")");
-            }
+    if (!equalsize(other)){
+        try {
+            // Allocate new memory for the array
+            std::unique_ptr<T[]> newdata = std::make_unique<T[]>(other.get_capacity());
+            // Copy the elements from the other array to the new array
+            std::copy(other.data.get(), other.data.get() + other.get_elements(), newdata.get());
+            // Assign the new data to this object
+            this->data = std::move(newdata);
+            this->data_elements = other.get_elements();
+            this->dim_size = other.dim_size;
+            this->subspace_size = other.subspace_size;
+            this->capacity = other.get_capacity();
         }
-        else {
-            try {
-                std::copy(other.data.get(), other.data.get() + other.get_elements(), this->data.get());
-            }
-            catch (...) {
-                Log::log(LOG_LEVEL_WARNING,
-                    "method 'Array<T>& Array<T>::operator=(const Array<T>& other)' has failed, "
-                    "with 'this' of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
-                    ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),")");                
-            }
+        catch (...) {
+            Log::log(LOG_LEVEL_WARNING,
+                "method 'Array<T>& Array<T>::operator=(const Array<T>& other)' has failed, "
+                "with 'this' of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
+                ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),")");
+        }
+    }
+    else {
+        try {
+            std::copy(other.data.get(), other.data.get() + other.get_elements(), this->data.get());
+        }
+        catch (...) {
+            Log::log(LOG_LEVEL_WARNING,
+                "method 'Array<T>& Array<T>::operator=(const Array<T>& other)' has failed, "
+                "with 'this' of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
+                ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),")");                
         }
     }
     return *this;
@@ -2834,14 +2755,14 @@ template<typename T>
 T& Array<T>::operator[](const int index) const {
     if (index>=this->data_elements){
         Log::log(LOG_LEVEL_WARNING,
-        "invalid usage of method 'T& Array<T>::operator[](const int index) const', ",
+        "invalid usage of method 'T& Array<T>::operator[](const int index)', ",
         "index out of range: index is ", index, ", but the Array has only ", this->data_elements,
         " elements; indexing starts from zero, therefore ", this->data_elements-1,
         " is the highest allowed argument -> will be clipped to match this range");
     }
     if (index<0){
         Log::log(LOG_LEVEL_WARNING,
-        "invalid usage of method 'T& Array<T>::operator[](const int index) const', ",
+        "invalid usage of method 'T& Array<T>::operator[](const int index)', ",
         "index out of range: index is ", index,
         " but must be positive -> will be clipped to 0 to match the allowed range");
     }    
@@ -2854,14 +2775,14 @@ template<typename T>
 T& Array<T>::operator[](const int index) {
     if (index>=this->data_elements){
         Log::log(LOG_LEVEL_WARNING,
-        "invalid usage of method 'T& Array<T>::operator[](const int index) const', ",
+        "invalid usage of method 'T& Array<T>::operator[](const int index)', ",
         "index out of range: index is ", index, ", but the Array has only ", this->data_elements,
         " elements; indexing starts from zero, therefore ", this->data_elements-1,
         " is the highest allowed argument -> will be clipped to match this range");
     }
     if (index<0){
         Log::log(LOG_LEVEL_WARNING,
-        "invalid usage of method 'T& Array<T>::operator[](const int index) const', ",
+        "invalid usage of method 'T& Array<T>::operator[](const int index)', ",
         "index out of range: index is ", index,
         " but must be positive -> will be clipped to 0 to match the allowed range");
     }    
@@ -2888,7 +2809,7 @@ Array<bool> Array<T>::operator>(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator>(const T value) const' has failed, "
+            "method 'Array<bool> Array<T>::operator>(const T value)' has failed, "
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name());
     }
@@ -2909,7 +2830,7 @@ Array<bool> Array<T>::operator>=(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator>=(const T value) const' has failed, "
+            "method 'Array<bool> Array<T>::operator>=(const T value)' has failed, "
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name());
     }
@@ -2930,7 +2851,7 @@ Array<bool> Array<T>::operator==(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator==(const T value) const' has failed, "
+            "method 'Array<bool> Array<T>::operator==(const T value)' has failed, "
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name());        
     }
@@ -2951,7 +2872,7 @@ Array<bool> Array<T>::operator!=(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator!=(const T value) const' has failed, "
+            "method 'Array<bool> Array<T>::operator!=(const T value)' has failed, "
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name());        
     }
@@ -2972,7 +2893,7 @@ Array<bool> Array<T>::operator<(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator<(const T value) const' has failed, "
+            "method 'Array<bool> Array<T>::operator<(const T value)' has failed, "
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name());        
     }
@@ -2993,7 +2914,7 @@ Array<bool> Array<T>::operator<=(const T value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator<=(const T value) const' has failed, "
+            "method 'Array<bool> Array<T>::operator<=(const T value)' has failed, "
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and value of type ", typeid(value).name());        
     }
@@ -3017,7 +2938,7 @@ Array<bool> Array<T>::operator>(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator>(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator>(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3031,7 +2952,7 @@ Array<bool> Array<T>::operator>(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator>(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator>(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3052,7 +2973,7 @@ Array<bool> Array<T>::operator>=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator>=(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator>=(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3066,7 +2987,7 @@ Array<bool> Array<T>::operator>=(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator>=(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator>=(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3087,7 +3008,7 @@ Array<bool> Array<T>::operator==(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator==(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator==(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3101,7 +3022,7 @@ Array<bool> Array<T>::operator==(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator==(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator==(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3122,7 +3043,7 @@ Array<bool> Array<T>::operator!=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator!=(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator!=(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3136,7 +3057,7 @@ Array<bool> Array<T>::operator!=(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator!=(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator!=(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3157,7 +3078,7 @@ Array<bool> Array<T>::operator<(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator<(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator<(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3171,7 +3092,7 @@ Array<bool> Array<T>::operator<(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator<(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator<(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3192,7 +3113,7 @@ Array<bool> Array<T>::operator<=(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator<=(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator<=(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3206,7 +3127,7 @@ Array<bool> Array<T>::operator<=(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator<=(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator<=(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3232,7 +3153,7 @@ Array<bool> Array<T>::operator&&(const bool value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator&&(const bool value) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator&&(const bool value)' has failed, ",
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and comparison value of type ", typeid(value).name(),
             ") -> result will be Array<NAN>");
@@ -3254,7 +3175,7 @@ Array<bool> Array<T>::operator||(const bool value) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator||(const bool value) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator||(const bool value)' has failed, ",
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and comparison value of type ", typeid(value).name(),
             ") -> result will be Array<NAN>");
@@ -3275,7 +3196,7 @@ Array<bool> Array<T>::operator!() const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator!() const' has failed, ",
+            "method 'Array<bool> Array<T>::operator!()' has failed, ",
             "with type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") -> result will be Array<NAN>");
         result->fill_values(T(NAN));
@@ -3294,7 +3215,7 @@ Array<bool> Array<T>::operator&&(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator&&(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator&&(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3308,7 +3229,7 @@ Array<bool> Array<T>::operator&&(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator&&(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator&&(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3328,7 +3249,7 @@ Array<bool> Array<T>::operator||(const Array<T>& other) const {
     std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
-            "invalid usage of method 'Array<bool> Array<T>::operator||(const Array<T>& other) const' ",
+            "invalid usage of method 'Array<bool> Array<T>::operator||(const Array<T>& other)' ",
             "with Arrays of non-matching shapes: ",
             "this", this->get_shapestring(), " vs other", other.get_shapestring(),
             " -> result will be Array<NAN>");
@@ -3342,7 +3263,7 @@ Array<bool> Array<T>::operator||(const Array<T>& other) const {
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
-            "method 'Array<bool> Array<T>::operator||(const Array<T>& other) const' has failed, ",
+            "method 'Array<bool> Array<T>::operator||(const Array<T>& other)' has failed, ",
             "with 'this'  of type ", this->get_typename(), " (shape: ", this->get_shapestring(),
             ") and 'other' of type ", other.get_typename(), " (shape: ", other.get_shapestring(),
             ") -> result will be Array<NAN>");
@@ -3362,13 +3283,13 @@ Array<T>::operator Array<C>(){
     std::unique_ptr<Array<C>> result = std::make_unique<Array<C>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
-            result->data[i]=C(this->data[i]);
+            result->data[i] = C(this->data[i]);
         }
     }
     catch (...) {
         Log::log(LOG_LEVEL_WARNING,
             "typecasting with method 'Array<T>::operator Array<C>()' has failed; ",
-            "source is of type ", typeid(T).name(), ", target type is ",
+            "source type T is ", typeid(T).name(), ", target type C is ",
             typeid(C).name());
     }
     return std::move(*result);
@@ -3380,17 +3301,20 @@ Array<T>::operator Array<C>(){
 
 // dereference operator
 template<typename T>
-Array<T&> Array<T>::operator*() {
-    Array<T&> result(this->dim_size);
+Array<typename std::remove_pointer<T>::type> Array<T>::operator*() const {
+    using InnerType = typename std::remove_pointer<T>::type;
+    Array<InnerType> result(this->dim_size);
     for (int i = 0; i < this->data_elements; i++) {
         result.data[i] = *(this->data[i]);
     }
     return result;
 }
 
+
+
 // 'address-of' operator
 template<typename T>
-Array<T*> Array<T>::operator&() {
+Array<T*> Array<T>::operator&() const {
     Array<T*> result(this->dim_size);
     for (int i = 0; i < this->data_elements; i++) {
         result.data[i] = &(this->data[i]);
@@ -3484,7 +3408,7 @@ void Array<T>::reshape(Array<int> shape, const T init_value){
 // concatenate 'this' Array and 'other' Array
 // by stacking along the specified axis
 template<typename T>
-Array<T> Array<T>::concatenate(const Array<T>& other, const int axis){
+Array<T> Array<T>::concatenate(const Array<T>& other, const int axis) const {
 
     // check if both arrays have the same number of dimensions
     if (this->dimensions != other.get_dimensions()){
@@ -3547,7 +3471,7 @@ Array<T> Array<T>::concatenate(const Array<T>& other, const int axis){
 // adds a dimension (the index of the new dimension
 // will be the last one, i.e. at the end of the index vector)
 template<typename T>
-Array<T> Array<T>::add_dimension(int size, T init_value){
+Array<T> Array<T>::add_dimension(int size, T init_value) const {
     std::vector<int> new_shape = this->dim_size;
     new_shape.push_back(size);
     std::unique_ptr<Array<T>> result = Array<T>(new_shape);
@@ -3560,21 +3484,25 @@ Array<T> Array<T>::add_dimension(int size, T init_value){
 
 // stacks a nested Array of Arrays into a single combined array
 template<typename T>
-Array<T> Array<T>::stack() {
-    Array<T> result = this->data[0].add_dimension(1);
-    int axis = this->dimensions - 1;
-    for (int n = 1; n < this->data_elements; n++){
-        result.concatenate(this->data[n].add_dimension(1),axis);
+T Array<T>::stack() const {
+    std::unique_ptr<T> result = std::make_unique<T>(this->get_stacked_shape());
+    std::vector<int> index(this->get_dimensions()+1);
+    for (int n = 0; n < this->data_elements; n++){
+        for (int i=0; i<this->data[n].get_elements(); i++){
+            index = this->data[n].get_index(i);
+            index.push_back(n);
+            result->set(index,this->data[n][i]);
+        }
     }
-    return result;
+    return std::move(*result);
 }
 
 // returns the shape that result from stacking
 // a nested Array of Arrays into a single combined Array
 template<typename T>
-std::vector<int> Array<T>::get_stacked_shape(){
+std::vector<int> Array<T>::get_stacked_shape() const {
     std::vector<int> result = this->data[0].get_shape();
-    result.push_back(this->dimensions);
+    result.push_back(this->data_elements);
     return result;
 }
 
@@ -3584,7 +3512,7 @@ template<typename T>
 CorrelationResult<T> Array<T>::correlation(const Array<T>& other) const {
     if (this->data_elements != other.data_elements) {
         Log::log(LOG_LEVEL_WARNING,
-            "Invalid use of method 'CorrelationResult<T> Array<T>::correlation(const Array<T>& other) const': ",
+            "Invalid use of method 'CorrelationResult<T> Array<T>::correlation(const Array<T>& other)': ",
             "both Arrays should have the same number of elements ",
             " --> the surplus elements of the larger array will be ignored");
     }
@@ -3782,7 +3710,7 @@ HistogramResult<T> Array<T>::histogram(int bars) const {
 
 // adds padding in all directions
 template<typename T>
-Array<T> Array<T>::padding(const int amount, const T value){
+Array<T> Array<T>::padding(const int amount, const T value) const {
     std::vector<int> target_shape = this->dim_size;
     for (int d=0; d<this->dimensions; d++){
         target_shape[d] = this->dim_size[d] + 2*amount;
@@ -3802,7 +3730,7 @@ Array<T> Array<T>::padding(const int amount, const T value){
 
 // adds padding to the beginning of each dimension
 template<typename T>
-Array<T> Array<T>::padding_pre(const int amount, const T value){
+Array<T> Array<T>::padding_pre(const int amount, const T value) const {
     std::vector<int> target_shape = this->dim_size;
     for (int d=0; d<this->dimensions; d++){
         target_shape[d] = this->dim_size[d] + amount;
@@ -3822,7 +3750,7 @@ Array<T> Array<T>::padding_pre(const int amount, const T value){
 
 // adds padding to the end of each dimension
 template<typename T>
-Array<T> Array<T>::padding_post(const int amount, const T value){
+Array<T> Array<T>::padding_post(const int amount, const T value) const {
     std::vector<int> target_shape = this->dim_size;
     for (int d=0; d<this->dimensions; d++){
         target_shape[d] = this->dim_size[d] + amount;
@@ -3840,10 +3768,9 @@ Array<T> Array<T>::padding_post(const int amount, const T value){
 // dissects the specified axis, resulting in a stack
 // of sub-Array slices
 template<typename T>
-Array<Array<T>> Array<T>::dissect(int axis){
+Array<Array<T>> Array<T>::dissect(int axis) const {
     int result_slices = this->dim_size[axis];
     Array<Array<T>> result = Array<Array<T>>({result_slices});
-    int dissection_size = this->data_elements / result_slices;
     // get slice shape and instantiate slices
     std::vector<int> slice_shape = this->dim_size;
     slice_shape.erase(slice_shape.begin()+axis);
@@ -3852,7 +3779,9 @@ Array<Array<T>> Array<T>::dissect(int axis){
     }
     // copy source data to corresponding slices
     for (int i=0;i<this->data_elements;i++){
-        result[this->get_index(i)[axis]].set((this->get_index(i)).erase(axis), this->data[i]);
+        std::vector<int> index = this->get_index(i);
+        index.erase(index.begin()+axis);
+        result[this->get_index(i)[axis]].set(index, this->data[i]);
     }
     return result;
 }
@@ -3861,7 +3790,7 @@ Array<Array<T>> Array<T>::dissect(int axis){
 // specified as 'stride_shape'; from each slider position the pooled result of
 // the slider box gets assigned to a corresponding element of the result array
 template<typename T>
-Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape){
+Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape) const {
     std::vector<int> slider_shape_vec = initlist_to_vector(slider_shape);
     std::vector<int> stride_shape_vec = initlist_to_vector(stride_shape);
     // confirm valid slider shape
@@ -3917,7 +3846,7 @@ Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slid
             index_slider = slider.get_index(n);
             // get combined index and check if it fits within source boundaries            
             bool index_ok=true;
-            for (int d=0;d<index_combined.size();d++){
+            for (int d=0;d<int(index_combined.size());d++){
                 index_combined[d] = index_source[d] + index_slider[d];
                 if (index_combined[d]>=this->dim_size[d]){
                     index_ok=false;
@@ -3942,7 +3871,7 @@ Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slid
 }
 
 template<typename T>
-Array<T> Array<T>::convolution(const Array<T>& filter, bool padding){
+Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
     // declare result Array
     std::unique_ptr<Array<T>> result;
 
@@ -4090,28 +4019,28 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding){
 }
 
 template<typename T>
-Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool padding){
+Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool padding) const {
 
     // check valid filter dimensions
-    if (filter_shape.dimensions>this->dimensions){
+    if (filter_shape.get_dimensions()>this->dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method ",
             "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
             "filter can't have more dimensions then the array; filter has shape ", filter_shape.get_shapestring(),
             ", source array has shape ", this->get_shapestring());
     }
-    for (int d=0;d<filter_shape.dimensions;d++){
-        if (filter_shape.get_size(d)>this->dim_size[d]){
+    for (int d=0;d<filter_shape.get_dimensions();d++){
+        if (filter_shape.get_size(d)>this->get_size(d)){
             Log::log(LOG_LEVEL_WARNING,
                 "invalid usage of method ",
                 "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
                 "the source Array has shape ", this->get_shapestring(), " whilst the filter has shape ",
                 filter_shape.get_shapestring(), ", therefore the filter has size ", filter_shape.get_size(d),
-                " in dimension ", d, ", but the Array has only size ", this->dim_size(d),
+                " in dimension ", d, ", but the Array has only size ", this->get_size(d),
                 " in dimension ", d);
         }
     }
-    if (filter_shape.dimensions<this->dimensions-1){
+    if (filter_shape.get_dimensions()<this->dimensions-1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method ",
             "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
@@ -4123,7 +4052,7 @@ Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool 
     if (padding) {
         Array<int> result(this->dimensions);
         for (int d=0; d<this->dimensions; d++) {
-            result[d] = this->dim_size[d];
+            result[d] = this->get_size(d);
         }
         return result;
     }
@@ -4143,7 +4072,7 @@ Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool 
         return result;
     }
     // 2d convolution for 2d arrays
-    if (this->dimensions==2 && filter_shape.dimensions==2){
+    if (this->dimensions==2 && filter_shape.get_dimensions()==2){
         Array<int> result(2);
         try {
             result[0] = this->dim_size[0]-filter_shape.get_size(0);
@@ -4154,9 +4083,10 @@ Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool 
                 "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
                 "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());            
         }
+        return result;
     }
     // 2d convoltion for 3d arrays
-    if (this->dimensions==3 && filter_shape.dimensions==3){
+    if (this->dimensions==3 && filter_shape.get_dimensions()==3){
         Array<int> result(2);
         try {
             result[0] = this->dim_size[0]-filter_shape.get_size(0);
@@ -4166,17 +4096,18 @@ Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool 
             Log::log(LOG_LEVEL_WARNING,
                 "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
                 "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());                        
-        }        
+        }     
+        return result;   
     }
 
     // nd convolution
-    if (filter_shape.dimensions == this->dimensions-1){
+    if (filter_shape.get_dimensions() == this->dimensions-1){
         Array<int> result;
         try {
             for (int d=0;d<this->dimensions-1;d++){
                 result.push_back(this->dim_size[d]-filter_shape.get_size(d));
             }
-            result.push_back(filter_shape.get_size(filter_shape.dimensions-1));
+            result.push_back(filter_shape.get_size(filter_shape.get_dimensions()-1));
             return result;
         }
         catch (...) {
@@ -4186,13 +4117,15 @@ Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool 
         }
         return result;
     }
+    // default return statement if the conditions above all fail
+    return this->get_shape();
 }
 
 template<typename T>
-std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding){
+std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding) const {
     // convert filter shape from type std::vector to Array
     Array<int> filter_shape_Array(filter_shape.size());
-    for (int d=0; d<filter_shape.size(); d++){
+    for (int d=0; d<int(filter_shape.size()); d++){
         filter_shape_Array[d] = filter_shape[d];
     }
     // get result
@@ -4296,13 +4229,13 @@ Array<T>::Array(Array&& other) noexcept {
 // Array copy constructor
 template<typename T>
 Array<T>::Array(Array& other) {
-    this->data_elements = other.data_elements;
+    this->data_elements = other.get_elements();
     this->capacity = other.get_capacity();    
     this->dimensions = other.dimensions;
     this->dim_size = other.dim_size;
     this->subspace_size = other.subspace_size;
-    this->data = std::make_unique<T>(data_elements);
-    std::copy(other.data, other.data + data_elements, this->data);
+    this->data = std::make_unique<T[]>(data_elements);
+    std::copy(other.data.get(), other.data.get() + other.get_elements(), this->data.get());
 }  
 
 // virtual destructor
@@ -4625,7 +4558,7 @@ double Array<T>::Engle_Granger(const Array<T>& other) const {
 //    deltamean=4,
 //    original=5
 template<typename T>
-Array<T> Array<T>::stationary(DIFFERENCING method, double degree, double fract_exponent)  const {
+Array<T> Array<T>::stationary(DIFFERENCING method, double degree, double fract_exponent) const {
     // make a copy
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data_elements);
     for (int i = 0; i < this->data_elements; i++) {
@@ -4773,7 +4706,7 @@ double Array<T>::covariance(const Array<T>& other) const {
 // each represented by the mean of the values inside that bin;
 // returning the result as pointer to a new Array of size n
 template<typename T>
-Array<T> Array<T>::binning(const int bins){
+Array<T> Array<T>::binning(const int bins) const {
     if (this->data_elements == 0) {
         Log::log(LOG_LEVEL_WARNING, "Cannot bin an empty vector.");
         return *this;

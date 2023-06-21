@@ -8,6 +8,7 @@
 #include <numeric>
 #include <unordered_map>
 #include <typeindex>
+#include <type_traits>
 #include <boost/core/demangle.hpp>
 #include "../../distributions/headers/random_distributions.h"
 #include "../../distributions/headers/cumulative_distribution_functions.h"
@@ -202,12 +203,12 @@ class Array{
         int get_size() const {return this->data_elements;};
         int get_elements() const {return this->data_elements;};
         std::vector<int> get_shape() const {return dim_size;};
-        Array<int> get_convolution_shape(Array<int>& filter_shape, const bool padding=false);
-        std::vector<int> get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false);
-        std::vector<int> get_stacked_shape();
+        Array<int> get_convolution_shape(Array<int>& filter_shape, const bool padding=false) const;
+        std::vector<int> get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const;
+        std::vector<int> get_stacked_shape() const;
         std::string get_shapestring() const;
         int get_subspace(int dimension) const;
-        std::vector<int> subspace() {return this->subspace_size;};       
+        std::vector<int> subspace() const {return this->subspace_size;};       
         int get_capacity() const {return this->capacity;};    
         int get_element(const std::initializer_list<int>& index) const;
         int get_element(const std::vector<int>& index) const;
@@ -242,10 +243,10 @@ class Array{
         double variance() const;
         double stddev() const;        
         Array<double> nested_min() const;
-        Array<double> nested_max() const;
-        Array<double> nested_mean() const;
-        Array<double> nested_variance() const;                            
-        Array<double> nested_stddev() const;        
+        Array<double> nested_max() const; 
+        Array<double> nested_mean() const; 
+        Array<double> nested_variance() const;                             
+        Array<double> nested_stddev() const;      
         double skewness() const;
         double kurtosis() const;
 
@@ -254,7 +255,7 @@ class Array{
         Array<T> operator+(const T value) const;
         Array<T> operator+(const Array<T>& other) const;
         Array<T> operator++(int) const; //=postfix increment
-        Array<T>& operator++(); //=prefix increment
+        Array<T>& operator++() const; //=prefix increment
         void operator+=(const T value);
         void operator+=(const Array<T>& other);
 
@@ -262,7 +263,7 @@ class Array{
         Array<T> operator-(const T value) const;
         Array<T> operator-(const Array<T>& other) const;
         Array<T> operator--(int) const; //=postfix decrement
-        Array<T>& operator--(); //=prefix decrement
+        Array<T>& operator--() const; //=prefix decrement
         void operator-=(const T value);
         void operator-=(const Array<T>& other);
 
@@ -273,78 +274,78 @@ class Array{
         Array<T> tensordot(const Array<T>& other, const std::vector<int>& axes) const; //=tensor reduction
         Array<T> tensordot(const Array<T>& other) const; //=tensor reduction
         Array<T> operator*(const Array<T>& other) const; //=alias for tensordot matrix multiplication
-        void operator*=(const Array<T>& other) const; //=alias for tensordot matrix multiplication
+        void operator*=(const Array<T>& other); //=alias for tensordot matrix multiplication
         T dotproduct(const Array<T>& other) const; //=scalar product
         Array<T> Hadamard_product(const Array<T>& other) const;
         
         // division
         Array<T> operator/(const T quotient) const;
         void operator/=(const T quotient);
-        Array<T> Hadamard_division(const Array<T>& other) const;
+        Array<T> Hadamard_division(const Array<T>& other);
 
         // modulo
         void operator%=(const double num);
         Array<double> operator%(const double num) const;
 
         // exponentiation & logarithm
-        Array<T> pow(const T exponent);
-        Array<T> pow(const Array<T>& other);
-        Array<T> sqrt();
-        Array<T> log();
-        Array<T> log10();
+        Array<T> pow(const T exponent) const;
+        Array<T> pow(const Array<T>& other) const;
+        Array<T> sqrt() const;
+        Array<T> log() const;
+        Array<T> log10() const;
 
         // rounding (elementwise)
-        Array<T> round();
-        Array<T> floor();
-        Array<T> ceil();
-        Array<T> abs();
+        Array<T> round() const;
+        Array<T> floor() const;
+        Array<T> ceil() const;
+        Array<T> abs() const;
 
         // min, max (elementwise comparison)
-        Array<T> min(const T value);
-        Array<T> max(const T value);
-        Array<T> min(const Array<T>& other);
-        Array<T> max(const Array<T>& other);
+        Array<T> min(const T value) const;
+        Array<T> max(const T value) const;
+        Array<T> min(const Array<T>& other) const;
+        Array<T> max(const Array<T>& other) const;
 
         // trigonometric functions (elementwise)
-        Array<T> cos();
-        Array<T> sin();
-        Array<T> tan();
-        Array<T> acos();
-        Array<T> asin();
-        Array<T> atan();  
+        Array<T> cos() const;
+        Array<T> sin() const;
+        Array<T> tan() const;
+        Array<T> acos() const;
+        Array<T> asin() const;
+        Array<T> atan() const;  
 
         // hyperbolic functions (elementwise)
-        Array<T> cosh();
-        Array<T> sinh();
-        Array<T> tanh();
-        Array<T> acosh();
-        Array<T> asinh();
-        Array<T> atanh();                
+        Array<T> cosh() const;
+        Array<T> sinh() const;
+        Array<T> tanh() const;
+        Array<T> acosh() const;
+        Array<T> asinh() const;
+        Array<T> atanh() const;                
 
         // find, replace
-        Array<T> replace(const T old_value, const T new_value);
+        Array<T> replace(const T old_value, const T new_value) const;
         int find(const T value) const;
-        Array<char> sign();
+        Array<char> sign() const;
 
         // scale
-        Array<double> scale_minmax(T min=0,T max=1);
-        Array<double> scale_mean();
-        Array<double> scale_standardized();
-        Array<double> scale_unit_length();
+        Array<double> scale_minmax(T min=0,T max=1) const;
+        Array<double> scale_mean() const;
+        Array<double> scale_standardized() const;
+        Array<double> scale_unit_length() const;
 
         // activation functions
-        Array<T> activation(ActFunc activation_function);
-        Array<T> derivative(ActFunc activation_function);
+        Array<T> activation(ActFunc activation_function) const;
+        Array<T> derivative(ActFunc activation_function) const;
 
         // custom functions
-        Array<T> function(const T (*pointer_to_function)(T));
+        Array<T> function(const T (*pointer_to_function)(T)) const;
 
         // outlier treatment
-        Array<T> outliers_truncate(double z_score=3);
-        Array<T> outliers_winsoring(double z_score=3);
-        Array<T> outliers_mean_imputation(double z_score=3);
-        Array<T> outliers_median_imputation(double z_score=3);
-        Array<T> outliers_value_imputation(T value=0, double z_score=3);        
+        Array<T> outliers_truncate(double z_score=3) const;
+        Array<T> outliers_winsoring(double z_score=3) const;
+        Array<T> outliers_mean_imputation(double z_score=3) const;
+        Array<T> outliers_median_imputation(double z_score=3) const;
+        Array<T> outliers_value_imputation(T value=0, double z_score=3) const;        
 
         // assignment
         Array<T>& operator=(const Array<T>& other); // =copy assignment
@@ -380,25 +381,25 @@ class Array{
         template<typename C> operator Array<C>();
 
         // pointers
-        Array<T&> operator*(); // dereference operator
-        Array<T*> operator&(); // 'address-of' operator
+        Array<typename std::remove_pointer<T>::type> operator*() const; // dereference operator
+        Array<T*> operator&() const; // 'address-of' operator
         
         // conversion
         Array<T> flatten() const;
         void reshape(std::vector<int> shape, const T init_value=0);
         void reshape(std::initializer_list<int> shape, const T init_value=0);
         void reshape(Array<int> shape, const T init_value=0);
-        Array<T> concatenate(const Array<T>& other, const int axis=0);
-        Array<T> add_dimension(int size, T init_value=0);
-        Array<T> padding(const int amount, const T value=0);
-        Array<T> padding_pre(const int amount, const T value=0);
-        Array<T> padding_post(const int amount, const T value=0);
-        Array<Array<T>> dissect(int axis);
-        Array<T> pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape);     
-        Array<T> convolution(const Array<T>& filter, bool padding=false);    
+        Array<T> concatenate(const Array<T>& other, const int axis=0) const;
+        Array<T> add_dimension(int size, T init_value=0) const;
+        Array<T> padding(const int amount, const T value=0) const;
+        Array<T> padding_pre(const int amount, const T value=0) const;
+        Array<T> padding_post(const int amount, const T value=0) const;
+        Array<Array<T>> dissect(int axis) const;
+        Array<T> pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape) const;     
+        Array<T> convolution(const Array<T>& filter, bool padding=false) const;    
         Array<T> transpose() const;    
         Array<T> reverse() const;
-        Array<T> stack();
+        T stack() const;
         Array<T> shuffle() const;
 
         // 1d Array statistics
@@ -425,7 +426,7 @@ class Array{
         Array<T> stationary(DIFFERENCING method=integer,double degree=1,double fract_exponent=2) const;
         Array<T> sort(bool ascending=true) const;
         double covariance(const Array<T>& other) const;
-        Array<T> binning(const int bins);                   
+        Array<T> binning(const int bins) const;                   
 
         // indexing
         T& operator[](const int index) const;

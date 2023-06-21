@@ -192,8 +192,7 @@ class NeuralNet{
         void layer_init(LayerType type, std::initializer_list<int> shape);
         void layer_make_dense_connections();
         std::vector<int> initlist_to_vector(const std::initializer_list<int>& list);
-        std::initializer_list<int> vector_to_initlist(const std::vector<int>& vec);
-        void addlayer_pool(LayerType type, std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape);         
+        std::initializer_list<int> vector_to_initlist(const std::vector<int>& vec);         
             
         // private members
         std::vector<Layer> layer;
@@ -219,3 +218,5 @@ class NeuralNet{
         bool gradient_clipping = false;
         double max_gradient;
 };
+
+#include "../sources/neuralnet.cpp"

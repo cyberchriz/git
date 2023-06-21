@@ -9,9 +9,10 @@ int main(){
       
     // topology
     int input_neurons=5;  
-    network.add_layer(input_neurons,Vanilla,f_LReLU);
-    network.add_layer(35,Vanilla,f_LReLU);
-    network.add_layer(input_neurons,Vanilla,f_LReLU);
+    network.add_layer(input_neurons,VANILLA,f_LReLU);
+    network.add_layer(35,VANILLA,f_LReLU);
+    network.add_layer(35,VANILLA,f_LReLU);
+    network.add_layer(input_neurons,VANILLA,f_LReLU);
 
     // hyperparameters
     network.set_learning_rate(0.05);

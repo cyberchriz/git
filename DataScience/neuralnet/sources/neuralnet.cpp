@@ -27,16 +27,7 @@ void NeuralNet::fit(const Array<Array<double>>& features, const Array<Array<doub
             // process samples for current batch batch
             if (batch_counter < batch_size){
 
-                // scale features and run prediction
-                if (scaling_method==ScalingMethod::MIN_MAX_NORM){
-                    predict((features[sample]-features_min).Hadamard_division(features_max-features_min),false);
-                }
-                if (scaling_method==ScalingMethod::MEAN_NORM){
-                    predict((features[sample]-features_mean).Hadamard_division(features_max-features_min),false);
-                }
-                if (scaling_method==ScalingMethod::STANDARDIZED){
-                    predict((features[sample]-features_mean).Hadamard_division(features_stddev),false);
-                }
+                predict(features[sample],false);
 
                 // assign scaled labels
                 if (scaling_method==ScalingMethod::MIN_MAX_NORM){
@@ -72,16 +63,7 @@ void NeuralNet::fit(const Array<double>& features, const Array<double>& labels){
     Log::time(LOG_LEVEL_DEBUG);
     if (backprop_iterations==0){return;}
 
-        // scale features and run prediction
-    if (scaling_method==ScalingMethod::MIN_MAX_NORM){
-        predict((features-features_min).Hadamard_division(features_max-features_min),false);
-    }
-    if (scaling_method==ScalingMethod::MEAN_NORM){
-        predict((features-features_mean).Hadamard_division(features_max-features_min),false);
-    }
-    if (scaling_method==ScalingMethod::STANDARDIZED){
-        predict((features-features_mean).Hadamard_division(features_stddev),false);
-    }
+    predict(features,false);
 
     // assign scaled labels
     if (scaling_method==ScalingMethod::MIN_MAX_NORM){
@@ -95,9 +77,11 @@ void NeuralNet::fit(const Array<double>& features, const Array<double>& labels){
     }
 
     calculate_loss();
+
     Log::log(LOG_LEVEL_DEBUG,
         "average loss (across all output neurons): ", loss_avg,
         "; starting backprop (iteration ", backprop_iterations, ")");
+    
     backpropagate();
 }
 
@@ -106,8 +90,21 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
     Log::time(LOG_LEVEL_DEBUG);
     forward_iterations++;
     // iterate over layers
-    for (int l=1;l<layers;l++){
+    for (int l=0;l<layers;l++){
         switch (layer[l].type){
+
+            case INPUT_LAYER:  {
+                // scale and assign features
+                if (scaling_method==ScalingMethod::MIN_MAX_NORM){
+                    layer[l].h = (features-features_min).Hadamard_division(features_max-features_min);
+                }
+                if (scaling_method==ScalingMethod::MEAN_NORM){
+                    layer[l].h = (features-features_mean).Hadamard_division(features_max-features_min);
+                }
+                if (scaling_method==ScalingMethod::STANDARDIZED){
+                    layer[l].h = (features-features_mean).Hadamard_division(features_stddev);
+                }                
+            } break;
 
             case POOL_LAYER: {
                 if (layer[l-1].is_stacked()){
@@ -320,11 +317,7 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
         }        
     }
     // return output
-    if (!rescale || scaling_method==ScalingMethod::none){
-        return layer[layers-1].h;
-    }
-    else {
-        // rescale
+    if (rescale && scaling_method!=ScalingMethod::none){
         if (scaling_method == ScalingMethod::MIN_MAX_NORM){
             return layer[layers-1].h.Hadamard_product(labels_max-labels_min)+labels_min;
         }
@@ -335,6 +328,7 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
             return layer[layers-1].h.Hadamard_product(labels_stddev)+labels_mean;
         }
     }
+    return layer[layers-1].h;
 }
 
 // save the model to a file
@@ -472,7 +466,8 @@ void NeuralNet::backpropagate(){
                 // push gradients to preceding layer
                 layer[l-1].gradient.fill_zeros();
                 for (int i=0; i<layer[l-1].h.get_elements(); i++){
-                    layer[l-1].gradient[i] = *layer[l-1].W_out[i].dotproduct(layer[l].h);
+                    Array<double> weights_i = *(layer[l-1].W_out[i]);
+                    layer[l-1].gradient[i] = weights_i.dotproduct(layer[l].gradient);
                 }
                 if (layer[l-1].is_stacked()){
                     layer[l-1].gradient_stack = layer[l-1].gradient.dissect(layer[l-1].dimensions-1);
@@ -564,6 +559,7 @@ void NeuralNet::backpropagate(){
             case LSTM_LAYER: {
                 layer[l].gradient_t.pop_first();
                 layer[l].gradient_t.push_back(layer[l].gradient);
+                layer[l-1].gradient.fill_zeros();
                 for (int t = layer[l].timesteps - 2; t >= std::max(layer[l].timesteps - forward_iterations, 1); t--){
                     // Compute the derivative of the loss function with respect to the LSTM output gate activation at the current time step:
                     // dL/do(t) = dL/dy(t) * tanh(c(t)) * sigmoid_derivative(o(t))
@@ -631,11 +627,13 @@ void NeuralNet::backpropagate(){
                         layer[l].b_c[j] -= gradient[j] * lr;
                     }
 
-                    // Compute the gradient propagated to the previous LSTM layer
-                    layer[l-1].gradient = (layer[l].U_i.tensordot(i_gate_gradient, {0})
-                                        + layer[l].U_f.tensordot(f_gate_gradient, {0})
-                                        + layer[l].U_o.tensordot(o_gate_gradient, {0})
-                                        + layer[l].U_c.tensordot(gradient, {0}));
+                    // Compute the gradient propagated to the previous layer
+                    for (int i=0; i<layer[l-1].neurons; i++){
+                        layer[l-1].gradient += (layer[l].U_i[i].tensordot(i_gate_gradient, {0})
+                                            + layer[l].U_f[i].tensordot(f_gate_gradient, {0})
+                                            + layer[l].U_o[i].tensordot(o_gate_gradient, {0})
+                                            + layer[l].U_c[i].tensordot(gradient, {0}));
+                    }
                 }
 
                 // Update the hidden state of the LSTM layer
@@ -693,12 +691,12 @@ void NeuralNet::backpropagate(){
                     layer[l].b_c -= layer[l].gradient_t[t].Hadamard_product(layer[l].c_gate_t[t].derivative(ActFunc::TANH)) * lr;                                                                           
 
                     // Compute the gradient propagated to the previous GRU layer
-                    Array<double> prev_gradient = (layer[l].U_z.tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].z_gate_t[t].derivative(ActFunc::SIGMOID)))
-                                                    + layer[l].U_r.tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].r_gate_t[t].derivative(ActFunc::SIGMOID)))
-                                                    + layer[l].U_c.tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].c_gate_t[t].derivative(ActFunc::TANH))));
-
-                    // Propagate the gradient to the previous layer
-                    layer[l-1].gradient = prev_gradient;
+                    layer[l-1].gradient.fill_zeros();
+                    for (int i=0; i<layer[l-1].neurons;i++){
+                        layer[l-1].gradient += (layer[l].U_z[i].tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].z_gate_t[t].derivative(ActFunc::SIGMOID)))
+                                            + layer[l].U_r[i].tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].r_gate_t[t].derivative(ActFunc::SIGMOID)))
+                                            + layer[l].U_c[i].tensordot(layer[l].gradient_t[t].Hadamard_product(layer[l].c_gate_t[t].derivative(ActFunc::TANH))));
+                    }
                 }
             } break;
 
@@ -1040,7 +1038,7 @@ void NeuralNet::addlayer_convolutional(const int filter_radius, const int featur
         int l = layers - 1;
         layer[l].type = CONVOLUTIONAL_LAYER;
         layer[l].maps = feature_maps;
-        layer[l].shape = vector_to_initlist(layer[layers-1].h.get_convolution_shape(filter_shape, padding));
+        layer[l].shape = std::move(vector_to_initlist(layer[layers-1].h.get_convolution_shape(filter_shape, padding)));
         // initialize 'x', 'h' and 'gradient' arrays
         layer[l].feature_stack_h = Array<Array<double>>(feature_maps);
         layer[l].gradient_stack = Array<Array<double>>(feature_maps);
@@ -1132,7 +1130,7 @@ void NeuralNet::layer_make_dense_connections(){
     // attach outgoing weights of preceding layer
     layer[l-1].W_out = Array<Array<int>>(layer[l-1].h.get_shape());
     for (int i=0;i<neurons_i;i++){
-        layer[l-1].W_out[i] = Array<int>(layer[l].shape);
+        layer[l-1].W_out[i] = Array<double*>(layer[l].shape);
         for (int j=0;j<neurons_j;j++){
             // store references to associated weights into <double *>
             layer[l-1].W_out[i][j] = &layer[l].W_x[j][i];
