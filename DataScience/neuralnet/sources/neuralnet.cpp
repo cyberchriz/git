@@ -308,7 +308,14 @@ Array<double> NeuralNet::predict(const Array<double>& features, bool rescale){
             } break;
                 
             case FLATTEN_LAYER: {
-                layer[l].h = layer[l-1].h.flatten();
+                if (layer[l-1].is_stacked()){
+                    for (int n=0; n<layer[l-1].maps; n++){
+                        layer[l].feature_stack_h[n] = layer[l-1].feature_stack_h[n].flatten();
+                    }
+                }
+                else {
+                    layer[l].h = layer[l-1].h.flatten();
+                }
             } break;
                 
             default: {
@@ -366,9 +373,9 @@ void NeuralNet::log_summary(LogLevel level){
                 case FLATTEN_LAYER: layer_type = "flatten"; break;
                 default: layer_type = "unknown layer type"; break;
             }
-            Log::log(level, "   (", l, ") ", layer_type, " ", layer[l].h.get_shapestring(),
+            Log::log(level, "layer ", l, ": ", layer_type, " ", layer[l].h.get_shapestring(),
                             layer[l].is_stacked() ? " * " + std::to_string(layer[l].maps) +
-                            " feature maps (=stacked) --> " : " --> ",
+                            " feature maps (=stacked) -> " : " -> ",
                             std::to_string(layer[l].neurons) + " neurons");
             neurons_total += layer[l].neurons;
         }
@@ -407,7 +414,6 @@ void NeuralNet::backpropagate(){
                     layer[l].gradient_stack = layer[l].gradient.dissect(layer[l].dimensions-1);
                     // initialize variables
                     std::vector<int> index_i(layer[l-1].dimensions);
-                    std::vector<int> stride_shape_vec = initlist_to_vector(layer[l].pooling_stride_shape);
                     std::vector<int> combined_index(layer[l-1].dimensions);  
                     Array<int> slider_box(layer[l].pooling_slider_shape);                  
                     for (int map=0; layer[l].maps; map++){
@@ -418,7 +424,7 @@ void NeuralNet::backpropagate(){
                             std::vector<int> index_j = layer[l].feature_stack_h.get_index(j);
                             // get corresponding source index
                             for (int n=0; n<layer[l-1].dimensions; n++){
-                                index_i[n] = index_j[n] * stride_shape_vec[n];
+                                index_i[n] = index_j[n] * layer[l].pooling_stride_shape[n];
                             }
                             for (int s=0; s<slider_box.get_elements(); s++) {
                                 std::vector<int> box_element_index = slider_box.get_index(s);
@@ -437,7 +443,6 @@ void NeuralNet::backpropagate(){
                     layer[l-1].gradient.fill_zeros();
                     // initialize variables
                     std::vector<int> index_i(layer[l-1].dimensions);
-                    std::vector<int> stride_shape_vec = initlist_to_vector(layer[l].pooling_stride_shape);
                     std::vector<int> combined_index(layer[l-1].dimensions);
                     Array<int> slider_box(layer[l].pooling_slider_shape);                    
                     // iterate over pooled elements
@@ -446,7 +451,7 @@ void NeuralNet::backpropagate(){
                         std::vector<int> index_j = layer[l].h.get_index(j);
                         // get corresponding source index
                         for (int n=0; n<layer[l-1].dimensions; n++){
-                            index_i[n] = index_j[n] * stride_shape_vec[n];
+                            index_i[n] = index_j[n] * layer[l].pooling_stride_shape[n];
                         }
                         for (int s=0; s<slider_box.get_elements(); s++) {
                             std::vector<int> box_element_index = slider_box.get_index(s);
@@ -861,13 +866,13 @@ void NeuralNet::calculate_loss(){
 
 // creates a new input layer or adds a new parallel input shape
 // to a preexisting input layer
-void NeuralNet::addlayer_input(std::initializer_list<int> shape){
+void NeuralNet::addlayer_input(std::vector<int> shape){
     layer_init(INPUT_LAYER, shape);  
 }
 
 // creates a new output layer or adds a new parallel output shape
 // to a preexisting output layer
-void NeuralNet::addlayer_output(std::initializer_list<int> shape, LossFunction loss_function){
+void NeuralNet::addlayer_output(std::vector<int> shape, LossFunction loss_function){
     layer_init(OUTPUT_LAYER, shape);
     int l = layers-1;
     layer[l].label = Array<double>(shape);
@@ -881,11 +886,10 @@ void NeuralNet::addlayer_output(std::initializer_list<int> shape, LossFunction l
         layer[l].opt_v[j] = Array<double>(layer[l-1].h.get_shape());
         layer[l].opt_w[j] = Array<double>(layer[l-1].h.get_shape());
     }
-    log_summary(LOG_LEVEL_INFO);
 }
 
 // creates an LSTM layer of the specified shape
-void NeuralNet::addlayer_lstm(std::initializer_list<int> shape, const int timesteps){
+void NeuralNet::addlayer_lstm(std::vector<int> shape, const int timesteps){
     layer_init(LSTM_LAYER, shape);
     int l = layers-1;
     layer[l].timesteps = timesteps;
@@ -938,7 +942,7 @@ void NeuralNet::addlayer_lstm(std::initializer_list<int> shape, const int timest
 }
 
 // creates a GRU layer
-void NeuralNet::addlayer_GRU(std::initializer_list<int> shape, const int timesteps){
+void NeuralNet::addlayer_GRU(std::vector<int> shape, const int timesteps){
     layer_init(GRU_LAYER, shape);
     int l = layers-1;
     layer[l].timesteps = timesteps;
@@ -982,7 +986,7 @@ void NeuralNet::addlayer_GRU(std::initializer_list<int> shape, const int timeste
 }
 
 // creates a recurrent layer of the specified shape
-void NeuralNet::addlayer_recurrent(std::initializer_list<int> shape, int timesteps){
+void NeuralNet::addlayer_recurrent(std::vector<int> shape, int timesteps){
     layer_init(RECURRENT_LAYER, shape);
     int l = layers-1;
     layer[l].timesteps = timesteps;
@@ -995,7 +999,7 @@ void NeuralNet::addlayer_recurrent(std::initializer_list<int> shape, int timeste
 }
 
 // creates a fully connected layer
-void NeuralNet::addlayer_dense(std::initializer_list<int> shape){
+void NeuralNet::addlayer_dense(std::vector<int> shape){
     layer_init(DENSE_LAYER, shape);
     layer_make_dense_connections();
     int l=layers-1;
@@ -1028,7 +1032,7 @@ void NeuralNet::addlayer_convolutional(const int filter_radius, const int featur
     }
     // initialize layer
     if (layer[layers-1].is_stacked()){
-        layer_init(CONVOLUTIONAL_LAYER, vector_to_initlist(layer[layers-1].feature_stack_h.get_convolution_shape(filter_shape, padding)));
+        layer_init(CONVOLUTIONAL_LAYER, layer[layers-1].feature_stack_h.get_convolution_shape(filter_shape, padding));
     }
     else {
         // create new layer
@@ -1038,7 +1042,7 @@ void NeuralNet::addlayer_convolutional(const int filter_radius, const int featur
         int l = layers - 1;
         layer[l].type = CONVOLUTIONAL_LAYER;
         layer[l].maps = feature_maps;
-        layer[l].shape = std::move(vector_to_initlist(layer[layers-1].h.get_convolution_shape(filter_shape, padding)));
+        layer[l].shape = std::move(layer[layers-1].h.get_convolution_shape(filter_shape, padding));
         // initialize 'x', 'h' and 'gradient' arrays
         layer[l].feature_stack_h = Array<Array<double>>(feature_maps);
         layer[l].gradient_stack = Array<Array<double>>(feature_maps);
@@ -1050,7 +1054,7 @@ void NeuralNet::addlayer_convolutional(const int filter_radius, const int featur
         layer[l].neurons = layer[l].feature_stack_h.get_elements();
 
         layer[l].dimensions = layer[l].shape.size();   
-        layer_init(CONVOLUTIONAL_LAYER, vector_to_initlist(layer[layers-1].h.get_convolution_shape(filter_shape, padding)));
+        layer_init(CONVOLUTIONAL_LAYER, layer[layers-1].h.get_convolution_shape(filter_shape, padding));
     }
     layer[layers-1].filter_shape = filter_shape;
 }
@@ -1082,27 +1086,24 @@ void NeuralNet::addlayer_tanh(){
 }
 
 void NeuralNet::addlayer_flatten(){
-    std::initializer_list<int> shape = {layer[layers-1].neurons};
-    layer_init(FLATTEN_LAYER, shape);
+    layer_init(FLATTEN_LAYER, {layer[layers-1].neurons});
 }
 
-void NeuralNet::addlayer_pool(PoolMethod method, std::initializer_list<int> slider_shape, std::initializer_list<int> stride_shape){
+void NeuralNet::addlayer_pool(PoolMethod method, std::vector<int> slider_shape, std::vector<int> stride_shape){
     std::vector<int> layer_shape(layer[layers-1].dimensions);
-    std::vector<int> slider_shape_vec = initlist_to_vector(slider_shape);
-    std::vector<int> stride_shape_vec = initlist_to_vector(stride_shape);
     int l=layers;
     if (layer[l-1].is_stacked())
     {
         for (int d=0;d<layer[layers-1].dimensions;d++){
-            layer_shape[d] = (layer[layers-1].feature_stack_h[0].get_shape()[d] - slider_shape_vec[d]) / stride_shape_vec[d];
+            layer_shape[d] = (layer[layers-1].feature_stack_h[0].get_shape()[d] - slider_shape[d]) / stride_shape[d];
         }
     }
     else {
         for (int d=0;d<layer[layers-1].dimensions;d++){
-            layer_shape[d] = (layer[l-1].h.get_shape()[d] - slider_shape_vec[d]) / stride_shape_vec[d];
+            layer_shape[d] = (layer[l-1].h.get_shape()[d] - slider_shape[d]) / stride_shape[d];
         }
     }    
-    layer_init(LayerType::POOL_LAYER, vector_to_initlist(layer_shape));
+    layer_init(LayerType::POOL_LAYER, layer_shape);
     layer[l].pooling_slider_shape=slider_shape;
     layer[l].pooling_stride_shape=stride_shape;
     layer[l].pooling_method = method;
@@ -1119,6 +1120,7 @@ void NeuralNet::layer_make_dense_connections(){
     }     
     // create incoming weights
     layer[l].W_x = Array<Array<double>>(layer[l].shape);
+    layer[l].delta_W_x = Array<Array<double>>(layer[l].shape);
     int neurons_i = layer[l-1].h.get_elements();
     int neurons_j = layer[l].neurons;
     for (int j=0;j<neurons_j;j++){
@@ -1128,7 +1130,7 @@ void NeuralNet::layer_make_dense_connections(){
         layer[l].delta_W_x[j].fill_zeros();
     }
     // attach outgoing weights of preceding layer
-    layer[l-1].W_out = Array<Array<int>>(layer[l-1].h.get_shape());
+    layer[l-1].W_out = Array<Array<double*>>(layer[l-1].h.get_shape());
     for (int i=0;i<neurons_i;i++){
         layer[l-1].W_out[i] = Array<double*>(layer[l].shape);
         for (int j=0;j<neurons_j;j++){
@@ -1144,7 +1146,7 @@ void NeuralNet::layer_make_dense_connections(){
 }
 
 // basic layer setup
-void NeuralNet::layer_init(LayerType type, std::initializer_list<int> shape){
+void NeuralNet::layer_init(LayerType type, std::vector<int> shape){
     // check valid layer type
     if (layers==0 && type != INPUT_LAYER){
         throw std::invalid_argument("the first layer always has to be of type 'INPUT'");
@@ -1152,7 +1154,7 @@ void NeuralNet::layer_init(LayerType type, std::initializer_list<int> shape){
     if (layers>0 && type == INPUT_LAYER){
         throw std::invalid_argument("input layer already exists");
     }    
-    if (layer[layers-1].type == OUTPUT_LAYER){
+    if (layers>0 && layer[layers-1].type == OUTPUT_LAYER){
         throw std::invalid_argument("an output layer has already been defined; can't add any new layers on top");
     }
     if (static_cast<int>(type) < 0 || static_cast<int>(type) >= static_cast<int>(LayerType::LAYER_TYPE_COUNT)){
@@ -1165,8 +1167,20 @@ void NeuralNet::layer_init(LayerType type, std::initializer_list<int> shape){
     int l = layers - 1;
     layer[l].type = type;
     layer[l].shape = shape;
+    // only the following layer types can be stacked:
+    //  - POOL_LAYER
+    //  - DROPOUT_LAYER
+    //  - RELU_LAYER
+    //  - LRELU_LAYER
+    //  - ELU_LAYER
+    //  - SIGMOID_LAYER
+    //  - TANH_LAYER
+    //  - FLATTEN_LAYER
+    //  - CONVOLUTIONAL_LAYER
+    // excluding layers that can't be stacked:
     if (type!=INPUT_LAYER &&
         type!=OUTPUT_LAYER &&
+        type!=DENSE_LAYER &&
         type!=LSTM_LAYER &&
         type!=GRU_LAYER &&
         type!=RECURRENT_LAYER){
@@ -1181,7 +1195,7 @@ void NeuralNet::layer_init(LayerType type, std::initializer_list<int> shape){
             layer[l].gradient_stack[i] = Array<double>(shape);
             layer[l].gradient_stack[i].fill_zeros();
         }
-        layer[l].neurons = layer[l].feature_stack_h.get_elements();
+        layer[l].neurons = layer[l].feature_stack_h[0].get_elements();
     }
     else {
         layer[l].h = Array<double>(shape);

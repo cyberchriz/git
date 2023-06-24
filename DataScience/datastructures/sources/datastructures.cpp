@@ -178,6 +178,9 @@ std::string Array<T>::get_shapestring() const {
         if (i!=this->dimensions-1){
             result += ',';
         }
+        if (i==MAX_DIM-1){
+            result += " ...";
+        }
     }
     return result + "}";
 }
@@ -226,19 +229,8 @@ int Array<T>::get_element(const std::initializer_list<int>& index) const {
 // to a one-dimensional index (=as a scalar)
 template<typename T>
 int Array<T>::get_element(const std::vector<int>& index) const {
-    // check for invalid index dimensions
-    if (int(index.size()) != this->dimensions){
-        Log::log(LOG_LEVEL_WARNING,
-            "method 'int Array<T>::get_element(const std::vector<int>& index)'",
-            "has been used with invalid index dimensions; the corresponding array has ",
-            this->dimensions, " dimensions (shape: ",
-            this->get_shapestring(), "), result will be 0");
-        return 0;
-    }    
-    // deal with the special case of single dimension Arrays
-    if (this->dimensions == 1){
-        return index[0];
-    }    
+    if (!index_isvalid(index)) return 0;
+    if (this->dimensions == 1) return index[0];
     // initialize result to number of elements belonging to last dimension
     int result = index[this->dimensions-1];
     // initialize dimension index to second last dimension
@@ -264,6 +256,13 @@ int Array<T>::get_element(const std::vector<int>& index) const {
 template<typename T>
 std::vector<int> Array<T>::get_index(int element) const {
     std::vector<int> result(this->dimensions);
+    // check if the array is not initialized (i.e. dimensions=0)
+    if (this->dimensions<=0){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method 'std::vector<int> Array<T>::get_index(int element)': ",
+            "the array isn't properly initialized (dimensions=", this->dimensions, ")");
+        return result;
+    }    
     // check valid element index
     if (element <0){
         Log::log(LOG_LEVEL_WARNING,
@@ -768,6 +767,8 @@ Array<double> Array<T>::nested_variance() const {
         Log::log(LOG_LEVEL_WARNING,
             "improper usage of method 'Array<double> Array<T>::nested_variance() const': ",
             "source must have type Array<Array<T>> but is ", this->get_typename());
+        std::unique_ptr<Array<double>> result;
+        return std::move(*result);
     }
 }
 
@@ -1340,7 +1341,7 @@ T Array<T>::dotproduct(const Array<T>& other) const {
             " with 'this' as type ", this->get_typename(), this->get_shapestring(),
             " vs. 'other' as type ", other.get_typename(), other.get_shapestring(),
             " -> result will be undefined");
-        T result;
+        T result = T(NAN);
         return result;
     }
     try {
@@ -2680,6 +2681,7 @@ Array<T>& Array<T>::operator=(const Array<T>& other) {
 // Array move assignment
 template<typename T>
 Array<T>& Array<T>::operator=(Array<T>&& other) noexcept {
+    this->resize(other.get_elements());
     this->data_elements = other.get_elements();
     this->data = std::move(other.data);
     this->dim_size = std::move(other.dim_size);
@@ -2696,7 +2698,7 @@ Array<T>& Array<T>::operator=(const T (&arr)[]){
     int arr_elements = sizeof(arr) / sizeof(arr[0]);
     if (arr_elements != this->data_elements){
         try {
-            resize_array(this->data, arr_elements);
+            resize_array(this->data, this->data_elements, arr_elements);
             // Copy the elements from array argument to 'this'
             std::copy(arr.get(), arr.get() + arr_elements, this->data.get());
             this->data_elements = arr_elements;
@@ -2728,9 +2730,10 @@ Array<T>& Array<T>::operator=(const T (&arr)[]){
 template<typename T>
 Array<T>& Array<T>::operator=(T (&&arr)[]) noexcept {
     int arr_elements = sizeof(arr) / sizeof(arr[0]);
+    int oldSize = this->data_elements;
     this->data_elements = arr_elements;
     if (this->data_elements!=arr_elements){
-        resize_array(this->data,arr_elements);
+        resize_array(this->data, oldSize, arr_elements);
     }
     this->data = std::move(arr);
     this->dim_size = {arr_elements};
@@ -3283,7 +3286,7 @@ Array<T>::operator Array<C>(){
     std::unique_ptr<Array<C>> result = std::make_unique<Array<C>>(this->dim_size);
     try {
         for (int i=0; i<this->data_elements; i++){
-            result->data[i] = C(this->data[i]);
+            result->data[i] = static_cast<C>(this->data[i]);
         }
     }
     catch (...) {
@@ -3870,6 +3873,90 @@ Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slid
     return std::move(*result);
 }
 
+// moves a box of shape 'slider_shape' across the Array, with the step lengths
+// specified as 'stride_shape'; from each slider position the pooled result of
+// the slider box gets assigned to a corresponding element of the result array
+template<typename T>
+Array<T> Array<T>::pool(PoolMethod method, const std::vector<int> slider_shape, const std::vector<int> stride_shape) const {
+    std::vector<int> slider_shape_vec = slider_shape;
+    std::vector<int> stride_shape_vec = stride_shape;
+    // confirm valid slider shape
+    if (int(slider_shape.size()) != this->dimensions){
+        Log::log(LOG_LEVEL_WARNING,
+            "slider shape for pooling operation must have same number of dimensions ",
+            "as the array it is acting upon -> auto-adjusting slider shape to fit");
+        while (int(slider_shape_vec.size()) < this->dimensions){
+            slider_shape_vec.push_back(1);
+        }
+        while (int(slider_shape_vec.size()) > this->dimensions){
+            slider_shape_vec.pop_back();
+        }
+    }
+    // confirm valid stride shape
+    if (int(stride_shape.size()) != this->dimensions){
+        Log::log(LOG_LEVEL_WARNING,
+            "stride shape for pooling operation must have same number of dimensions ",
+            "as the array it is acting upon -> auto-adjusting stride shape to fit");
+        while (int(stride_shape_vec.size()) < this->dimensions){
+            stride_shape_vec.push_back(1);
+        }
+        while (int(stride_shape_vec.size()) > this->dimensions){
+            stride_shape_vec.pop_back();
+        }            
+    }
+    // create source index
+    std::vector<int> index_source(this->dimensions);
+    // get result shape
+    std::vector<int> result_shape(this->dimensions,1);
+    for (int d=0;d<this->dimensions;d++){
+        result_shape[d] = this->dim_size[d] / std::max(1,stride_shape_vec[d]);
+    }
+    // create result array
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(result_shape);
+    std::vector<int> index_result(result->get_dimensions());
+    // create a sliding box for pooling
+    Array<double> slider = Array<double>(slider_shape_vec);
+    std::vector<int> index_slider(slider.get_dimensions());
+    std::vector<int> index_combined(this->dimensions);
+    // iterate over result
+    int result_elements = result->get_elements();
+    for (int j=0;j<result_elements;j++){
+        // get associated result index
+        index_result = result->get_index(j);
+        // get corresponding source index at slider position
+        for (int d=0;d<this->dimensions;d++){
+            index_source[d] = index_result[d] * stride_shape_vec[d];
+        }
+        // iterate over elements of the slider
+        for (int n=0;n<slider.get_elements();n++){
+            // update multidimensional index of the slider element
+            index_slider = slider.get_index(n);
+            // get combined index and check if it fits within source boundaries            
+            bool index_ok=true;
+            for (int d=0;d<int(index_combined.size());d++){
+                index_combined[d] = index_source[d] + index_slider[d];
+                if (index_combined[d]>=this->dim_size[d]){
+                    index_ok=false;
+                    break;
+                }                
+            }
+            // assing slider value from the element with the index of the sum of index_i+index_slider
+            if (index_ok){
+                slider.set(n, this->get(index_combined));
+            }
+        }
+        switch (method) {
+            case PoolMethod::MAX: result->set(j,slider.max()); break;
+            case PoolMethod::MAXABS: result->set(j,slider.maxabs()); break;
+            case PoolMethod::MEAN: result->set(j,slider.mean()); break;
+            case PoolMethod::MIN: result->set(j,slider.min()); break;
+            case PoolMethod::MEDIAN: result->set(j,slider.median()); break;
+            case PoolMethod::MODE: result->set(j,slider.mode()); break;
+        }
+    }
+    return std::move(*result);
+}
+
 template<typename T>
 Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
     // declare result Array
@@ -4268,84 +4355,116 @@ bool Array<T>::equalsize(const Array<T>& other) const {
 // change the size of a simple C-style array via its std::unique_ptr<T[]>
 // by allocating new memory and copying the previous data to the new location
 template<typename T>
-void Array<T>::resize_array(std::unique_ptr<T[]>& arr, const int newSize) {
+void Array<T>::resize_array(std::unique_ptr<T[]>& arr, const int oldSize, const int newSize, T init_value) {
     // Create a new array with the desired size
     std::unique_ptr<T[]> newArr = std::make_unique<T[]>(newSize);
     // Copy the elements from the old array to the new array
     for (int i = 0; i < newSize; i++) {
-        if (i < this->data_elements) {
-            newArr[i] = arr[i];
-        } else {
-            newArr[i] = 0;
-        }
+        newArr[i] = i<oldSize ? arr[i] : init_value;
     }
     // Assign the new array to the old array variable
     arr = std::move(newArr);
-    // Update the number of elements in the array
-    this->data_elements = newSize;
 }
 
 // +=================================+   
-// | Dynamic Handling of 1d Arrays   |
+// | Dynamic Handling of Arrays      |
 // +=================================+
 
 // push back 1 element into the 1d Array
 // returns the resulting total number of elements
 template<typename T>
-int Array<T>::push_back(const T value){
+int Array<T>::push_back(const T init_value){
+    if (this->dimensions != 1){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method 'int Array<T>::push_back(const T value)': ",
+            "can only be used with 1d Arrays but this Array is ", this->dimensions, "d!");
+        return this->data_elements;
+    }
     this->data_elements++;
-    this->dim_size[0]=this->data_elements;
+    this->dim_size[0]++;
     if (this->data_elements>this->capacity){
         this->capacity=int(this->data_elements*(1.0+this->_reserve));
-        resize_array(this->data, this->capacity);
+        resize_array(this->data, this->data_elements-1, this->capacity);
     }
-    this->data[this->data_elements-1]=value;
+    this->data[this->data_elements-1]=init_value;
     return this->data_elements;
 }
 
-// resize the vector to a new number of elements
+// resize the array in the specified dimension (default: dimension 0)
 template<typename T>
-void Array<T>::resize(const int newsize){
-    this->data_elements=newsize;
-    this->dim_size[0]=newsize;
+void Array<T>::resize(const int newsize, int dimension, T init_value){
+    int dimensions_old = this->dimensions;
+    int dimensions_new = std::max(dimensions_old, dimension+1);
+    // make a copy of the original Array
+    Array<T> temp_copy = *this;
+    // set up the new dimensions
+    this->dim_size.resize(dimensions_new);
+    for (int d=0; d<dimensions_new; d++){
+        if (d==dimensions){
+            this->dim_size[d] = newsize;
+        }
+        else if (d>=dimensions_old && d!=dimension){
+            this->dim_size[d] = 1;
+        }
+        else {
+            // keep the size of the given dimension as it is
+        }
+    }
+    this->dimensions = dimensions_new;
+    // get number of data_elements with new size
+    int oldSize = this->data_elements;
+    this->data_elements = this->dim_size[0];
+    for (int d=1; d<this->dimensions; d++){
+        this->data_elements *= this->dim_size[d];
+    }    
+    // reserve memory for the new elements
     if (this->data_elements>this->capacity){
         this->capacity=int(this->data_elements*(1.0+this->_reserve));
-        resize_array(this->data, this->capacity);
+        resize_array(this->data, oldSize, this->capacity);
+    }    
+    // transfer data from the temporary copy to the updated array
+    std::vector<int> index(dimensions_new);
+    for (int i=0; i<this->data_elements; i++){
+        index = this->get_index(i);
+        if (temp_copy.index_isvalid(index)){
+            this->data[i] = temp_copy.get(index);
+        }
+        else {
+            this->data[i] = init_value;
+        }
     }    
 }
-// grows the vector size by the specified number of
-// additional elements and initializes these new elements
+
+// grows the Array size of the specified dimension (default: dimension index 0)
+// by the specified number of additional(!) elements and initializes these new elements
 // to the specified value (default=0);
 // will only re-allocate memory if the new size exceeds
 // the capacity; returns the new total number of elements
 template<typename T>
-int Array<T>::grow(const int additional_elements){
-    if (additional_elements<1){return 0;}
-    int newsize=this->data_elements+additional_elements;
-    this->dim_size[0]=newsize;
-    // re-allocate memory if the new size exceeds the capacity
-    if (newsize>this->capacity){
-        this->capacity=int(this->data_elements*(1.0+this->_reserve));
-        resize_array(this->data, this->capacity);
-    }
-    this->data_elements=newsize;
-    return newsize;
+int Array<T>::grow(const int additional_elements, int dimension, T init_value){
+    this->resize(this->dim_size[dimension]+additional_elements, dimension, init_value);
+    return this->data_elements;
 }
 
-// shrinks the vector size by the specified number of
-// elements and returns the resulting new number of
-// remaining total elements
+// shrins the Array size of the specified dimension (default: dimension index 0)
+// by the specified number of elements;
+// returns the new total number of elements
 template<typename T>
-int Array<T>::shrink(const int remove_amount){
-    int newsize=std::fmax(0,this->data_elements-remove_amount);
-    this->data_elements=newsize;
-    this->dim_size[0]=newsize;
-    return newsize;
+int Array<T>::shrink(const int remove_amount, int dimension){
+    this->resize(this->dim_size[dimension]-remove_amount, dimension);
+    return this->data_elements;
 }
 
 // pop 1 element from the end of the Array
 template<typename T>
 T Array<T>::pop_last(){
+    if (this->dimensions != 1){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method 'T Array<T>::pop_last()': ",
+            "is meant to be used only for 1d Arrays but this Array is ", this->dimensions, "d!",
+            " -> will return the last element of the flattend array without removing anything");
+        return this->data[this->data_elements-1];
+    }
     this->data_elements--;
     this->dim_size[0]--;
     return this->data[this->data_elements];
@@ -4354,6 +4473,13 @@ T Array<T>::pop_last(){
 // pop 1 element from the beginning of the Array
 template<typename T>
 T Array<T>::pop_first(){
+    if (this->dimensions != 1){
+        Log::log(LOG_LEVEL_WARNING,
+            "invalid usage of method 'T Array<T>::pop_first()': ",
+            "is meant to be used only for 1d Arrays but this Array is ", this->dimensions, "d!",
+            " -> will return the first element of the flattend array without removing anything");
+        return this->data[0];
+    }    
     T temp = this->data[0];
     // reassign pointer to position of the raw pointer to the element at index 1
     this->data = std::unique_ptr<T[]>(this->data.release() + 1, std::default_delete<T[]>());
@@ -4372,6 +4498,22 @@ T Array<T>::erase(const int index){
     this->data_elements--;
     this->dim_size[0]--;
     return result;
+}
+
+// helper method to confirm valid multidimensional index
+template<typename T>
+bool Array<T>::index_isvalid(const std::vector<int>& index) const {
+    if ((int)index.size() != this->dimensions) return false;
+    for (int d=0; d<this->dimensions; d++){
+        if (index[d]<0 || index[d]>=this->dim_size[d]) return false;
+    }
+    return true;
+}
+
+// helper method to confirm valid 1d index
+template<typename T>
+bool Array<T>::index_isvalid(const int index) const {
+    return this->dimensions==1 && index>0 && index<this->data_elements ? true : false;
 }
 
 // +=================================+   

@@ -13,10 +13,16 @@ std::vector<T> initlist_to_vector(const std::initializer_list<T>& list){
 }
 
 // helper method to convert a std::vector<T> to std::initializer_list<T>
-template<typename T>
+/*template<typename T>
 std::initializer_list<T> vector_to_initlist(const std::vector<T>& vec) {
     std::initializer_list<T> init_list;
     for (auto& elem : vec) {
         init_list = {std::initializer_list<int>{elem}};
     }
+    return init_list;
+}*/
+template<typename T>
+std::initializer_list<T> vector_to_initlist(const std::vector<T>& vec) {
+    return std::initializer_list<T>{vec.begin(), vec.end()};
 }
+

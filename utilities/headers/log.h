@@ -55,9 +55,9 @@ public:
     }
 
     static void time(int level=LOG_LEVEL_DEBUG){
-        if (level < LogLevel::LOG_LEVEL_NONE && level <= log_level) {
-            Timer timer = Timer();
-        }
+        if (level>=LogLevel::LOG_LEVEL_NONE || level<log_level) return;
+        Timer timer = Timer();
+        std::move(timer);
     }
 
     // returns 'true' if the currently set log level
@@ -75,12 +75,7 @@ public:
             };
             std::stringstream stream;
             (stream << ... << std::forward<Args>(args));
-            std::string log_message = "[" + std::string(levelStrings[level]) + "]: " + stream.str() + "\n";
-
-
-            if (log_to_console) {
-                std::cout << log_message << std::endl;
-            }
+            std::string log_message = "[" + std::string(levelStrings[level]) + "]: " + stream.str();
 
             if (log_to_file) {
                 std::ofstream file_stream(log_filepath, std::ios_base::app);
@@ -88,6 +83,15 @@ public:
                     file_stream << log_message << std::endl;
                     file_stream.close();
                 }
+            }
+
+            if (log_to_console && level != LogLevel::LOG_LEVEL_ERROR){
+                    std::cout << log_message << std::endl;
+                }
+
+            // invoking a crash for any LOG_LEVEL_ERROR messages
+            if (level == LogLevel::LOG_LEVEL_ERROR) {
+                throw std::invalid_argument(log_message + "\n");
             }
         }
     }

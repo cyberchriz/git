@@ -216,6 +216,9 @@ class Array{
         const std::type_info& get_type() const {return typeid(T);};
         std::string get_typename() const {return boost::core::demangle(std::type_index(typeid(*this)).name());}
 
+        // helper method to confirm valid index
+        bool index_isvalid(const std::vector<int>& index) const;
+        bool index_isvalid(const int index) const;
 
         // fill, initialize
         void fill_values(const T value);
@@ -395,7 +398,8 @@ class Array{
         Array<T> padding_pre(const int amount, const T value=0) const;
         Array<T> padding_post(const int amount, const T value=0) const;
         Array<Array<T>> dissect(int axis) const;
-        Array<T> pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape) const;     
+        Array<T> pool(PoolMethod method, const std::initializer_list<int> slider_shape, const std::initializer_list<int> stride_shape) const;
+        Array<T> pool(PoolMethod method, const std::vector<int> slider_shape, const std::vector<int> stride_shape) const;
         Array<T> convolution(const Array<T>& filter, bool padding=false) const;    
         Array<T> transpose() const;    
         Array<T> reverse() const;
@@ -408,14 +412,14 @@ class Array{
         PolyRegResult<T> regression_polynomial(const Array<T>& other, const int power) const;
         HistogramResult<T> histogram(int bars) const;
 
-        // 1d Array dynamic handling
-        int push_back(T value);
+        // Array dynamic handling
+        int push_back(T init_value);
         T pop_last();
         T pop_first();
         T erase(const int index);
-        int grow(const int additional_elements);
-        int shrink(const int remove_amount);       
-        void resize(const int newsize);         
+        int grow(const int additional_elements, int dimension=0, T init_value=0);
+        int shrink(const int remove_amount, int dimension=0);       
+        void resize(const int newsize, int dimension=0, T init_value=0);         
 
         // 1d Array sample analysis
         Array<int> ranking() const;
@@ -440,7 +444,7 @@ class Array{
         // protected member variables
         bool equalsize(const Array<T>& other) const;
         int data_elements=0; // total number of data_elements in all _dimensions
-        int dimensions;
+        int dimensions=0;
         std::vector<int> dim_size; // holds the size (number of data_elements) per individual dimension 
         std::vector<int> subspace_size;       
 
@@ -463,7 +467,7 @@ class Array{
         ~Array();   
     
     private:
-        void resize_array(std::unique_ptr<T[]>& arr, const int newSize);
+        void resize_array(std::unique_ptr<T[]>& arr, const int oldSize, const int newSize, T init_value=0);
         const float _reserve = 0.5;
         int capacity;        
 };
