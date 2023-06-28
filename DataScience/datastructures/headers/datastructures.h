@@ -198,12 +198,11 @@ class Array{
         T get(const std::vector<int>& index) const;
         T get(const Array<int>& index) const;
         T get(const int row, const int col) const;
-        int get_dimensions() const {return this->dimensions;};
-        int get_size(int dimension) const {return this->dim_size[dimension];};
+        int get_dimensions() const {return int(this->dim_size.size());}
+        int get_size(int dimension) const {return dimension<this->get_dimensions() ? this->dim_size[dimension] : 0;};
         int get_size() const {return this->data_elements;};
         int get_elements() const {return this->data_elements;};
         std::vector<int> get_shape() const {return dim_size;};
-        Array<int> get_convolution_shape(Array<int>& filter_shape, const bool padding=false) const;
         std::vector<int> get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const;
         std::vector<int> get_stacked_shape() const;
         std::string get_shapestring() const;
@@ -444,7 +443,6 @@ class Array{
         // protected member variables
         bool equalsize(const Array<T>& other) const;
         int data_elements=0; // total number of data_elements in all _dimensions
-        int dimensions=0;
         std::vector<int> dim_size; // holds the size (number of data_elements) per individual dimension 
         std::vector<int> subspace_size;       
 

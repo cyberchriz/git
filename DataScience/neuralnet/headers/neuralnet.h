@@ -47,14 +47,15 @@ enum LayerType{
     SIGMOID_LAYER,
     TANH_LAYER,
     FLATTEN_LAYER,
-    LAYER_TYPE_COUNT // used to verify valid enum argument          
+    LAYER_TYPE_COUNT, // used to verify valid enum argument
+    LAYER_TYPE_NONE
 };
 
 enum ScalingMethod{
     STANDARDIZED,
     MIN_MAX_NORM,
     MEAN_NORM,
-    none
+    NO_SCALING
 };
 
 enum OPTIMIZATION_METHOD {
@@ -71,10 +72,10 @@ struct Layer{
     public:
         // public member objects
         LayerType type;
-        int neurons;
+        int neurons=0;
         int dimensions;
         int timesteps;
-        int maps=1;
+        bool is_stacked=false;
         Array<Array<double>> feature_stack_h;
         Array<Array<double>> gradient_stack;
         Array<Array<double>> filter_stack;
@@ -125,7 +126,6 @@ struct Layer{
         std::vector<int> pooling_slider_shape; // vector of pointers to pooling slider shapes
         std::vector<int> pooling_stride_shape; // vector of pointers to pooling stride shapes
         PoolMethod pooling_method;
-        bool is_stacked(){return maps>1;}
 
         // default constructor
         Layer(){};
@@ -136,7 +136,7 @@ struct Layer{
             this->neurons = other.neurons;
             this->dimensions = other.dimensions;
             this->timesteps = other.timesteps;
-            this->maps = other.maps;
+            this->is_stacked = other.is_stacked;
             this->feature_stack_h = other.feature_stack_h;
             this->gradient_stack = other.gradient_stack;
             this->filter_stack = other.filter_stack;
@@ -194,7 +194,7 @@ struct Layer{
             this->neurons = std::move(other.neurons);
             this->dimensions = std::move(other.dimensions);
             this->timesteps = std::move(other.timesteps);
-            this->maps = std::move(other.maps);
+            this->is_stacked = std::move(other.is_stacked);
             this->feature_stack_h = std::move(other.feature_stack_h);
             this->gradient_stack = std::move(other.gradient_stack);
             this->filter_stack = std::move(other.filter_stack);
@@ -266,6 +266,7 @@ class NeuralNet{
         void set_momentum(const double value){momentum = std::fmin(1,std::fmax(0,value));}
         void set_loss_function(const LossFunction func){loss_function = func;}
         void set_gradient_clipping(const bool active=true, const double limit=0.49999){gradient_clipping=active; max_gradient = std::fmax(0,limit);}
+        void set_feature_maps(const int n){if (layers==0 || (layers>0 && layer[layers-1].type!=OUTPUT_LAYER)) {feature_maps = n;}}
 
         void addlayer_input(std::vector<int> shape);
         void addlayer_input(const int neurons){std::vector<int> shape = {neurons}; addlayer_input(shape);}
@@ -286,7 +287,7 @@ class NeuralNet{
         void addlayer_dense(std::vector<int> shape);
         void addlayer_dense(const int neurons){std::vector<int> layer_shape = {neurons}; addlayer_dense({layer_shape});}
         void addlayer_dense(){addlayer_dense(layer[layers-1].shape);}
-        void addlayer_convolutional(const int filter_radius=1, const int feature_maps=10, bool padding=false);
+        void addlayer_convolutional(const int filter_radius=1, bool padding=false);
         void addlayer_GRU(std::vector<int> shape, const int timesteps=10);
         void addlayer_GRU(const int neurons, const int timesteps=10){addlayer_GRU({neurons}, timesteps);}
         void addlayer_GRU(const int timesteps=10){addlayer_GRU(layer[layers-1].shape, timesteps);}
@@ -331,6 +332,7 @@ class NeuralNet{
         OPTIMIZATION_METHOD opt_method = VANILLA;
         bool gradient_clipping = false;
         double max_gradient;
+        int feature_maps=10;
 };
 
 #include "../sources/neuralnet.cpp"

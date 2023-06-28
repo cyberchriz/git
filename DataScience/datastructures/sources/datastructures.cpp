@@ -83,10 +83,10 @@ void Array<T>::set(const int row, const int col, const T value){
             "therefore ", this->dim_size[1]-1, " is the allowed maximum)");
         return;
     }    
-    if (this->dimensions != 2){
+    if (this->get_dimensions() != 2){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'void Array<T>::set(const int row, const int col, const T value)': ",
-            "can only be used for 2d Arrays but Array has ", this->dimensions, " dimensions");
+            "can only be used for 2d Arrays but Array has ", this->get_dimensions(), " dimensions");
         return;
     }
     // set value
@@ -114,10 +114,10 @@ T Array<T>::get(const std::vector<int>& index) const {
 template<typename T>
 T Array<T>::get(const Array<int>& index) const {
     // check valid index dimensions
-    if (index.get_elements() != this->dimensions){
+    if (index.get_elements() != this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'T Array<T>::get(const Array<int>& index)' ",
-            "with ", index.get_elements(), "d index parameter for a ", this->dimensions,
+            "with ", index.get_elements(), "d index parameter for a ", this->get_dimensions(),
             "d array -> will return NAN");
         return T(NAN);
     }
@@ -157,10 +157,10 @@ T Array<T>::get(const int row, const int col) const {
             " --> will return NAN");
         return NAN;
     }    
-    if (this->dimensions != 2){
+    if (this->get_dimensions() != 2){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'void Array<T>::set(const int row, const int col, const T value)': ",
-            "can only be used for 2d Arrays but Array has ", this->dimensions, " dimensions",
+            "can only be used for 2d Arrays but Array has ", this->get_dimensions(), " dimensions",
             " --> will return NAN");
         return NAN;
     }
@@ -173,9 +173,9 @@ template<typename T>
 std::string Array<T>::get_shapestring() const {
     const static int MAX_DIM = 10;
     std::string result = "{";
-    for (int i=0;i<std::min(this->dimensions, MAX_DIM);i++){
+    for (int i=0;i<std::min(this->get_dimensions(), MAX_DIM);i++){
         result += std::to_string(this->dim_size[i]);
-        if (i!=this->dimensions-1){
+        if (i!=this->get_dimensions()-1){
             result += ',';
         }
         if (i==MAX_DIM-1){
@@ -190,14 +190,14 @@ std::string Array<T>::get_shapestring() const {
 template<typename T>
 int Array<T>::get_element(const std::initializer_list<int>& index) const {
     // check for invalid index dimensions
-    if (int(index.size()) != this->dimensions){
+    if (int(index.size()) != this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "method 'get_element()' has been used with invalid index dimensions; the corresponding array has ",
-            this->dimensions, " dimensions (shape: ", this->get_shapestring(), "), result will be int(T(NAN))");
+            this->get_dimensions(), " dimensions (shape: ", this->get_shapestring(), "), result will be int(T(NAN))");
         return int(T(NAN));
     }
     // deal with the special case of single dimension Arrays
-    if (this->dimensions == 1){
+    if (this->get_dimensions() == 1){
         return *(index.begin());
     }
     // initialize result to number of elements belonging to last dimension
@@ -205,13 +205,13 @@ int Array<T>::get_element(const std::initializer_list<int>& index) const {
     // initialize iterator to counter of second last dimension
     auto iterator = index.end()-2;
     // initialize dimension index to second last dimension
-    int i = this->dimensions-2;
+    int i = this->get_dimensions()-2;
     // decrement iterator down to first dimension
     for (; iterator >= index.begin(); i--, iterator--){
         // initialize amount to add to count in dimension i
         int add = *iterator;
         // multiply by product of sizes of dimensions higher than i
-        int s=this->dimensions-1;
+        int s=this->get_dimensions()-1;
         for(; s >i; s--){
             add *= this->dim_size[s];
         }
@@ -230,16 +230,16 @@ int Array<T>::get_element(const std::initializer_list<int>& index) const {
 template<typename T>
 int Array<T>::get_element(const std::vector<int>& index) const {
     if (!index_isvalid(index)) return 0;
-    if (this->dimensions == 1) return index[0];
+    if (this->get_dimensions() == 1) return index[0];
     // initialize result to number of elements belonging to last dimension
-    int result = index[this->dimensions-1];
+    int result = index[this->get_dimensions()-1];
     // initialize dimension index to second last dimension
-    int i = this->dimensions-2;
+    int i = this->get_dimensions()-2;
     for (; i>=0;i--){
         // initialize amount to add to count in dimension i
         int add = index[i];
         // multiply by product of sizes of dimensions higher than i
-        int s=this->dimensions-1;
+        int s=this->get_dimensions()-1;
         for(; s > i; s--){
             add *= this->dim_size[s];
         }
@@ -255,12 +255,12 @@ int Array<T>::get_element(const std::vector<int>& index) const {
 // its multi-dimensional equivalent
 template<typename T>
 std::vector<int> Array<T>::get_index(int element) const {
-    std::vector<int> result(this->dimensions);
+    std::vector<int> result(this->get_dimensions());
     // check if the array is not initialized (i.e. dimensions=0)
-    if (this->dimensions<=0){
+    if (this->get_dimensions()<=0){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'std::vector<int> Array<T>::get_index(int element)': ",
-            "the array isn't properly initialized (dimensions=", this->dimensions, ")");
+            "the array isn't properly initialized (dimensions=", this->get_dimensions(), ")");
         return result;
     }    
     // check valid element index
@@ -277,14 +277,14 @@ std::vector<int> Array<T>::get_index(int element) const {
             " (indexing start from zero, therefore ", this->data_elements-1, " is the highest allowed value)");
     }
     // deal with the special case of single dimension arrays
-    if (this->dimensions == 1){
+    if (this->get_dimensions() == 1){
         result[0] = element;
         return result;
     }
     // initialize iterator to counter of second last dimension
     auto iterator = result.end()-1;
     // initialize dimension index to last dimension
-    int i = this->dimensions-1;
+    int i = this->get_dimensions()-1;
     // decrement iterator down to first dimension
     int _element = element;
     for (; iterator >= result.begin(); i--, iterator--){
@@ -306,11 +306,11 @@ int Array<T>::get_subspace(int dimension) const {
             " dimension argument is ", dimension, "but must be positive --> result will be 0");
         return 0;
     }
-    if (dimension>this->dimensions){
+    if (dimension>this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'int Array<T>::get_subspace(int dimension)': ",
-            " dimension argument is ", dimension, "but must the Array has only ", this->dimensions,
-            " dimensions (indexing starts from zero, therefore ", this->dimensions-1,
+            " dimension argument is ", dimension, "but must the Array has only ", this->get_dimensions(),
+            " dimensions (indexing starts from zero, therefore ", this->get_dimensions()-1,
             " is the highest allowed value) --> result will be 0");
         return 0;
     }
@@ -343,13 +343,13 @@ void Array<T>::fill_identity(){
     this->fill_values(0);
     // get size of smallest dimension
     int max_index=this->get_size(0);
-    for (int i=1; i<dimensions; i++){
+    for (int i=1; i<this->get_dimensions(); i++){
         max_index=std::min(max_index,this->get_size(i));
     }
-    std::vector<int> index(dimensions);
+    std::vector<int> index(this->get_dimensions());
     // add 'ones' of identity matrix
     for (int i=0;i<max_index;i++){
-        for (int d=0;d<dimensions;d++){
+        for (int d=0; d<this->get_dimensions(); d++){
             index[d]=i;
         }
         this->set(index,1);
@@ -378,14 +378,14 @@ void Array<T>::fill_random_uniform(const T min, const T max){
 template<typename T>
 void Array<T>::fill_range(const T start, const T step){
     // deal with the special case of 1-dimensional Arrays
-    if (this->dimensions==1){
+    if (this->get_dimensions()==1){
         for (int i=0;i<this->data_elements;i++){
             this->data[i]=start+i*step;
         }
         return;
     }
     // for all Arrays with >1 dimensions:
-    std::vector<int> index(this->dimensions);
+    std::vector<int> index(this->get_dimensions());
     int zero_distance;
     for (int i=0;i<this->data_elements;i++){
         index = this->index(i);
@@ -1215,12 +1215,12 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
     try {
         // compute the dimensions of the output tensor
         std::vector<int> out_dims;
-        for (int i = 0; i < this->dimensions; i++) {
+        for (int i = 0; i < this->get_dimensions(); i++) {
             if (std::find(axes.begin(), axes.end(), i) == axes.end()) {
                 out_dims.push_back(this->dim_size[i]);
             }
         }
-        for (int i = 0; i < other.dimensions; i++) {
+        for (int i = 0; i < other.get_dimensions(); i++) {
             if (std::find(axes.begin(), axes.end(), i) == axes.end()) {
                 out_dims.push_back(other.dim_size[i]);
             }
@@ -1230,8 +1230,8 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
         result = std::make_unique<Array<T>>(out_dims);
         
         // perform the tensor contraction
-        std::vector<int> index1(this->dimensions, 0);
-        std::vector<int> index2(other.dimensions, 0);
+        std::vector<int> index1(this->get_dimensions(), 0);
+        std::vector<int> index2(other.get_dimensions(), 0);
         std::vector<int> index_out(out_dims.size(), 0);
         int contractionsize = 1;
         for (int i = 0; i < int(axes.size()); i++) {
@@ -1273,7 +1273,7 @@ Array<T> Array<T>::tensordot(const Array<T>& other, const std::vector<int>& axes
 template<typename T>
 Array<T> Array<T>::tensordot(const Array<T>& other) const {
     // check valid dimensions
-    if (this->dimensions!=other.dimensions || this->dimensions>2 || other.get_dimensions()>2){
+    if (this->get_dimensions()!=other.get_dimensions() || this->get_dimensions()>2 || other.get_dimensions()>2){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<T> Array<T>::tensordot(const Array<T>& other)': ",
             "this overload is meant to be used only if both Arrays are 1-dimensional or both are 2-dimensional; ",
@@ -1283,7 +1283,7 @@ Array<T> Array<T>::tensordot(const Array<T>& other) const {
         return this->tensordot(other, {0,1});
     }
     // use case for 1d Arrays:
-    if (this->dimensions==1){
+    if (this->get_dimensions()==1){
         // TODO
     }
     else {
@@ -3215,7 +3215,7 @@ Array<bool> Array<T>::operator!() const {
 // the function will otherwise return a NAN array!
 template<typename T>
 Array<bool> Array<T>::operator&&(const Array<T>& other) const {
-    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->size);
+    std::unique_ptr<Array<bool>> result = std::make_unique<Array<bool>>(this->dim_size);
     if (!this->equalsize(other)){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<bool> Array<T>::operator&&(const Array<T>& other)' ",
@@ -3414,7 +3414,7 @@ template<typename T>
 Array<T> Array<T>::concatenate(const Array<T>& other, const int axis) const {
 
     // check if both arrays have the same number of dimensions
-    if (this->dimensions != other.get_dimensions()){
+    if (this->get_dimensions() != other.get_dimensions()){
         throw std::invalid_argument("can't concatenate arrays with unequal number of dimensions");
     }
 
@@ -3441,13 +3441,13 @@ Array<T> Array<T>::concatenate(const Array<T>& other, const int axis) const {
     }
 
     // check if all dimensions except for the concatenation axis match
-    for (int d=0; d<this->dimensions; d++){
+    for (int d=0; d<this->get_dimensions(); d++){
         if (d!=axis && this->dim_size[d] != other.get_size(d)){
             throw std::invalid_argument("can't concatenate arrays with unequal dimension sizes along any axis other than the concatenation axis");
         }
     }
     // check for valid concatenation axis
-    if (axis<0 || axis>=this->dimensions){
+    if (axis<0 || axis>=this->get_dimensions()){
         throw std::invalid_argument("invalid concatenation axis: must fit withing the number of dimensions of the arrays to be concatenated");
     }
 
@@ -3715,7 +3715,7 @@ HistogramResult<T> Array<T>::histogram(int bars) const {
 template<typename T>
 Array<T> Array<T>::padding(const int amount, const T value) const {
     std::vector<int> target_shape = this->dim_size;
-    for (int d=0; d<this->dimensions; d++){
+    for (int d=0; d<this->get_dimensions(); d++){
         target_shape[d] = this->dim_size[d] + 2*amount;
     }
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(target_shape);
@@ -3735,7 +3735,7 @@ Array<T> Array<T>::padding(const int amount, const T value) const {
 template<typename T>
 Array<T> Array<T>::padding_pre(const int amount, const T value) const {
     std::vector<int> target_shape = this->dim_size;
-    for (int d=0; d<this->dimensions; d++){
+    for (int d=0; d<this->get_dimensions(); d++){
         target_shape[d] = this->dim_size[d] + amount;
     }
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(target_shape);
@@ -3755,7 +3755,7 @@ Array<T> Array<T>::padding_pre(const int amount, const T value) const {
 template<typename T>
 Array<T> Array<T>::padding_post(const int amount, const T value) const {
     std::vector<int> target_shape = this->dim_size;
-    for (int d=0; d<this->dimensions; d++){
+    for (int d=0; d<this->get_dimensions(); d++){
         target_shape[d] = this->dim_size[d] + amount;
     }
     std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(target_shape);
@@ -3797,34 +3797,34 @@ Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slid
     std::vector<int> slider_shape_vec = initlist_to_vector(slider_shape);
     std::vector<int> stride_shape_vec = initlist_to_vector(stride_shape);
     // confirm valid slider shape
-    if (int(slider_shape.size()) != this->dimensions){
+    if (int(slider_shape.size()) != this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "slider shape for pooling operation must have same number of dimensions ",
             "as the array it is acting upon -> auto-adjusting slider shape to fit");
-        while (int(slider_shape_vec.size()) < this->dimensions){
+        while (int(slider_shape_vec.size()) < this->get_dimensions()){
             slider_shape_vec.push_back(1);
         }
-        while (int(slider_shape_vec.size()) > this->dimensions){
+        while (int(slider_shape_vec.size()) > this->get_dimensions()){
             slider_shape_vec.pop_back();
         }
     }
     // confirm valid stride shape
-    if (int(stride_shape.size()) != this->dimensions){
+    if (int(stride_shape.size()) != this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "stride shape for pooling operation must have same number of dimensions ",
             "as the array it is acting upon -> auto-adjusting stride shape to fit");
-        while (int(stride_shape_vec.size()) < this->dimensions){
+        while (int(stride_shape_vec.size()) < this->get_dimensions()){
             stride_shape_vec.push_back(1);
         }
-        while (int(stride_shape_vec.size()) > this->dimensions){
+        while (int(stride_shape_vec.size()) > this->get_dimensions()){
             stride_shape_vec.pop_back();
         }            
     }
     // create source index
-    std::vector<int> index_source(this->dimensions);
+    std::vector<int> index_source(this->get_dimensions());
     // get result shape
-    std::vector<int> result_shape(this->dimensions,1);
-    for (int d=0;d<this->dimensions;d++){
+    std::vector<int> result_shape(this->get_dimensions(),1);
+    for (int d=0;d<this->get_dimensions();d++){
         result_shape[d] = this->dim_size[d] / std::max(1,stride_shape_vec[d]);
     }
     // create result array
@@ -3833,14 +3833,14 @@ Array<T> Array<T>::pool(PoolMethod method, const std::initializer_list<int> slid
     // create a sliding box for pooling
     Array<double> slider = Array<double>(slider_shape_vec);
     std::vector<int> index_slider(slider.get_dimensions());
-    std::vector<int> index_combined(this->dimensions);
+    std::vector<int> index_combined(this->get_dimensions());
     // iterate over result
     int result_elements = result->get_elements();
     for (int j=0;j<result_elements;j++){
         // get associated result index
         index_result = result->get_index(j);
         // get corresponding source index at slider position
-        for (int d=0;d<this->dimensions;d++){
+        for (int d=0;d<this->get_dimensions();d++){
             index_source[d] = index_result[d] * stride_shape_vec[d];
         }
         // iterate over elements of the slider
@@ -3881,34 +3881,34 @@ Array<T> Array<T>::pool(PoolMethod method, const std::vector<int> slider_shape, 
     std::vector<int> slider_shape_vec = slider_shape;
     std::vector<int> stride_shape_vec = stride_shape;
     // confirm valid slider shape
-    if (int(slider_shape.size()) != this->dimensions){
+    if (int(slider_shape.size()) != this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "slider shape for pooling operation must have same number of dimensions ",
             "as the array it is acting upon -> auto-adjusting slider shape to fit");
-        while (int(slider_shape_vec.size()) < this->dimensions){
+        while (int(slider_shape_vec.size()) < this->get_dimensions()){
             slider_shape_vec.push_back(1);
         }
-        while (int(slider_shape_vec.size()) > this->dimensions){
+        while (int(slider_shape_vec.size()) > this->get_dimensions()){
             slider_shape_vec.pop_back();
         }
     }
     // confirm valid stride shape
-    if (int(stride_shape.size()) != this->dimensions){
+    if (int(stride_shape.size()) != this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "stride shape for pooling operation must have same number of dimensions ",
             "as the array it is acting upon -> auto-adjusting stride shape to fit");
-        while (int(stride_shape_vec.size()) < this->dimensions){
+        while (int(stride_shape_vec.size()) < this->get_dimensions()){
             stride_shape_vec.push_back(1);
         }
-        while (int(stride_shape_vec.size()) > this->dimensions){
+        while (int(stride_shape_vec.size()) > this->get_dimensions()){
             stride_shape_vec.pop_back();
         }            
     }
     // create source index
-    std::vector<int> index_source(this->dimensions);
+    std::vector<int> index_source(this->get_dimensions());
     // get result shape
-    std::vector<int> result_shape(this->dimensions,1);
-    for (int d=0;d<this->dimensions;d++){
+    std::vector<int> result_shape(this->get_dimensions(),1);
+    for (int d=0;d<this->get_dimensions();d++){
         result_shape[d] = this->dim_size[d] / std::max(1,stride_shape_vec[d]);
     }
     // create result array
@@ -3917,14 +3917,14 @@ Array<T> Array<T>::pool(PoolMethod method, const std::vector<int> slider_shape, 
     // create a sliding box for pooling
     Array<double> slider = Array<double>(slider_shape_vec);
     std::vector<int> index_slider(slider.get_dimensions());
-    std::vector<int> index_combined(this->dimensions);
+    std::vector<int> index_combined(this->get_dimensions());
     // iterate over result
     int result_elements = result->get_elements();
     for (int j=0;j<result_elements;j++){
         // get associated result index
         index_result = result->get_index(j);
         // get corresponding source index at slider position
-        for (int d=0;d<this->dimensions;d++){
+        for (int d=0;d<this->get_dimensions();d++){
             index_source[d] = index_result[d] * stride_shape_vec[d];
         }
         // iterate over elements of the slider
@@ -3963,13 +3963,13 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
     std::unique_ptr<Array<T>> result;
 
     // check valid filter dimensions
-    if (filter.dimensions>this->dimensions){
+    if (filter.get_dimensions() > this->get_dimensions()){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<T> Array<T>::convolution(const Array<T>& filter)': ",
             "filter can't have more dimensions then the array; filter has shape ", filter.get_shapestring(),
             ", source array has shape ", this->get_shapestring());
     }
-    for (int d=0;d<filter.dimensions;d++){
+    for (int d=0; d<filter.get_dimensions(); d++){
         if (filter.get_size(d)>this->dim_size[d]){
             Log::log(LOG_LEVEL_WARNING,
                 "invalid usage of method 'Array<T> Array<T>::convolution(const Array<T>& filter)': ",
@@ -3979,14 +3979,14 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
                 " in dimension ", d);
         }
     }
-    if (filter.dimensions<this->dimensions-1){
+    if (filter.get_dimensions() < this->get_dimensions()-1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'Array<T> Array<T>::convolution(const Array<T>& filter)': ",
-            "Array is ", this->dimensions, "-dimensional, therefore only filters with ",
-            this->dimensions-1, " or ", this->dimensions, " are allowed");
+            "Array is ", this->get_dimensions(), "-dimensional, therefore only filters with ",
+            this->get_dimensions()-1, " or ", this->get_dimensions(), " are allowed");
     }
     // 1d convolution for vectors
-    if (this->dimensions == 1){
+    if (this->get_dimensions() == 1){
         try {
             int filter_width = filter.get_size(0);
             result = std::make_unique<Array<T>>(this->data_elements - ((filter_width-1)*!padding));
@@ -4005,7 +4005,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
         }
     }
     // 2d convolution for matrices
-    if (this->dimensions==2 && filter.dimensions==2){
+    if (this->get_dimensions()==2 && filter.get_dimensions()==2){
         try {
             int filter_height = filter.get_size(0);
             int filter_width = filter.get_size(1);
@@ -4032,7 +4032,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
         }
     }
     // 2d convoltion for 3d arrays (with 3d filters)
-    if (this->dimensions==3 && filter.dimensions==3){
+    if (this->get_dimensions()==3 && filter.get_dimensions()==3){
         try {
             int filter_height = filter.get_size(0);
             int filter_width = filter.get_size(1);
@@ -4063,17 +4063,17 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
     }
 
     // nd convolution
-    if (filter.dimensions == this->dimensions-1){
+    if (filter.get_dimensions() == this->get_dimensions()-1){
         try {
             std::vector<int> result_shape;
-            for (int d=0;d<this->dimensions-1;d++){
+            for (int d=0;d<this->get_dimensions()-1;d++){
                 result_shape.push_back(this->dim_size[d]- (filter.get_size(d)-1)*padding);
             }
-            result_shape.push_back(filter.get_size(filter.dimensions-1));
+            result_shape.push_back(filter.get_size(filter.get_dimensions()-1));
             result = std::make_unique<Array<T>>(result_shape);
-            std::vector<int> source_index(this->dimensions);
-            std::vector<int> filter_index(filter.dimensions);
-            std::vector<int> combined_index(this->dimensions);
+            std::vector<int> source_index(this->get_dimensions());
+            std::vector<int> filter_index(filter.get_dimensions());
+            std::vector<int> combined_index(this->get_dimensions());
             for (int i=0;i<result->get_elements();i++){
                 source_index = this->get_index(i);
                 combined_index = source_index;
@@ -4081,7 +4081,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
                 for (int ii=0;ii<filter.data_elements;ii++){
                     filter_index = filter.get_index(ii);
                     bool index_okay=true;
-                    for (int d=0;d<filter.dimensions;d++){
+                    for (int d=0;d<filter.get_dimensions();d++){
                         combined_index[d] += filter_index[d];
                         if (combined_index[d]>=result->get_size(d)){
                             index_okay=false;
@@ -4097,7 +4097,7 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
                 "method 'Array<T> Array<T>::convolution(const Array<T>& filter)' has failed ",
-                "to calculate convolution operation for the ", this->dimensions, "d source ",
+                "to calculate convolution operation for the ", this->get_dimensions(), "d source ",
                 "Array with a ", filter.get_dimensions(), "d filter");                
         }
     }
@@ -4106,124 +4106,101 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
 }
 
 template<typename T>
-Array<int> Array<T>::get_convolution_shape(Array<int>& filter_shape, const bool padding) const {
+std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding) const {
 
     // check valid filter dimensions
-    if (filter_shape.get_dimensions()>this->dimensions){
+    int filter_dimensions = int(filter_shape.size());
+    int source_dimensions = this->get_dimensions();
+    if (filter_dimensions > source_dimensions){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method ",
-            "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
-            "filter can't have more dimensions then the array; filter has shape ", filter_shape.get_shapestring(),
-            ", source array has shape ", this->get_shapestring());
+            "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const': ",
+            "filter can't have more dimensions then the array; filter has ", filter_shape.size(),
+            " dimensions, source array has shape ", this->get_shapestring(), " = ", this->get_dimensions(), " dimensions");
     }
-    for (int d=0;d<filter_shape.get_dimensions();d++){
-        if (filter_shape.get_size(d)>this->get_size(d)){
+    for (int d=0; d<filter_dimensions; d++){
+        if (filter_shape[d] > this->get_size(d)){
             Log::log(LOG_LEVEL_WARNING,
                 "invalid usage of method ",
-                "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
-                "the source Array has shape ", this->get_shapestring(), " whilst the filter has shape ",
-                filter_shape.get_shapestring(), ", therefore the filter has size ", filter_shape.get_size(d),
+                "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const' ",
+                " with source Array of shape ", this->get_shapestring(), " and a ",
+                filter_shape.size(), "dimensional filter; the filter has size ", filter_shape[d],
                 " in dimension ", d, ", but the Array has only size ", this->get_size(d),
                 " in dimension ", d);
         }
     }
-    if (filter_shape.get_dimensions()<this->dimensions-1){
+    if (filter_dimensions < source_dimensions-1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method ",
-            "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)': ",
-            "Array is ", this->dimensions, "-dimensional, therefore only filters with ",
-            this->dimensions-1, " or ", this->dimensions, " are allowed");
+            "'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const': ",
+            "Array is ", this->get_dimensions(), "-dimensional, therefore only filters with ",
+            source_dimensions>1 ? std::to_string(source_dimensions-1) + " or " : "",
+            this->get_dimensions(), " are allowed");
     }
 
     // return original shape if padding applies
-    if (padding) {
-        Array<int> result(this->dimensions);
-        for (int d=0; d<this->dimensions; d++) {
-            result[d] = this->get_size(d);
-        }
-        return result;
-    }
+    if (padding) {return this->get_shape();}
 
     // 1d convolution for 1d arrays
-    if (this->dimensions == 1){
-        Array<int> result(1);
+    if (source_dimensions == 1){
+        std::vector<int> result(1);
         try {
-            int filter_width = filter_shape.get_size(0);
-            result[0] = this->data_elements - filter_width;
+            result[0] = this->data_elements - filter_shape[0];
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const' ",
+                "has failed with source Array of shape ", this->get_shapestring(), " and a ", filter_shape.size(), "dimensional filter");
         }
         return result;
     }
     // 2d convolution for 2d arrays
-    if (this->dimensions==2 && filter_shape.get_dimensions()==2){
-        Array<int> result(2);
+    if (source_dimensions==2 && filter_dimensions==2){
+        std::vector<int> result(2);
         try {
-            result[0] = this->dim_size[0]-filter_shape.get_size(0);
-            result[1] = this->dim_size[1]-filter_shape.get_size(1);
+            result[0] = this->dim_size[0]-filter_shape[0];
+            result[1] = this->dim_size[1]-filter_shape[1];
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());            
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const' ",
+                "has failed with source Array of shape ", this->get_shapestring(), " and a ", filter_shape.size(), "dimensional filter");            
         }
         return result;
     }
     // 2d convoltion for 3d arrays
-    if (this->dimensions==3 && filter_shape.get_dimensions()==3){
-        Array<int> result(2);
+    if (source_dimensions==3 && filter_dimensions==3){
+        std::vector<int> result(2);
         try {
-            result[0] = this->dim_size[0]-filter_shape.get_size(0);
-            result[1] = this->dim_size[1]-filter_shape.get_size(1);
+            result[0] = this->dim_size[0]-filter_shape[0];
+            result[1] = this->dim_size[1]-filter_shape[1];
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());                        
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const' ",
+                "has failed with source Array shape ", this->get_shapestring(), " and a ", filter_shape.size(), "dimensional filter");                       
         }     
         return result;   
     }
 
     // nd convolution
-    if (filter_shape.get_dimensions() == this->dimensions-1){
-        Array<int> result;
+    if (filter_dimensions == source_dimensions-1){
+        std::vector<int> result;
         try {
-            for (int d=0;d<this->dimensions-1;d++){
-                result.push_back(this->dim_size[d]-filter_shape.get_size(d));
+            for (int d=0; d<source_dimensions-1; d++){
+                result.emplace_back(this->dim_size[d]-filter_shape[d]);
             }
-            result.push_back(filter_shape.get_size(filter_shape.get_dimensions()-1));
             return result;
         }
         catch (...) {
             Log::log(LOG_LEVEL_WARNING,
-                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false)' ",
-                "has failed with source Array shape ", this->get_shapestring(), " and filter shape ", filter_shape.get_shapestring());
+                "method 'std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding=false) const' ",
+                "has failed with source Array shape ", this->get_shapestring(), " and a ", filter_shape.size(), "dimensional filter");
         }
         return result;
     }
     // default return statement if the conditions above all fail
     return this->get_shape();
-}
-
-template<typename T>
-std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape, const bool padding) const {
-    // convert filter shape from type std::vector to Array
-    Array<int> filter_shape_Array(filter_shape.size());
-    for (int d=0; d<int(filter_shape.size()); d++){
-        filter_shape_Array[d] = filter_shape[d];
-    }
-    // get result
-    Array<int> result_Array = get_convolution_shape(filter_shape_Array, padding);
-    // convert back into std::vector
-    std::vector<int> result_vector(result_Array.get_dimensions());
-    for (int d=0; d<result_Array.get_dimensions(); d++){
-        result_vector[d] = result_Array[d];
-    }
-    // return result
-    return result_vector;
 }
 
 // +=================================+   
@@ -4235,10 +4212,8 @@ std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape,
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
 Array<T>::Array(const std::initializer_list<int>& shape) {
-    // set dimensions
-    this->dimensions = (int)shape.size();
     // check if init_list empty
-    if (this->dimensions==0){
+    if (this->get_dimensions()==0){
         this->data_elements=0;
         this->capacity=0;
         return;
@@ -4246,21 +4221,21 @@ Array<T>::Array(const std::initializer_list<int>& shape) {
     // store size of individual dimensions in std::vector<int> size member variable
     auto iterator=shape.begin();
     int n=0;
-    this->dim_size.resize(this->dimensions);
+    this->dim_size.resize(this->get_dimensions());
     for (; iterator!=shape.end();n++, iterator++){
         this->dim_size[n]=*iterator;
     }
     // calculate the subspace size for each dimension
     int totalsize = 1;
-    this->subspace_size.resize(this->dimensions);
-    for (int i = 0; i < this->dimensions; i++) {
+    this->subspace_size.resize(this->get_dimensions());
+    for (int i = 0; i < this->get_dimensions(); i++) {
         totalsize *= this->dim_size[i];
         this->subspace_size[i] = totalsize;
     }
     this->data_elements = totalsize;
     // set reserve capacity for 1d Arrays
     this->capacity = this->data_elements;
-    if (this->dimensions==1){
+    if (this->get_dimensions()==1){
         this->capacity = (1.0f+this->_reserve) * this->data_elements;
     }
     // initialize data buffer
@@ -4274,13 +4249,11 @@ template<typename T>
 Array<T>::Array(const std::vector<int>& shape) {
     // check if init_list empty
     if (shape.size()==0){return;}
-    // set dimensions
-    this->dimensions = shape.size();
     // calculate subspace size for each dimension
     int totalsize = 1;
-    this->subspace_size.resize(this->dimensions);
-    this->dim_size.resize(this->dimensions);
-    for (int i = 0; i < this->dimensions; i++) {
+    this->subspace_size.resize((int)shape.size());
+    this->dim_size.resize((int)shape.size());
+    for (int i = 0; i < this->get_dimensions(); i++) {
         this->subspace_size[i] = totalsize;
         this->dim_size[i]=shape[i];
         totalsize *= this->dim_size[i];
@@ -4288,7 +4261,7 @@ Array<T>::Array(const std::vector<int>& shape) {
     this->data_elements = totalsize;
     // set reserve capacity for 1d Arrays
     this->capacity = this->data_elements;
-    if (this->dimensions==1){
+    if (this->get_dimensions()==1){
         this->capacity = (1.0f+this->_reserve) * this->data_elements;
     }
     // initialize data buffer
@@ -4298,7 +4271,7 @@ Array<T>::Array(const std::vector<int>& shape) {
 // constructor for 1d Arrays
 template<typename T>
 Array<T>::Array(const int elements) {
-    Array({elements});
+    Array(std::vector<int>({elements}));
 }
 
 // Array move constructor
@@ -4306,7 +4279,6 @@ template<typename T>
 Array<T>::Array(Array&& other) noexcept {
     this->data_elements = other.get_elements();
     this->capacity = other.get_capacity();
-    this->dimensions = other.dimensions;    
     this->data = std::move(other.data);
     this->dim_size = std::move(other.dim_size);
     this->subspace_size = std::move(other.subspace_size);
@@ -4318,7 +4290,6 @@ template<typename T>
 Array<T>::Array(Array& other) {
     this->data_elements = other.get_elements();
     this->capacity = other.get_capacity();    
-    this->dimensions = other.dimensions;
     this->dim_size = other.dim_size;
     this->subspace_size = other.subspace_size;
     this->data = std::make_unique<T[]>(data_elements);
@@ -4340,10 +4311,10 @@ Array<T>::~Array(){
 // and their size per individual dimensions
 template<typename T>
 bool Array<T>::equalsize(const Array<T>& other) const {
-    if (this->dimensions!=other.get_dimensions()){
+    if (this->get_dimensions()!=other.get_dimensions()){
         return false;
     }
-    for (int n=0; n<this->dimensions; n++){
+    for (int n=0; n<this->get_dimensions(); n++){
         if (this->dim_size[n]!=other.get_size(n)){
             return false;
         }
@@ -4374,10 +4345,10 @@ void Array<T>::resize_array(std::unique_ptr<T[]>& arr, const int oldSize, const 
 // returns the resulting total number of elements
 template<typename T>
 int Array<T>::push_back(const T init_value){
-    if (this->dimensions != 1){
+    if (this->get_dimensions() != 1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'int Array<T>::push_back(const T value)': ",
-            "can only be used with 1d Arrays but this Array is ", this->dimensions, "d!");
+            "can only be used with 1d Arrays but this Array is ", this->get_dimensions(), "d!");
         return this->data_elements;
     }
     this->data_elements++;
@@ -4393,14 +4364,14 @@ int Array<T>::push_back(const T init_value){
 // resize the array in the specified dimension (default: dimension 0)
 template<typename T>
 void Array<T>::resize(const int newsize, int dimension, T init_value){
-    int dimensions_old = this->dimensions;
+    int dimensions_old = this->get_dimensions();
     int dimensions_new = std::max(dimensions_old, dimension+1);
     // make a copy of the original Array
     Array<T> temp_copy = *this;
     // set up the new dimensions
     this->dim_size.resize(dimensions_new);
     for (int d=0; d<dimensions_new; d++){
-        if (d==dimensions){
+        if (d==this->get_dimensions()){
             this->dim_size[d] = newsize;
         }
         else if (d>=dimensions_old && d!=dimension){
@@ -4410,11 +4381,10 @@ void Array<T>::resize(const int newsize, int dimension, T init_value){
             // keep the size of the given dimension as it is
         }
     }
-    this->dimensions = dimensions_new;
     // get number of data_elements with new size
     int oldSize = this->data_elements;
     this->data_elements = this->dim_size[0];
-    for (int d=1; d<this->dimensions; d++){
+    for (int d=1; d<this->get_dimensions(); d++){
         this->data_elements *= this->dim_size[d];
     }    
     // reserve memory for the new elements
@@ -4458,10 +4428,10 @@ int Array<T>::shrink(const int remove_amount, int dimension){
 // pop 1 element from the end of the Array
 template<typename T>
 T Array<T>::pop_last(){
-    if (this->dimensions != 1){
+    if (this->get_dimensions() != 1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'T Array<T>::pop_last()': ",
-            "is meant to be used only for 1d Arrays but this Array is ", this->dimensions, "d!",
+            "is meant to be used only for 1d Arrays but this Array is ", this->get_dimensions(), "d!",
             " -> will return the last element of the flattend array without removing anything");
         return this->data[this->data_elements-1];
     }
@@ -4473,10 +4443,10 @@ T Array<T>::pop_last(){
 // pop 1 element from the beginning of the Array
 template<typename T>
 T Array<T>::pop_first(){
-    if (this->dimensions != 1){
+    if (this->get_dimensions() != 1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'T Array<T>::pop_first()': ",
-            "is meant to be used only for 1d Arrays but this Array is ", this->dimensions, "d!",
+            "is meant to be used only for 1d Arrays but this Array is ", this->get_dimensions(), "d!",
             " -> will return the first element of the flattend array without removing anything");
         return this->data[0];
     }    
@@ -4503,8 +4473,8 @@ T Array<T>::erase(const int index){
 // helper method to confirm valid multidimensional index
 template<typename T>
 bool Array<T>::index_isvalid(const std::vector<int>& index) const {
-    if ((int)index.size() != this->dimensions) return false;
-    for (int d=0; d<this->dimensions; d++){
+    if ((int)index.size() != this->get_dimensions()) return false;
+    for (int d=0; d<this->get_dimensions(); d++){
         if (index[d]<0 || index[d]>=this->dim_size[d]) return false;
     }
     return true;
@@ -4513,7 +4483,7 @@ bool Array<T>::index_isvalid(const std::vector<int>& index) const {
 // helper method to confirm valid 1d index
 template<typename T>
 bool Array<T>::index_isvalid(const int index) const {
-    return this->dimensions==1 && index>0 && index<this->data_elements ? true : false;
+    return this->get_dimensions()==1 && index>0 && index<this->data_elements ? true : false;
 }
 
 // +=================================+   
@@ -4524,7 +4494,7 @@ bool Array<T>::index_isvalid(const int index) const {
 // i.e. as transposition with data in rows (single column)
 template<typename T>
 Array<T> Array<T>::transpose() const {
-    if (this->dimensions==1){
+    if (this->get_dimensions()==1){
         std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>({this->data_elements,1});
         for (int i=0; i<this->data_elements; i++){
             result->set({i,0}, this->data[i]);
@@ -4907,7 +4877,7 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
         std::cout << comment << std::endl;
     }
 
-    if (this->dimensions==1){
+    if (this->get_dimensions()==1){
         // iterate over elements
         for (int i=0;i<this->data_elements;i++){
             // add indices
@@ -4927,14 +4897,14 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
     }
 
     // create a vector for temporary storage of the current index (needed for indexing dimensions >=2);
-    std::vector<int> index(this->dimensions);
+    std::vector<int> index(this->get_dimensions());
     std::fill(index.begin(),index.end(),0);   
 
-    if (this->dimensions==2){
+    if (this->get_dimensions()==2){
         // iterate over rows
-        for (int row=0; row < (this->dimensions==1 ? 1 : this->dim_size[0]); row++) {
+        for (int row=0; row < (this->get_dimensions()==1 ? 1 : this->dim_size[0]); row++) {
             // iterate over columns
-            for (int col=0; col < (this->dimensions==1 ? this->dim_size[0] : this->dim_size[1]); col++) {                
+            for (int col=0; col < (this->get_dimensions()==1 ? this->dim_size[0] : this->dim_size[1]); col++) {                
                 // add indices
                 if (with_indices) {
                     std::cout << "[" << row << "]" << "[" << col << "]=";
@@ -4962,7 +4932,7 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
                 // add opening brace for column
                 std::cout << "{";
                 // iterate over higher dimensions
-                for (int d = 2; d < this->dimensions; d++) {
+                for (int d = 2; d < this->get_dimensions(); d++) {
                     // add opening brace for dimension
                     std::cout << "{";
                     // iterate over entries in the current dimension
@@ -4971,7 +4941,7 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
                         index[d] = i;
                         // add indices
                         if (with_indices) {
-                            for (int dd = 0; dd < this->dimensions; dd++) {
+                            for (int dd = 0; dd < this->get_dimensions(); dd++) {
                                 std::cout << "[" << index[dd] << "]";
                             }
                             std::cout << "=";
@@ -4986,7 +4956,7 @@ void Array<T>::print(std::string comment, std::string delimiter, std::string lin
                     // add closing brace for the current dimension
                     std::cout << "}";
                     // add delimiter between dimensions
-                    if (d != this->dimensions - 1) {
+                    if (d != this->get_dimensions() - 1) {
                         std::cout << delimiter;
                     }
                 }
