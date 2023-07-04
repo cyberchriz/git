@@ -534,7 +534,7 @@ void NeuralNet::backpropagate(){
                             lookahead = (layer[l].delta_W_x[j] * momentum) +
                                         (layer[l-1].h * layer[l].gradient[j] * lr * (1-momentum));
                             // momentum step
-                            layer[l].delta_W_x = (lookahead * momentum) +
+                            layer[l].delta_W_x[j] = (lookahead * momentum) +
                                                 (layer[l-1].h * layer[l].gradient[j] * lr * (1-momentum));
                             // update step
                             layer[l].W_x[j] -= layer[l].delta_W_x[j];
@@ -559,7 +559,7 @@ void NeuralNet::backpropagate(){
                             // opt_w update
                             layer[l].opt_w[j] = (layer[l].opt_w[j] * 0.999) + (layer[l-1].h * (pow(layer[l].gradient[j],2) * 0.001));
                             // get delta
-                            layer[l].delta_W_x = layer[l].opt_v[j].Hadamard_division((layer[l].opt_w[j]+1e-8).sqrt()) * lr;
+                            layer[l].delta_W_x[j] = layer[l].opt_v[j].Hadamard_division((layer[l].opt_w[j]+1e-8).sqrt()) * lr;
                             // update step
                             layer[l].W_x[j] -= layer[l].delta_W_x[j];
                         }
@@ -997,20 +997,20 @@ void NeuralNet::addlayer_lstm(std::vector<int> shape, const int timesteps){
     layer_init(LSTM_LAYER, shape);
     int l = layers-1;
     layer[l].timesteps = timesteps;
-    layer[l].c_t = Array<Array<double>>(timesteps);
-    layer[l].h_t = Array<Array<double>>(timesteps);
-    layer[l].x_t = Array<Array<double>>(timesteps);
-    layer[l].gradient_t = Array<Array<double>>(timesteps);
-    layer[l].f_gate_t = Array<Array<double>>(timesteps);
-    layer[l].i_gate_t = Array<Array<double>>(timesteps);
-    layer[l].o_gate_t = Array<Array<double>>(timesteps);
-    layer[l].c_gate_t = Array<Array<double>>(timesteps);
+    layer[l].c_t = Array<Array<double>>({timesteps});
+    layer[l].h_t = Array<Array<double>>({timesteps});
+    layer[l].x_t = Array<Array<double>>({timesteps});
+    layer[l].gradient_t = Array<Array<double>>({timesteps});
+    layer[l].f_gate_t = Array<Array<double>>({timesteps});
+    layer[l].i_gate_t = Array<Array<double>>({timesteps});
+    layer[l].o_gate_t = Array<Array<double>>({timesteps});
+    layer[l].c_gate_t = Array<Array<double>>({timesteps});
     for (int t=0;t<timesteps;t++){
         // initialize vectors of timesteps for the cell state, hidden state and gradient h_t
         layer[l].c_t[t] = Array<double>(shape); layer[l].c_t[t].fill_zeros();
         layer[l].h_t[t] = Array<double>(shape); layer[l].h_t[t].fill_zeros();
         layer[l].x_t[t] = Array<double>(shape); layer[l].h_t[t].fill_zeros();
-        layer[l].gradient_t[t] = Array<double>(shape); layer[l].gradient_t.fill_zeros();
+        layer[l].gradient_t[t] = Array<double>(shape); layer[l].gradient_t[t].fill_zeros();
         // initialize gate value arrays
         layer[l].f_gate_t[t] = Array<double>(shape); layer[l].f_gate_t[t].fill_zeros();
         layer[l].i_gate_t[t] = Array<double>(shape); layer[l].i_gate_t[t].fill_zeros();
@@ -1050,12 +1050,12 @@ void NeuralNet::addlayer_GRU(std::vector<int> shape, const int timesteps){
     layer_init(GRU_LAYER, shape);
     int l = layers-1;
     layer[l].timesteps = timesteps;
-    layer[l].c_t = Array<Array<double>>(timesteps);
-    layer[l].h_t = Array<Array<double>>(timesteps);
-    layer[l].x_t = Array<Array<double>>(timesteps);
-    layer[l].z_gate_t = Array<Array<double>>(timesteps);
-    layer[l].r_gate_t = Array<Array<double>>(timesteps);
-    layer[l].c_gate_t = Array<Array<double>>(timesteps);    
+    layer[l].c_t = Array<Array<double>>({timesteps});
+    layer[l].h_t = Array<Array<double>>({timesteps});
+    layer[l].x_t = Array<Array<double>>({timesteps});
+    layer[l].z_gate_t = Array<Array<double>>({timesteps});
+    layer[l].r_gate_t = Array<Array<double>>({timesteps});
+    layer[l].c_gate_t = Array<Array<double>>({timesteps});    
     for (int t=0;t<timesteps;t++){
         // initialize vectors of timesteps for the cell state and hidden state
         layer[l].c_t[t] = Array<double>(shape); layer[l].c_t[t].fill_zeros();
@@ -1094,8 +1094,8 @@ void NeuralNet::addlayer_recurrent(std::vector<int> shape, int timesteps){
     layer_init(RECURRENT_LAYER, shape);
     int l = layers-1;
     layer[l].timesteps = timesteps;
-    layer[l].x_t = Array<Array<double>>(timesteps);
-    layer[l].h_t = Array<Array<double>>(timesteps);
+    layer[l].x_t = Array<Array<double>>({timesteps});
+    layer[l].h_t = Array<Array<double>>({timesteps});
     layer[l].U = Array<Array<double>>(shape);
     for (int j=0; j<layer[l].neurons; j++){
         layer[l].U[j] = Array<double>(shape); layer[l].U[j].fill_He_ReLU(layer[l].neurons);
@@ -1137,10 +1137,12 @@ void NeuralNet::addlayer_convolutional(const int filter_radius, bool padding){
     }
     // initialize layer
     if (layer[layers-1].is_stacked){
-        layer_init(CONVOLUTIONAL_LAYER, layer[layers-1].feature_stack_h[0].get_convolution_shape(filter_shape, padding));
+        std::vector<int> shape = layer[layers-1].feature_stack_h[0].get_convolution_shape(filter_shape, padding);
+        layer_init(CONVOLUTIONAL_LAYER, shape);
     }
     else {  
-        layer_init(CONVOLUTIONAL_LAYER, layer[layers-1].h.get_convolution_shape(filter_shape, padding));
+        std::vector<int> shape = layer[layers-1].h.get_convolution_shape(filter_shape, padding);
+        layer_init(CONVOLUTIONAL_LAYER, shape);
     }
     layer[layers-1].filter_shape = filter_shape;
 }
@@ -1269,12 +1271,11 @@ void NeuralNet::layer_init(LayerType type, std::vector<int> shape){
     if (type==CONVOLUTIONAL_LAYER){layer[l].is_stacked=true;}
     // initialize 'x', 'h' and 'gradient' arrays
     if (layer[l].is_stacked){
-        layer[l].feature_stack_h = Array<Array<double>>(feature_maps);
-        layer[l].gradient_stack = Array<Array<double>>(feature_maps);
+        layer[l].feature_stack_h = Array<Array<double>>({feature_maps});
+        layer[l].gradient_stack = Array<Array<double>>({feature_maps});
         for (int i=0; i<feature_maps; i++){
-            layer[l].feature_stack_h[i] = Array<double>(shape);
-            layer[l].gradient_stack[i] = Array<double>(shape);
-            layer[l].gradient_stack[i].fill_zeros();
+            layer[l].feature_stack_h.data[i] = Array<double>(shape);
+            layer[l].gradient_stack.data[i] = Array<double>(shape);
         }
         layer[l].neurons = layer[l].feature_stack_h[0].get_elements() * feature_maps;
     }

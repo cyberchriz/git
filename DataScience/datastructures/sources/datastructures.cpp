@@ -2681,12 +2681,11 @@ Array<T>& Array<T>::operator=(const Array<T>& other) {
 // Array move assignment
 template<typename T>
 Array<T>& Array<T>::operator=(Array<T>&& other) noexcept {
-    this->resize(other.get_elements());
-    this->data_elements = other.get_elements();
+    this->data_elements = std::move(other.data_elements);
     this->data = std::move(other.data);
     this->dim_size = std::move(other.dim_size);
     this->subspace_size = std::move(other.subspace_size);
-    this->capacity = other.get_capacity();
+    this->capacity = std::move(other.capacity);
     other.data.reset();
     return *this;
 }
@@ -3332,7 +3331,8 @@ Array<T*> Array<T>::operator&() const {
 // flattens the Array into a one-dimensional vector
 template<typename T>
 Array<T> Array<T>::flatten() const {
-    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(this->data_elements);
+    std::initializer_list<int> result_shape = {this->data_elements};
+    std::unique_ptr<Array<T>> result = std::make_unique<Array<T>>(result_shape);
     for (int i=0;i<this->data_elements;i++){
         result->data[i]=this->data[i];
     }
@@ -3989,7 +3989,8 @@ Array<T> Array<T>::convolution(const Array<T>& filter, bool padding) const {
     if (this->get_dimensions() == 1){
         try {
             int filter_width = filter.get_size(0);
-            result = std::make_unique<Array<T>>(this->data_elements - ((filter_width-1)*!padding));
+            std::initializer_list<int> result_shape = {this->data_elements - ((filter_width-1)*!padding)};
+            result = std::make_unique<Array<T>>(result_shape);
             result->fill_zeros();
             for (int i=0; i<result->get_elements(); i++){
                 for (int ii=0; ii<filter_width; ii++){
@@ -4212,8 +4213,9 @@ std::vector<int> Array<T>::get_convolution_shape(std::vector<int>& filter_shape,
 // as an initializer_list, e.g. {3,4,4}
 template<typename T>
 Array<T>::Array(const std::initializer_list<int>& shape) {
-    // check if init_list empty
-    if (this->get_dimensions()==0){
+    // check if shape init_list is empty
+    int dimensions = (int)shape.size();
+    if (dimensions==0){
         this->data_elements=0;
         this->capacity=0;
         return;
@@ -4221,21 +4223,21 @@ Array<T>::Array(const std::initializer_list<int>& shape) {
     // store size of individual dimensions in std::vector<int> size member variable
     auto iterator=shape.begin();
     int n=0;
-    this->dim_size.resize(this->get_dimensions());
+    this->dim_size.resize(dimensions);
     for (; iterator!=shape.end();n++, iterator++){
         this->dim_size[n]=*iterator;
     }
     // calculate the subspace size for each dimension
     int totalsize = 1;
-    this->subspace_size.resize(this->get_dimensions());
-    for (int i = 0; i < this->get_dimensions(); i++) {
+    this->subspace_size.resize(dimensions);
+    for (int i = 0; i < dimensions; i++) {
         totalsize *= this->dim_size[i];
         this->subspace_size[i] = totalsize;
     }
     this->data_elements = totalsize;
     // set reserve capacity for 1d Arrays
     this->capacity = this->data_elements;
-    if (this->get_dimensions()==1){
+    if (dimensions==1){
         this->capacity = (1.0f+this->_reserve) * this->data_elements;
     }
     // initialize data buffer
@@ -4247,13 +4249,18 @@ Array<T>::Array(const std::initializer_list<int>& shape) {
 // as type std::vector<int>
 template<typename T>
 Array<T>::Array(const std::vector<int>& shape) {
-    // check if init_list empty
-    if (shape.size()==0){return;}
+    // check if shape vector is empty
+    int dimensions = (int)shape.size();
+    if (dimensions==0){
+        this->data_elements=0;
+        this->capacity=0;
+        return;
+    }    
     // calculate subspace size for each dimension
     int totalsize = 1;
     this->subspace_size.resize((int)shape.size());
     this->dim_size.resize((int)shape.size());
-    for (int i = 0; i < this->get_dimensions(); i++) {
+    for (int i = 0; i < dimensions; i++) {
         this->subspace_size[i] = totalsize;
         this->dim_size[i]=shape[i];
         totalsize *= this->dim_size[i];
@@ -4261,17 +4268,11 @@ Array<T>::Array(const std::vector<int>& shape) {
     this->data_elements = totalsize;
     // set reserve capacity for 1d Arrays
     this->capacity = this->data_elements;
-    if (this->get_dimensions()==1){
+    if (dimensions==1){
         this->capacity = (1.0f+this->_reserve) * this->data_elements;
     }
     // initialize data buffer
     this->data = std::make_unique<T[]>(this->capacity);
-}
-
-// constructor for 1d Arrays
-template<typename T>
-Array<T>::Array(const int elements) {
-    Array(std::vector<int>({elements}));
 }
 
 // Array move constructor
@@ -4344,7 +4345,7 @@ void Array<T>::resize_array(std::unique_ptr<T[]>& arr, const int oldSize, const 
 // push back 1 element into the 1d Array
 // returns the resulting total number of elements
 template<typename T>
-int Array<T>::push_back(const T init_value){
+int Array<T>::push_back(T init_value){
     if (this->get_dimensions() != 1){
         Log::log(LOG_LEVEL_WARNING,
             "invalid usage of method 'int Array<T>::push_back(const T value)': ",
@@ -4355,7 +4356,7 @@ int Array<T>::push_back(const T init_value){
     this->dim_size[0]++;
     if (this->data_elements>this->capacity){
         this->capacity=int(this->data_elements*(1.0+this->_reserve));
-        resize_array(this->data, this->data_elements-1, this->capacity);
+        resize_array(this->data, this->data_elements-1, this->capacity, init_value);
     }
     this->data[this->data_elements-1]=init_value;
     return this->data_elements;

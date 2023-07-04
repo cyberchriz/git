@@ -455,7 +455,6 @@ class Array{
         Array(const std::initializer_list<int>& shape);
         Array(const std::vector<int>& shape);
         Array(const Array<int>& shape);
-        Array(const int elements);
         
         //=move constructor
         Array(Array&& other) noexcept;
@@ -465,7 +464,7 @@ class Array{
         ~Array();   
     
     private:
-        void resize_array(std::unique_ptr<T[]>& arr, const int oldSize, const int newSize, T init_value=0);
+        void resize_array(std::unique_ptr<T[]>& arr, const int oldSize, const int newSize, T init_value);
         const float _reserve = 0.5;
         int capacity;        
 };
